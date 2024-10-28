@@ -1,0 +1,99 @@
+(define "CellOfLastVertex" 
+    (sites Incident Cell of:Vertex at:(last To)) 
+)
+
+(define "AllHolesOfCell"
+    (intersection
+        (sites Incident Vertex of:Cell at:(site))
+        (sites "Holes")
+    )
+)
+
+(define "NumHolesCells" 
+    (count Sites in:("AllHolesOfCell"))
+)
+
+(define "NumOwnedHolesCells"
+    (count Sites 
+        in:(intersection
+            ("AllHolesOfCell")
+            (sites Occupied by:Mover on:Vertex)
+        )
+    )		
+)
+
+(define "MajorityOfEmptyCell" 
+    (if (is In (site) (sites Centre))
+        (>=
+            (+ ("NumOwnedHolesCells") (if (= (mover) (who Vertex at:(centrePoint Vertex))) 1 0))
+            3
+        )
+        (>=
+            ("NumOwnedHolesCells")
+            (if (is Even ("NumHolesCells")) (/ ("NumHolesCells") 2) (+ (/ ("NumHolesCells") 2) 1))
+        )
+    )
+)
+
+(define "CaptureTheCell" 
+    (claim
+        (piece (id "Rectangle" Mover))
+        (to
+            Cell 
+            (site) 
+        )
+    ) 
+)
+
+(game "ConHex" 
+    (players 2)
+    (equipment {
+        (board
+            (add
+                (keep
+                    (splitCrossings 
+                        (merge 
+                            (rotate 45 (dual (square 12 diagonals:Concentric)))
+                            (shift 3 3 (scale 6 (square 1)))
+                        )
+                    )
+                    (poly { {3 3} {3 9} {9 9} {9 3} })
+                )
+                vertices:{{6 6}}
+            )
+        )
+        (piece "Marker" Each)
+        (piece "Rectangle" Each)
+        (regions "Holes" (union (difference (sites Board Vertex) (sites Outer Vertex)) (sites Corners Vertex)))
+        (regions P1 {(sites Side N) (sites Side S) })
+        (regions P2 {(sites Side W) (sites Side E) })
+    })
+    (rules
+        (meta (swap))
+        (play 
+            (move Add (to Vertex (sites Empty Vertex) if:(is In (to) (sites "Holes")))
+                (then 
+                    (forEach Site
+                        "CellOfLastVertex" 
+                        (if "MajorityOfEmptyCell"
+                            "CaptureTheCell"
+                        )
+                        (then
+                            (forEach Site (forEach ("CellOfLastVertex") if:(is Mover (who Cell at:(site))))
+                                (if (is Connected at:(site) Mover)
+                                    (trigger "Connected" Mover)
+                                )
+                            )		
+                        )
+                    )
+                )		
+            )
+        )
+        
+        (end {
+            (if (is Triggered "Connected" Mover) (result Mover Win))
+            (if (<= 52 (count Moves)) (result Mover Draw))
+        }) 
+    )
+)
+

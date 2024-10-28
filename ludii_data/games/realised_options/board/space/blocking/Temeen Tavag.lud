@@ -1,0 +1,31 @@
+(game "Temeen Tavag"
+    (players 2)
+    (equipment {
+        
+        (board 
+            (remove (rotate 45 (concentric {1 4})) edges:{{1 4}})
+            use:Vertex
+        )
+        
+        (hand Each)
+        (piece "Disc" Each "StepToEmpty")
+    })
+    (rules 
+        (start (place "Disc" "Hand" count:2))
+        phases:{
+        (phase "Placement" 
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        ) 
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        (end ("BlockWin"))
+    )
+)
+

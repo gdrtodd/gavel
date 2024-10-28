@@ -1,0 +1,59 @@
+(define "ThrowValue" (count Pips))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" ("ThrowValue")))
+
+(define "Goal" 12)
+
+(define "StartingPoint" (mapEntry #1))
+
+(define "NumInitPiece" 2)
+
+(game "Gavalata" 
+    (players 4) 
+    (equipment { 
+        (board 
+            (square 5)
+            {
+            (track "Track1" "2,W,N,E,S,W1,N3,W2,S2,E1,N1" P1 directed:True)
+            (track "Track2" "22,E,S,W,N,E1,S3,E2,N2,W1,S1" P2 directed:True)
+            (track "Track3" "14,S,W,N,E,S1,W3,S2,E2,N1,W1" P3 directed:True)
+            (track "Track4" "10,N,E,S,W,N1,E3,N2,W2,S1,E1" P4 directed:True)
+            }
+        )
+        ("StickDice" 4)
+        (piece "Paddle" Each
+            (if ("IsNotOffBoard" "SiteToMoveOnTrack")
+                (move 
+                    (from (from) level:(level))
+                    (to 
+                        "SiteToMoveOnTrack" 
+                        ("HittingCapture" ("StartingPoint" (who at:(to))))
+                    )
+                )
+                (then 
+                    (if (= "Goal" (last To))
+                        (remove (last To))
+                    )
+                )
+            )		
+        )
+        (map {(pair 1 "C1") (pair 2 "C5") (pair 3 "E3") (pair 4 "A3")})
+    }) 
+    (rules 
+        (start {
+            (place Stack "Paddle1" ("StartingPoint" 1) count:"NumInitPiece")
+            (place Stack "Paddle2" ("StartingPoint" 2) count:"NumInitPiece")
+            (place Stack "Paddle3" ("StartingPoint" 3) count:"NumInitPiece")
+            (place Stack "Paddle4" ("StartingPoint" 4) count:"NumInitPiece")
+        })
+        
+        (play 
+            ("RollMove"
+                (if (!= 0 ("ThrowValue")) (forEach Piece) (move Pass))
+            )
+        )
+        
+        (end ("EscapeWin"))
+    )
+)
+

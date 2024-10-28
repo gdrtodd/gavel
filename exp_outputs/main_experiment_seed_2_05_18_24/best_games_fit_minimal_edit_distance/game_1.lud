@@ -1,0 +1,88 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (merge 
+                    (shift 0 
+                        (/ 
+                            (- 7 3)
+                        2)
+                        (rectangle 3 7 diagonals:Alternating)
+                    )
+                    (shift 
+                        (/ 
+                            (- 7 3)
+                        2)
+                        0 
+                        (rectangle 7 3 diagonals:Alternating)
+                    )
+                )
+            use:Vertex)
+            (piece "PIECE_ALPHA" P1 
+                (or 
+                    (move Hop 
+                        (between if:
+                            (is Enemy (who at:
+                                    (between)
+                            ))
+                            (apply 
+                                (remove 
+                                    (between)
+                                )
+                            )
+                        )
+                        (to if:(is Empty (to)))
+                    )
+                    (move Step 
+                        (to if:(is Empty (to)))
+                    )
+                )
+            )
+            (piece "PIECE_ALPHA" P2 N 
+                (move Step 
+                    (directions {Forwards Rightward Leftward})
+                    (to if:(is Empty (to)))
+                )
+            )
+    })
+
+    (rules 
+        (play 
+            (or 
+                (move Add 
+                    (to (sites Empty))
+                    (then (if (= 1 (count MovesThisTurn)) (moveAgain)))
+                )
+                (if (= 1 (var)) 
+                    (move Propose "Take" 
+                        (then (if (is Proposed "Take") (add 
+                                    (piece "PIECE_ALPHA2")
+                                    (to (sites Occupied by:P1))
+                                    (then (and 
+                                            (set Var 0)
+                                            (moveAgain)
+                                    ))
+                        )))
+                ) )
+            )
+        )
+
+        (end 
+            (if (or {
+                        (no Moves P1)
+                        (is Connected 3 SidesNoCorners)
+                        (is Line 5)
+            }) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Havannah
+// Selection metric: 0.53
+// Fitness: 0.88
+// Novelty: 0.48
+// Cell distance: 13.00
+// Edit Distance: 0.60
+// Global Edit Distance: 0.27
+// Lineage length: 7.00

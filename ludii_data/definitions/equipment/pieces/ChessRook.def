@@ -1,0 +1,24 @@
+// Defines a piece moving like a rook in Chess.
+// #1 = The name of the piece.
+// #2 = Consequences of the capture effect.
+// #3 = The consequences of the moves.
+// @example ("ChessRook" "Rook")
+
+(define "ChessRook" 
+    (piece #1 Each 
+        (move
+            Slide
+            Orthogonal
+            (to 
+                if:("IsEnemyAt" (to))  
+                (apply 
+                    (remove 
+                        (to) 
+                        #2
+                    )
+                ) 
+            )
+            #3
+        ) 		
+    )
+)

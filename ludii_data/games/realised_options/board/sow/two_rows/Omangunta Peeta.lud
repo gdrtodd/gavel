@@ -1,0 +1,179 @@
+(define "Columns" 7)
+(define "PlayableSites" (sites (values Remembered "Playable")))
+(define "NextHole" ("NextSiteOnTrack" #2 from:#1 "Track"))
+(define "OppositePit" (if (is In #1 (sites Bottom)) (+ #1 "Columns") (- #1 "Columns")))
+(define "NoPiecesOnBoardExceptCentre" (all Sites (difference (sites Board) (sites Centre)) if:(= 0 (count at:(site)))))
+(define "BottomCentre" 3)
+(define "TopCentre" 10)
+(define "SumCentreSites" (+ (count at:"BottomCentre") (count at:"TopCentre")))
+
+(game "Omangunta Peeta" 
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 6 to:(difference (sites Track) (sites Centre)))
+            (set Count 1 to:(sites Centre))
+            (set RememberValue "Playable" (union (sites Top) (sites Bottom)))
+        })
+        
+        phases:{
+        (phase "Sowing"
+            (play 
+                (or {
+                    (move Select
+                        (from
+                            (if ("SameTurn")
+                                (sites {(var "Replay")})
+                                (difference (sites Mover) (sites Centre))
+                            )
+                            if:(and (is Occupied (from)) (is In (from) ("PlayableSites")))
+                        )
+                        (then 
+                            (sow
+                                apply:(if (is Occupied ("NextHole" (to) 1))
+                                    (and
+                                        (moveAgain)
+                                        (set Var "Replay" (to))
+                                    )
+                                    (if (is In ("NextHole" (to) 2) (sites Centre))
+                                        (set Value Mover 1)
+                                        (and 
+                                            (if (is Occupied ("NextHole" (to) 2))
+                                                (fromTo
+                                                    (from ("NextHole" (to) 2))
+                                                    (to (handSite Mover))
+                                                    count:(count at:("NextHole" (to) 2))
+                                                )
+                                            )
+                                            (if (is Occupied ("OppositePit" ("NextHole" (to) 2)))
+                                                (fromTo
+                                                    (from ("OppositePit" ("NextHole" (to) 2)))
+                                                    (to (handSite Mover))
+                                                    count:(count at:("OppositePit" ("NextHole" (to) 2)))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                                skipIf:(and (not (is In (to) (sites Centre))) (not (is In (to) ("PlayableSites"))))
+                            )
+                        )
+                    )
+                    }
+                    (then (if ("NoPiecesOnBoardExceptCentre")
+                            (and {
+                                (forget Value "Playable" All)
+                                (if (!= 0 ("SumCentreSites"))
+                                    (if (and (= 1 (value Player P1)) (= 1 (value Player P2)))
+                                        (if (is Even ("SumCentreSites"))
+                                            (and {
+                                                (fromTo 
+                                                    (from ("BottomCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(- (count at:("BottomCentre")) 1)
+                                                )
+                                                (fromTo 
+                                                    (from ("TopCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(- (count at:("TopCentre")) 1)
+                                                )
+                                                (fromTo 
+                                                    (from Cell (handSite P1))
+                                                    (to Cell (handSite P2))
+                                                    count:(/ (- ("SumCentreSites") 2) 2)
+                                                )
+                                            })
+                                            (and {
+                                                (fromTo 
+                                                    (from ("BottomCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(- (count at:("BottomCentre")) 1)
+                                                )
+                                                (fromTo 
+                                                    (from ("TopCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(count at:("TopCentre"))
+                                                )
+                                                (fromTo 
+                                                    (from Cell (handSite P1))
+                                                    (to Cell (handSite P2))
+                                                    count:(/ (- ("SumCentreSites") 1) 2)
+                                                )
+                                            })
+                                        )
+                                        (if (= 1 (value Player P1))
+                                            (and
+                                                (fromTo 
+                                                    (from ("BottomCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(- (count at:("BottomCentre")) 1)
+                                                )
+                                                (fromTo 
+                                                    (from ("TopCentre"))
+                                                    (to Cell (handSite P1))
+                                                    count:(- (count at:("TopCentre")) 1)
+                                                )
+                                            )
+                                            (if (= 1 (value Player P2))
+                                                (and
+                                                    (fromTo 
+                                                        (from ("BottomCentre"))
+                                                        (to Cell (handSite P2))
+                                                        count:(- (count at:("BottomCentre")) 1)
+                                                    )
+                                                    (fromTo 
+                                                        (from ("TopCentre"))
+                                                        (to Cell (handSite P2))
+                                                        count:(- (count at:("TopCentre")) 1)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            })
+                        )
+                    )
+                )
+            )
+            
+            (end (if ("NoPiecesOnBoardExceptCentre")
+                    {
+                    (if (= 0 (count Cell at:(handSite P1))) (result P2 Win))
+                    (if (= 0 (count Cell at:(handSite P2))) (result P1 Win))
+                    }
+                )
+            )
+            
+            (nextPhase ("NoPiecesOnBoardExceptCentre") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (not (all Sites (difference (sites Mover) (sites Centre)) if:(is Occupied (site))))
+                    (if (<= 6 (count Cell at:(handSite Mover)))
+                        (move
+                            (from Cell (handSite Mover))
+                            (to (difference (sites Mover) (sites Centre)) if:(is Empty (to)))
+                            count:6
+                            (then (remember Value "Playable" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (all Passed) "Sowing")
+        )
+        }
+    )
+)
+

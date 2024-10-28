@@ -1,0 +1,68 @@
+(define "Columns" 5)
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1 "Home"))))
+
+(game "Nchayo" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "10,E,N1,W" loop:True P2)
+            }	
+            
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+        (hand Each)
+    })
+    (rules 
+        (start (set Count 1 to:(sites Board)))
+        
+        (play 
+            (move Select
+                (from 
+                    (if ("SameTurn")
+                        ("LastHoleSowed")
+                        (sites Mover "Home")
+                    )
+                    if:(is Occupied (from))
+                )
+                (then
+                    (sow
+                        "Track"
+                        owner:(mover)
+                        apply:(if (< 1 (count at:(to)))
+                            (moveAgain)
+                            (if (is In (to) (sites Mover "Inner"))
+                                (if (is Occupied ("OppositePit" (to)))
+                                    (and
+                                        (fromTo 
+                                            (from ("OppositePit" (to)))
+                                            (to (handSite Mover))
+                                            count:(count at:("OppositePit" (to)))
+                                        )	
+                                        (if (is Occupied ("OppositeOuterPit" (to)))
+                                            (fromTo 
+                                                (from ("OppositeOuterPit" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositeOuterPit" (to)))
+                                            )	
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" (no Moves Next)))
+    )
+)
+

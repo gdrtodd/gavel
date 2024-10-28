@@ -1,0 +1,38 @@
+(game "Juroku Musashi" 
+    (players 2) 
+    (equipment { 
+        
+        (board
+            (add
+                (merge
+                    (scale 2 (square 5 diagonals:Alternating))
+                    (shift 2 -2 (wedge 3))
+                )
+                vertices:{ {3 -2} {5 -2}}
+                edges:{{25 31} {25 29} {27 29} {27 32}}
+            )
+            use:Vertex
+        )
+        
+        (piece "Marker" P1 
+            "StepToEmpty"
+        )
+        (piece "Marker" P2 
+            (or 
+                ("HopCapture") 
+                ("StepToEmpty")
+            ) 
+        ) 
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (difference (sites Outer) (expand (sites Bottom))))
+            (place "Marker2" (ahead (centrePoint) N))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

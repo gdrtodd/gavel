@@ -1,0 +1,190 @@
+(define "SomeSite"
+    (not
+        (all Sites #1 
+            if:(not #2)
+        )
+    )
+)
+
+(define "UnClaimable"
+    (forEach
+        (sites Empty)
+        if:(and {
+            (=
+                (count Sites
+                    in:(sites Around (site) Own Orthogonal)
+                )
+                (count Sites
+                    in:(sites Around (site) Enemy Orthogonal)
+                )
+            )
+            (not
+                (can Move
+                    (move Select 
+                        (from 
+                            (sites Around (site) Empty Orthogonal)
+                            if:("SomeSite" 
+                                (sites Around (from) Empty Orthogonal)
+                                ("SomeSite" 
+                                    (sites Around (site) Empty Orthogonal)
+                                    (is Related Orthogonal (site) (from))
+                                )
+                            )     
+                        )
+                    )
+                )
+            )
+        })
+    )
+)
+
+(define "Select"
+    (move Select 
+        (from 
+            (sites Empty)
+            if:("SomeSite" 
+                (sites Around (from) Empty Orthogonal)
+                ("SomeSite" 
+                    (sites Around (site) Empty Orthogonal)
+                    (is Related Orthogonal (site) (from))
+                )
+            )     
+        )
+        (to
+            (sites Around (from) Empty Orthogonal)
+            if:("SomeSite"
+                (sites Around (to) Empty Orthogonal)
+                (is Related Orthogonal (site) (from))
+            )
+        )
+        #1
+    )
+)
+
+(define "Place"
+    (add 
+        (to
+            (intersection
+                (sites Around (last From) Orthogonal includeSelf:True)
+                (sites Around (last To) Orthogonal includeSelf:True)
+            )
+        )
+    )
+)
+
+(define "Score"
+    (addScore Mover
+        (%
+            (count Sites 
+                in:(forEach
+                    ("UnClaimable")
+                    if:(!= 1 (state at:(site)))
+                )
+            )
+        2)
+    )
+)
+
+(define "Mark"
+    (forEach Site
+        ("UnClaimable")
+        (set State at:(site) 1)
+    )
+)
+
+(game "Residuel"
+    (players 2)
+    (equipment {
+        (board 
+            (remove 
+                (rotate 30 (dual (tiling T3636 5))) 
+                cells:{0 4 5 73 81 97 142 143 152}
+            )
+        )
+        (tile "Rhombus" Each)
+    })
+    (rules
+        (play 
+            ("Select" 
+                (then
+                    (do
+                        ("Mark")
+                        next:(do
+                            ("Place")
+                            next:("Score")
+                        )
+                    )
+                )
+            )
+        )
+        (end 
+            (if (no Moves Next) 
+                (byScore {
+                    (score P1
+                        (+ {
+                            (score P1)
+                            (- 
+                                (max
+                                    (/ (count Sites in:(sites Occupied by:P1)) 3)
+                                    (/ (count Sites in:(sites Occupied by:P2)) 3)
+                                )
+                                (/ (count Sites in:(sites Occupied by:P1)) 3)
+                            )
+                            (count Sites 
+                                in:(forEach
+                                    (sites Empty)
+                                    if:(>
+                                        (count Sites
+                                            in:(intersection
+                                                (sites Around (site) Orthogonal)
+                                                (sites Occupied by:P1)
+                                            )
+                                        )
+                                        (count Sites
+                                            in:(intersection
+                                                (sites Around (site) Orthogonal)
+                                                (sites Occupied by:P2)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        })
+                    )
+                    (score P2
+                        (+ {
+                            (score P2)
+                            (- 
+                                (max
+                                    (/ (count Sites in:(sites Occupied by:P1)) 3)
+                                    (/ (count Sites in:(sites Occupied by:P2)) 3)
+                                )
+                                (/ (count Sites in:(sites Occupied by:P2)) 3)
+                            )
+                            (count Sites 
+                                in:(forEach
+                                    (sites Empty)
+                                    if:(>
+                                        (count Sites
+                                            in:(intersection
+                                                (sites Around (site) Orthogonal)
+                                                (sites Occupied by:P2)
+                                            )
+                                        )
+                                        (count Sites
+                                            in:(intersection
+                                                (sites Around (site) Orthogonal)
+                                                (sites Occupied by:P1)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        })
+                    )
+                })
+            )
+        )
+    )
+)
+

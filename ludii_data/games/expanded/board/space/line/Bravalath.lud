@@ -1,0 +1,1 @@
+(game "Bravalath" (players 2) (equipment {(boardless Hexagonal) (tile "Hex" Each numSides:6)}) (rules (start {(place "Hex1" (centrePoint)) (place "Hex2" (ahead (centrePoint) E))}) (play (move Add (to (sites Playable) if:(<= 1 (count Sites in:(sites Around (to) NotEmpty)))))) (end {(if (is Line 4) (result Mover Win)) (if (is Line 3) (result Mover Loss))}))) 

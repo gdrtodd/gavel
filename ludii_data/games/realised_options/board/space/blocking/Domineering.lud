@@ -1,0 +1,18 @@
+(game "Domineering" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 6 6)) 
+        (tile "Horz" P1 {R F} numSides:4)
+        (tile "Vert" P2 {F} numSides:4)
+    }) 
+    (rules 
+        (play 
+            (move Add 
+                (piece (mover) state:0) 
+                (to (sites Empty))
+            )
+        )
+        (end ("NoMoves" Loss))
+    )
+)
+

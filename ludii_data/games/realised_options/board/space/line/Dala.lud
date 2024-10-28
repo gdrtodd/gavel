@@ -1,0 +1,108 @@
+(define "IfCentreFull" (= (count Moves) 4))
+
+(define "FreeCentreSites"
+    (to 
+        (forEach 
+            (sites Centre) 
+            if:(is Empty (site))
+        )
+    ) 	
+)
+
+(define "AddPieceTo" 
+    (move 
+        (from (handSite Mover)) 
+        #1
+        #2
+    )
+)
+
+(define "IfLine3MoveAgain" 
+    (then 
+        (if (is Line 3 Orthogonal exact:True) 
+            (and
+                (moveAgain)
+                (addScore Mover 1)
+            )
+        )
+    )
+)
+
+(define "RemoveEnemyPiece" 
+    (move Remove
+        (sites Occupied by:Next container:"Board") 
+        (then 
+            (and
+                (set Score Mover (- (score Mover) 1))
+                (if (< 1 (score Mover)) (moveAgain))
+            )
+        )
+    )
+)
+
+(define "CheckLine3LastFrom" 
+    (if (and (!= (last From) (ahead (last From) #1)) (= (mover) (who at:(ahead (last From) #1))))
+        (if (is Line 3 Orthogonal through:(ahead (last From) #1) exact:True)
+            (and
+                (moveAgain)
+                (addScore Mover 1)
+            )
+        )
+    )	
+)
+
+(game "Dala"
+    (players 2) 
+    
+    (equipment { 
+        (board (square 6))
+        (hand Each)
+        (piece "Stick" Each 
+            (if (is Line 4 Orthogonal through:(from) exact:True)
+                ("StepToEmpty" Orthogonal
+                    (then
+                        (and {
+                            ("CheckLine3LastFrom" N)
+                            ("CheckLine3LastFrom" S)
+                            ("CheckLine3LastFrom" E)
+                            ("CheckLine3LastFrom" W)
+                        })
+                    )
+                )
+                ("StepToEmpty" Orthogonal "IfLine3MoveAgain")
+            )
+        )
+    }) 
+    (rules 
+        (start (place "Stick" "Hand" count:12))
+        
+        phases:{
+        (phase "PlacementCenter"
+            (play ("AddPieceTo" "FreeCentreSites"))
+            (nextPhase "IfCentreFull" "Placement")
+        )	
+        
+        (phase "Placement"
+            (play 
+                (if (!= 0 (score Mover))
+                    "RemoveEnemyPiece"
+                    ("AddPieceTo" (to (sites Empty)) "IfLine3MoveAgain")
+                )
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        (phase "Movement"
+            (play   
+                (if (!= 0 (score Mover))
+                    "RemoveEnemyPiece"
+                    (forEach Piece) 
+                )
+            )
+            
+            (end ("HavingLessPiecesLoss" Next 2))
+        )
+        }
+    )
+)
+

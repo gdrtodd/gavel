@@ -1,0 +1,116 @@
+(define "EnemyOutsideCentre"
+    (and 
+        ("IsEnemyAt" (between)) 
+        (!= (centrePoint) (between))
+    )
+)
+
+(define "FlankFromOrthogonalStep"
+    (or {
+        (can Move ("Custodial" (from (ahead (last To) N))))
+        (can Move ("Custodial" (from (ahead (last To) E))))
+        (can Move ("Custodial" (from (ahead (last To) W))))
+        (can Move ("Custodial" (from (ahead (last To) S))))
+    })
+)
+
+(define "CaptureAndMoveAgain" 
+    (apply 
+        (and 
+            (remove (between)) 
+            (if 
+                "FlankFromOrthogonalStep"
+                (moveAgain)
+                (if (no Moves Next) 
+                    (and 
+                        (set Pending) 
+                        (moveAgain) 
+                    )
+                )
+            ) 
+        )
+    )
+)
+
+(define "Custodial"
+    (custodial 
+        #1
+        Orthogonal
+        (between 
+            (max 1) 
+            if:"EnemyOutsideCentre"
+            #2
+        )
+        (to if:("IsFriendAt" (to)))
+    )
+)
+
+(game "Shantarad" 
+    (players 2) 
+    (equipment { 
+        (board (square 5)) 
+        (hand Each) 
+        
+        (piece "Marker" Each 
+            ("StepToEmpty" Orthogonal
+                (then
+                    ("Custodial" (from (last To)) "CaptureAndMoveAgain")
+                )
+            )
+        )
+    }) 
+    
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        phases:{
+        (phase "Placement"
+            (play 
+                (if (= (count Moves) 24)
+                    (forEach Piece)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (difference (sites Empty) (centrePoint))) 
+                        (then 
+                            (if 
+                                (or (= (count Moves) 24) ("NewTurn"))
+                                (moveAgain)
+                            )
+                        )
+                    ) 
+                )
+            ) 
+            (nextPhase (= (count Moves) 25) "Movement")
+        )
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    (move Step
+                        (from (last To)) 
+                        Orthogonal 
+                        (to if:(and 
+                                (is Empty (to)) 
+                                (or {
+                                    (and ("IsEnemyAt" (ahead (to) W)) ("IsFriendAt" (ahead (ahead (to) W) W))) 
+                                    (and ("IsEnemyAt" (ahead (to) E)) ("IsFriendAt" (ahead (ahead (to) E) E))) 
+                                    (and ("IsEnemyAt" (ahead (to) N)) ("IsFriendAt" (ahead (ahead (to) N) N))) 
+                                    (and ("IsEnemyAt" (ahead (to) S)) ("IsFriendAt" (ahead (ahead (to) S) S))) 
+                                }) 
+                            )
+                        )
+                        (then
+                            ("Custodial" (from (last To)) "CaptureAndMoveAgain")
+                        )
+                    )
+                    (do
+                        (forEach Piece) 
+                        ifAfterwards:(not (no Moves Next))
+                    )
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,61 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Los Doze Canes"
+    (players 2)
+    (equipment {
+        ("TableBoard" "TableTracksOppositeWithHands")
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("NoEnemyOrOnlyOne" ("SiteToMoveOnTrack"))
+                    (move 
+                        (from) 
+                        (to 
+                            "SiteToMoveOnTrack" 
+                            ("HittingCapture" (handSite Next))
+                        )
+                    )
+                )
+            )
+        )
+        (hand Each)
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (handSite P1) count:12)
+            (place Stack "Disc2" (handSite P2) count:12)
+        })
+        (play
+            ("RollEachNewTurnMove"
+                (or 
+                    (forEach Piece top:True) 
+                    (forEach Piece container:(mover) top:True)
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        (end {
+            (if (and {
+                    (= 2 (size Stack at:18))
+                    (= 2 (size Stack at:19))
+                    (= 2 (size Stack at:20))
+                    (= 2 (size Stack at:21))
+                    (= 2 (size Stack at:22))
+                    (= 2 (size Stack at:23))
+                    (= 0 (count Sites in:(difference (sites Occupied by:Mover) (sites {18..23}))))
+                })
+                (result Mover Win)
+            )
+            (if (and 
+                    (< 2 (size Stack at:12))
+                    (< 2 (size Stack at:0))
+                )
+                (result Mover Draw)
+            )
+        })
+    )
+)
+

@@ -1,0 +1,82 @@
+(define "PromotedHopOrthogonalSequenceCapture" 
+    
+    ("HopCapture" 
+        #1 
+        #2
+        (then 
+            ("ReplayIfCanMove" 
+                ("HopCapture" 
+                    (from (last To)) 
+                    #2
+                )
+            ) 
+        )
+    ) 
+    
+)
+
+(define "HopMan" 
+    ("HopCapture"
+        (from #1) 
+        (directions {Forward Rightward Leftward}) 
+        #2
+    ) 
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Tama" 
+    (players 2) 
+    ("DraughtsEquipment" (square 8))
+    (rules 
+        (start { 
+            (place "Counter1" (union (sites Row 1) (sites Row 2)))
+            (place "Counter2" (union (sites Row 5) (sites Row 6)))
+        })
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    (max Moves
+                        ("HopMan" (last To)
+                            (then 
+                                ("ReplayIfCanMove" ("HopMan" (last To))
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        )
+                    )
+                    (max Moves ("PromotedHopOrthogonalSequenceCapture" (from (last To)) (difference Orthogonal OppositeDirection)))
+                )
+                (priority {
+                    (max Moves
+                        (or { 
+                            (forEach Piece "Counter" 
+                                ("HopMan" (from)
+                                    (then 
+                                        ("ReplayIfCanMove" ("HopMan" (last To))
+                                            ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                        ) 
+                                    ) 
+                                ) 
+                            )
+                            (forEach Piece "DoubleCounter" ("PromotedHopOrthogonalSequenceCapture" (from) Orthogonal))
+                        })
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {Forwards Rightward Leftward}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter"  
+                            ("StepToEmpty")
+                        )
+                    )
+                })
+            )
+        ) 
+        
+        (end ("CaptureAll" Next))  
+    )
+)
+

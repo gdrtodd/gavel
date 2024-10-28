@@ -1,0 +1,20 @@
+(game "Bara Guti" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Marker" Each 
+            (or 
+                ("HopCapture")
+                ("StepToEmpty")
+            )
+        )
+    }) 
+    (rules 
+        ("BeforeAfterCentreSetup" "Marker1" "Marker2")
+        
+        (play (forEach Piece))
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

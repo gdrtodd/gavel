@@ -1,0 +1,18 @@
+(game "Aralzaa" 
+    (players 2)
+    (equipment {
+        (board (square 3))
+        (piece "Knight" Each ("LeapToEmpty" "KnightWalk"))
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    })
+    (rules 
+        (start {
+            (place "Knight1" (sites P1))
+            (place "Knight2" (sites P2))
+        })
+        (play (forEach Piece))
+        (end ("FillWin" (sites Next)))
+    )
+)
+

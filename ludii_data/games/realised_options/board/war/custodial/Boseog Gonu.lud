@@ -1,0 +1,49 @@
+(game "Boseog Gonu" 
+    (players 2)
+    
+    (equipment {
+        (board
+            (remove
+                (merge { 
+                    (rectangle 3 3 diagonals:Alternating)
+                    (shift 0 -1 (rotate 180 (wedge 2))) 
+                    (shift 0 2 (wedge 2)) 
+                    (shift -1.5 0.5 (rotate 90 (wedge 2))) 
+                    (shift 1.5 0.5 (rotate -90 (wedge 2))) 
+                })
+                edges:{ 
+                {{1 1} {0 0}} 
+                {{1 1} {2 2}} 
+                {{1 1} {2 0}} 
+                {{1 1} {0 2}}
+                } 
+            )
+            use:Vertex
+        )
+        (piece "Disc" Each 
+            ("StepToEmpty" ~
+                (then 
+                    (custodial 
+                        (from (last To)) 
+                        (between 
+                            (max 1) 
+                            if:("IsEnemyAt" (between)) 
+                            (apply (remove (between)))
+                        )
+                        (to if:(= (what at:(to)) (what at:(last To)))) 
+                    )	 
+                )
+            ) 
+        )
+    })
+    
+    (rules 
+        (start {
+            (place "Disc1" {"A3" "B3" "B4" "B2" })
+            (place "Disc2" {"D2" "D3" "E3" "D4" })
+        })
+        (play (forEach Piece)) 
+        (end ("HavingLessPiecesLoss" Next 1))
+    )
+)
+

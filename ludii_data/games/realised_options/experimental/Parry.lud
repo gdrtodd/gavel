@@ -1,0 +1,198 @@
+
+(define "SameTurn" (is Prev Mover))
+
+(define "SitePowerPlayerAt"
+    (-
+        (* 2 (count Pieces of:#1 in:(sites Around #2 Orthogonal includeSelf:True)))
+        (count Pieces All in:(sites Around #2 Orthogonal includeSelf:True))
+))
+
+(define "PlacementSites"  
+    (forEach
+        (sites Empty) 
+        if:(< 0 ("SitePowerPlayerAt" (mover) (site))) 
+))
+
+(define "SitesUncontrolledEmpty"
+    (difference 
+        (sites Empty)
+        (sites
+            (results
+                from:(difference (sites Board) (sites Empty))
+                to:(sites Around (from)
+                    if:(and
+                        (is Empty (to))
+                        (< 0 ("SitePowerPlayerAt" (who at:(from)) (to)))
+                ))
+                (to)
+))))
+
+(define "SiteUntontrolledOccupiedBy"
+    (difference
+        (sites Occupied by:(player #1))
+        (sites
+            (results
+                from:(difference (sites Occupied by:All) (sites Occupied by:(player #1)))
+                to:(sites Around (from)
+                    if:(and
+                        (= #1 (who at:(to)))
+                        (< 0 ("SitePowerPlayerAt" (who at:(from)) (to)))
+                ))
+                (to)
+))))
+
+(define "PlayerTerritory"
+    (forEach
+        (sites Board)
+        if:(or
+            (< 0 ("SitePowerPlayerAt" #1 (site)))
+            (and
+                {
+                
+                (= #1 (who at:(site)))  
+                (is In (site) ("SiteUntontrolledOccupiedBy" #1)) 
+                }
+))))
+
+(define "SetScores"
+    (forEach Player
+        (set Score
+            (player (player)) 
+            (max 0 
+                (size Array (array ("PlayerTerritory" (player))))
+))))
+
+(define "MoveAddPriority"
+    (priority
+        
+        (move Add
+            (to
+                (#1)
+                (apply (set Var "PlacedPiece" (to)))
+        ))
+        (move Add
+            (to
+                (#2)
+                (apply (set Var "PlacedPiece" (to)))
+        ))
+        
+        (then
+            (set Value Mover (max 0 (- ("SitePowerPlayerAt" (mover) (last To)) 1)) 
+                (then
+                    (if
+                        (>= 0 (value Player Mover))
+                        ("SetScores")
+                        (and
+                            ("SetScores")
+                            (moveAgain)
+)))))))
+
+(define "MoveUntilDone"
+    (or
+        (move Pass
+            (then ("SetScores"))
+        ) 
+        (do
+            (set Value Mover (- (value Player Mover) 1))
+            next:(forEach Piece
+                (move Step 
+                    (from if:(!= (from) (var "PlacedPiece")))
+                    Orthogonal
+                    (to if:(is Empty (to))) 
+                    (then
+                        (if
+                            (>= 0 (value Player Mover))
+                            ("SetScores")
+                            (moveAgain)
+)))))))
+
+(game "Parry"
+    (players 3)
+    (equipment
+        {
+        (board (tri {3 5 3 5 3}) use:Vertex)
+        (piece "Ball" Each)
+        }
+    )
+    (rules 
+        (meta (no Repeat PositionalInTurn)) 
+        (start
+            {
+            (set Score Each 1) 
+            }   
+        ) 
+        
+        (play
+            (if "SameTurn"
+                ("MoveUntilDone")
+                ("MoveAddPriority"
+                    "PlacementSites" 
+                    "SitesUncontrolledEmpty" 
+        )))
+        (end 
+            {
+            (if
+                (and
+                    {
+                    "EndCondition"
+                    (= 2 3)
+                    (= (score P1) (score P2))
+                    (= (id P1) (what at:(var "PlacedPiece")))
+                    }
+                )
+                (result P1 Win)
+            )
+            
+            (if
+                (and
+                    {
+                    "EndCondition"
+                    (= 2 3)
+                    (= (score P1) (score P2))
+                    (!= (id P1) (what at:(var "PlacedPiece")))
+                    }
+                )
+                (result P2 Win)
+            )
+            
+            (if
+                "EndCondition"
+                (byScore)
+            )
+            
+            }
+            
+        )
+    )
+)
+
+(define "EndCondition"
+    (or
+        (no Moves Next)
+        (all Passed)
+)) 
+
+(define "Tri46Bug"  (tri {4 6 4 7 4}))
+(define "Tri56Bug"  (tri {5 6 5 7 5}))
+(define "Tri57Bug"  (tri {5 7 5 8 5}))
+(define "Tri78Bug"  (tri {7 8 7 10 6}))
+
+(define "Show3"
+    (show Symbol "Disc.svg" P3 Vertex ("PlayerTerritory" 3) edgeColour:(colour Red) scale:1.0)
+)
+
+(define "Show34"
+    "Show3"
+    (show Symbol "Disc.svg" P4 Vertex ("PlayerTerritory" 4) edgeColour:(colour Green) scale:1.0)
+)
+
+(define "Show345"
+    "Show34"
+    (show Symbol "Disc.svg" P5 Vertex ("PlayerTerritory" 5) edgeColour:(colour Blue) scale:1.0)
+)
+
+(define "Show3456"
+    "Show345"
+    (show Symbol "Disc.svg" P6 Vertex ("PlayerTerritory" 6) edgeColour:(colour Magenta) scale:1.0)
+)
+

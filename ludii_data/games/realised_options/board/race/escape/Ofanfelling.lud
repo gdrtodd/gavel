@@ -1,0 +1,109 @@
+(define "SiteToSelect" ("NextSiteOnTrack" (- (pips) 1) from:(mapEntry "StartTrack" (mover))))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "PieceUnstacked" (= (state at:#1) 1))
+(define "PieceStacked" (= (state at:#1) 0))
+
+(define "Unstack" 
+    (forEach Level (last To)
+        (set State at:(last To) level:(level) 1)
+    )
+)
+
+(define "Stack" 
+    (forEach Level (last To)
+        (set State at:(last To) level:(level) 0)
+    )
+)
+
+(game "Ofanfelling"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard"
+            {
+            (track "Track1" {7..12} P1 directed:True)
+            (track "Track2" {18..13} P2 directed:True)
+            }
+        )
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsOffBoard" "SiteToMoveOnTrack")
+                    "RemoveAPiece"
+                    (move 
+                        (from) 
+                        (to "SiteToMoveOnTrack")
+                    )
+                )
+            )
+        )
+        (map "StartTrack" {(pair P1 7) (pair P2 18)})
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (sites {7..12}) count:2)
+            (place Stack "Disc2" (sites {13..18}) count:2)
+        })
+        phases:{
+        (phase "UnStacking" (play 
+                (do 
+                    (if (or (is Pending) ("NewTurn")) (roll)) 
+                    next:
+                    (forEach Die 
+                        if:("DieNotUsed")
+                        (if ("PieceStacked" "SiteToSelect")
+                            (move Select (from ("SiteToSelect"))
+                                (then 
+                                    (and
+                                        ("Unstack")
+                                        ("ReplayNotAllDiceUsed")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (then (if (all DiceEqual) (and (set Pending) (moveAgain))))
+                )
+            )
+            (nextPhase Mover (all Sites (sites Occupied by:Mover) if:(not ("PieceStacked" (site)))) "Stacking")
+        )
+        (phase "Stacking" (play 
+                (do 
+                    (if (or (is Pending) ("NewTurn")) (roll)) 
+                    next:
+                    (forEach Die 
+                        if:("DieNotUsed")
+                        (if ("PieceUnstacked" "SiteToSelect")
+                            (move Select (from ("SiteToSelect"))
+                                (then 
+                                    (and 
+                                        ("Stack")
+                                        ("ReplayNotAllDiceUsed")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (then (if (all DiceEqual) (and (set Pending) (moveAgain))))
+                )
+            )
+            (nextPhase Mover (all Sites (sites Occupied by:Mover) if:(not ("PieceUnstacked" (site)))) "BearingOff")
+        )
+        (phase "BearingOff" 
+            (play 
+                (do 
+                    (if (or (all DiceEqual) ("NewTurn")) (roll)) 
+                    next:(forEach Piece top:True)
+                    (then (if (or (not (all DiceUsed)) (all DiceEqual)) (moveAgain)))
+                )
+            )
+            (end ("EscapeWin"))
+        )
+        }
+    )
+)
+

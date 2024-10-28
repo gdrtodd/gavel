@@ -1,0 +1,73 @@
+(define "SiteToSelect" ("NextSiteOnTrack" (- (pips) 1) from:(mapEntry "StartTrack" (mover))))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "PieceStacked" (= (state at:#1) 1))
+(define "Unstack" (set State at:(last To) 0))
+
+(define "StackSizeLessThan2" (< (size Stack at:("NextSiteOnTrack" (pips))) 2))
+
+(game "Doblet"
+    (players 2)
+    (equipment {
+        ("TableBoard" ("TableTracksOpposite" End))
+        (dice d:6 num:3)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsEndTrack" ("NextSiteOnTrack" (pips)))
+                    "RemoveAPiece"
+                    (move 
+                        (from) 
+                        (to 
+                            ("NextSiteOnTrack" (pips)) 
+                            if:"StackSizeLessThan2"
+                            (apply (if ("IsEnemyAt" (to)) (remove (to))))
+                        )
+                    )
+                )
+            )
+        )
+        (map "StartTrack" {(pair P1 0) (pair P2 12)})
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (sites {0..5}) count:2 state:1)
+            (place Stack "Disc2" (sites {12..17}) count:2 state:1)
+        })
+        
+        phases:{
+        (phase "UnStacking" 
+            (play 
+                ("RollEachNewTurnMove"
+                    (forEach Die 
+                        if:("DieNotUsed")
+                        (if ("PieceStacked" "SiteToSelect")
+                            (move Select (from ("SiteToSelect"))
+                                (then 
+                                    (and {
+                                        ("Unstack")
+                                        ("ReplayNotAllDiceUsed")
+                                    })
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (nextPhase Mover (all Sites (sites Occupied by:Mover) if:(not ("PieceStacked" (site)))) "BearingOff")
+        )
+        (phase "BearingOff"
+            (play 
+                ("RollEachNewTurnMove"
+                    (forEach Piece top:True)
+                    (then (if (and (not (was Pass)) (not (all DiceUsed))) (moveAgain)))
+                )
+            )
+        )
+        }
+        
+        (end ("EscapeWin"))
+    )
+)
+

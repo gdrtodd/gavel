@@ -1,0 +1,62 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (count Pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Royal Game of Ur"
+    (players 2) 
+    (equipment  { 
+        (board 
+            (hole 
+                (hole
+                    (rectangle 3 8) 
+                    (poly { {4 0} {4 1} {6 1} {6 0}})
+                )
+                (poly { {4 2} {4 3} {6 3} {6 2}})
+            )
+            {(track "Track1" "20,3,W,N1,E,S1,W,End" P1 directed:True)
+            (track "Track2" "21,17,W,S1,E,N1,W,End" P2 directed:True)}
+        )
+        ("StickDice" 4)
+        (hand Each)
+        (regions "Replay" (sites {"A1" "A3" "D2" "G1" "G3"}))
+        
+        (piece "UrPiece" Each
+            (if ("IsEndTrack" "SiteToMoveOnTrack")
+                "RemoveAPiece"
+                (if ("IsNotOffBoard" "SiteToMoveOnTrack") 	 			
+                    
+                    (if (or
+                            (is Empty "SiteToMoveOnTrack")
+                            (and 
+                                (not ("IsFriendAt" "SiteToMoveOnTrack")) 
+                                (not (is In "SiteToMoveOnTrack" (sites "Replay")))
+                            )
+                        )
+                        (move 
+                            (from)
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                ("HittingCapture" (handSite Next))
+                            )
+                            (then ("ReplayInMovingOn" (sites "Replay")))
+                        )
+                    )
+                    
+                )
+            )
+        )
+        
+    }) 
+    
+    (rules 
+        (start { 	
+            (place "UrPiece1" (handSite P1) count:7)
+            (place "UrPiece2" (handSite P2) count:7)
+        })	
+        
+        (play ("RollMove" (if (!= (count Pips) 0) (or (forEach Piece) (forEach Piece container:(mover))))))
+        
+        (end ("EscapeWin"))
+    )
+)
+

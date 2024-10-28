@@ -1,0 +1,1 @@
+(game "Clobber" (players 2) (equipment {(board (rectangle 10 10)) (piece "Marker" Each (move Step Orthogonal (to if:(is Enemy (who at:(to))) (apply (remove (to))))))}) (rules (start {(place "Marker1" (sites Phase 1)) (place "Marker2" (sites Phase 0))}) (play (forEach Piece)) (end (if (no Moves Next) (result Next Loss))))) 

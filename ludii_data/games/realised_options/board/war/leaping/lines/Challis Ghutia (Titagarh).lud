@@ -1,0 +1,26 @@
+(game "Challis Ghutia (Titagarh)" 
+    ("TwoPlayersNorthSouth")
+    (equipment { 
+        ("AlquerqueBoard" 9 9)
+        (piece "Marker" Each 
+            (or
+                ("StepToEmpty") 
+                ("HopCapture") 
+            )
+        )
+    }) 
+    
+    (rules 
+        (start { 
+            
+            (place "Marker1" (union (expand (sites Bottom) steps:1) (expand origin:(coord "I3") steps:5 W)))
+            (place "Marker2" (union (expand (sites Top) steps:1) (expand origin:(coord "A7") steps:5 E)))
+            
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

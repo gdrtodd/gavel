@@ -1,0 +1,62 @@
+(define "SquarePattern" (is Pattern {F R F R F R F} #1))
+
+(define "RemoveEnemyPieceNotInLine3AndNotInSquare" 
+    (move Remove
+        (forEach 
+            (sites Occupied by:Next container:"Board") 
+            if:(and (not (is Line 3 All through:(site))) (not ("SquarePattern" from:(site))))
+        )
+    )
+)
+
+(define "IfLine3OrSquareMoveAgain" 
+    (then 
+        (if 
+            (or (is Line 3 All) ("SquarePattern"))
+            (moveAgain)
+        )
+    )
+)
+
+(game "Xanan Zirge"
+    (players 2) 
+    
+    (equipment { 
+        (board (square 9) use:Vertex)
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ "IfLine3OrSquareMoveAgain")
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:40))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "RemoveEnemyPieceNotInLine3AndNotInSquare"
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        "IfLine3OrSquareMoveAgain"
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveEnemyPieceNotInLine3AndNotInSquare"
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

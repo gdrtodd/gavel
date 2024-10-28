@@ -1,0 +1,133 @@
+(define "SumPips" (count Pips))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #2 #1))
+
+(define "NumDiceAtOne" 
+    (+ {
+        (if (= 1 (face (+ 0 (count Sites in:(sites Board))))) 1 0)
+        (if (= 1 (face (+ 1 (count Sites in:(sites Board))))) 1 0)
+        (if (= 1 (face (+ 2 (count Sites in:(sites Board))))) 1 0)
+        (if (= 1 (face (+ 3 (count Sites in:(sites Board))))) 1 0)
+    })
+)
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:("IsEnemyAt" (to)) 
+        (remove (to))
+    ) 
+)
+
+(game "Chong (Sakhalin)"
+    (players 2)
+    (equipment {
+        (board 
+            (rectangle 3 12)
+            {
+            (track "Track1" "0,E,N1,W,N1,E" P1 directed:True)
+            (track "Track2" "35,W,S1,E,S1,W" P2 directed:True)
+            }
+        )
+        (dice d:6 num:4)
+        (piece "Marker" Each
+            (move
+                (from)
+                (to ("SiteToMoveOnTrack" from:(from) (pips))
+                    if:(or {
+                        (is Empty (to))
+                        (and 
+                            ("IsEnemyAt" (to))
+                            (if (not ("IsPieceAt" "King" Next (to)))
+                                True
+                                (= 1 (abs (- (to) (from))))
+                            )
+                        )
+                    })
+                    ("CaptureEnemyPiece")
+                )
+            )
+        )
+        (piece "King" Each
+            (if (= 1 (pips))
+                (if (<= 2 (count Pieces Mover))
+                    (if (and (!= 1 (value Player Mover)) (= 1 (count Pieces Mover)))
+                        (move (from (from)) (to (from)) (then (set Value Mover 1)))
+                        (move
+                            (from)
+                            (to ("SiteToMoveOnTrack" from:(from) (pips))
+                                if:(or {
+                                    (is Empty (to))
+                                    (and 
+                                        ("IsEnemyAt" (to))
+                                        (if (not ("IsPieceAt" "King" Next (to)))
+                                            True
+                                            (= 1 (abs (- (to) (from))))
+                                        )
+                                    )
+                                })
+                                ("CaptureEnemyPiece")
+                            )
+                        )
+                    )
+                    (firstMoveOnTrack "Track" Mover
+                        (if (and (> (site) (from)) (is Mover (who at:(site))))
+                            (move Swap Pieces (from) (site))
+                        )
+                    )
+                )
+            )
+        )
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (sites Bottom))
+            (place "King1" 23)
+            (place "Marker2" (sites Top))
+            (place "King2" 12)
+        })
+        phases:{
+        (phase "Opening"
+            (play 
+                ("RollMove"
+                    (if (!= 0 ("NumDiceAtOne"))
+                        (if (is Mover P1)
+                            (if (is Mover (who at:(- (where "King" Mover) (+ (- (count Sites in:(sites Bottom)) 1) ("NumDiceAtOne")))))
+                                (move Swap Pieces (where "King" Mover) (- (where "King" Mover) (+ (- (count Sites in:(sites Bottom)) 1) ("NumDiceAtOne"))))
+                            )
+                            (if (is Mover (who at:(+ (where "King" Mover) (+ (- (count Sites in:(sites Bottom)) 1) ("NumDiceAtOne")))))
+                                (move Swap Pieces (where "King" Mover) (+ (where "King" Mover) (+ (- (count Sites in:(sites Bottom)) 1) ("NumDiceAtOne"))))
+                            )
+                            (then
+                                (fromTo
+                                    (from (last From))
+                                    (to ("SiteToMoveOnTrack" from:(last From) (- ("SumPips") ("NumDiceAtOne")))
+                                        ("CaptureEnemyPiece")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (nextPhase Mover (not (was Pass)) "Playing")
+        )
+        (phase "Playing"
+            (play
+                ("RollEachNewTurnMove"
+                    (forEach Die
+                        if:("DieNotUsed")
+                        (forEach Piece)
+                        (then ("ReplayNotAllDiceUsed"))
+                    )
+                )
+            )
+        )
+        }
+        
+        (end {
+            (if (= (who at:0) P2) (result P2 Win))
+            (if (= (who at:(- (count Sites in:(sites Board)) 1)) P1) (result P1 Win))
+        })
+    )
+)
+

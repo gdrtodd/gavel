@@ -1,0 +1,83 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(define "JumpToPromotionZone" (is In (last To) (sites Next)))
+
+(define "HopDistance" 
+    (move Hop
+        #1
+        #2
+        (between 
+            before:(count Rows)
+            if:("IsEnemyAt" (between)) 
+            (apply (remove (between)))
+        )
+        (to if:(is Empty (to)))
+        (then 
+            ("ReplayIfCanMove" 
+                (hop 
+                    (from (last To)) 
+                    (if (is In (last To) (sites Outer)) (difference Diagonal OppositeDirection) SameDirection)
+                    (between 
+                        before:(count Rows)
+                        if:(and 
+                            (not (is In (between) (sites ToClear))) 
+                            ("IsEnemyAt" (between))
+                        )
+                        (apply (remove (between)))
+                    )
+                    (to if:(is Empty (to)))
+                )
+            ) 
+        )
+    )
+)
+
+(define "DoubleCounterHop" ("HopDistance" Diagonal))
+(define "DoubleCounterHopAgain" 
+    ("HopDistance" 
+        (from (last To)) 
+        (if (is In (last To) (sites Outer)) (difference Diagonal OppositeDirection) SameDirection)
+    )
+)
+
+(game "Dam" 
+    (players 2)
+    ("DraughtsEquipment" (square 12)) 
+    (rules 
+        ("WhiteCellsSetup" 5)
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    (if "IsUnpromoted"
+                        ("HopDiagonalSequenceCaptureAgain")
+                        ("DoubleCounterHopAgain") 
+                    )
+                    (move Pass)
+                )
+                (or 
+                    (forEach Piece "Counter" 
+                        (or
+                            ("HopDiagonalSequenceCapture") 
+                            ("StepToEmpty" Diagonal)
+                        )
+                    )
+                    (forEach Piece "DoubleCounter"
+                        (or
+                            ("DoubleCounterHop")
+                            (move Slide (directions Diagonal)) 
+                        )
+                    )
+                )
+                (then 
+                    (if (and "IsUnpromoted" "JumpToPromotionZone")
+                        (promote (last To) (piece "DoubleCounter") Mover)
+                    )
+                )	
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

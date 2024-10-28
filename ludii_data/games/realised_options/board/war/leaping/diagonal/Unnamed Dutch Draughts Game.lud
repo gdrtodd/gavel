@@ -1,0 +1,101 @@
+(define "HopDoubleCounter" 
+    (move Hop
+        #1
+        Diagonal
+        (between 
+            #2
+            #3
+            if:(and (not (is In (between) (sites ToClear))) ("IsEnemyAt" (between)))
+            (apply (remove (between) #4))
+        )
+        (to if:(is Empty (to)))
+        (then 
+            ("ReplayIfCanMove" 
+                (hop 
+                    (from (last To)) 
+                    Diagonal
+                    (between 
+                        #2
+                        #3
+                        if:(and 
+                            (not (is In (between) (sites ToClear))) 
+                            ("IsEnemyAt" (between))
+                        )
+                        (apply (remove (between) #4))
+                    )
+                    (to if:(is Empty (to)))
+                )
+                ("PromoteIfReach" (sites Next) "CounterStar")
+            )
+        )
+    )
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(define "IsQueen" ("IsPieceAt" "DoubleCounter" Mover (last To)))
+
+(define "JumpToPromotionZone" (is In (last To) (sites Next)))
+
+(game "Unnamed Dutch Draughts Game" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 10) ~ (piece "CounterStar" Each))
+    (rules 
+        (start { 
+            (place "Counter1" (difference (expand (sites Bottom) steps:3) (union (sites Bottom) (sites Phase 1)) ))
+            (place "Counter2" (difference (expand (sites Top) steps:3) (union (sites Top) (sites Phase 1))))
+            (place "DoubleCounter1" (difference (sites Bottom) (sites Phase 1)))
+            (place "DoubleCounter2" (difference (sites Top) (sites Phase 1)))
+        })
+        
+        (play 
+            (if ("SameTurn")
+                (if ("IsUnpromoted")
+                    (max Moves
+                        ("HopInternationalDraughtsStyle" (from (last To))
+                            (then 
+                                ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To)))
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        )
+                    )
+                    (if ("IsQueen")
+                        (max Moves ("HopDoubleCounter" (from (last To)) before:(count Rows) after:(count Rows) at:EndOfTurn))
+                        (max Moves ("HopSequenceCaptureAgain" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                    )
+                )
+                (priority {
+                    (max Moves
+                        (or {
+                            (forEach Piece "Counter"
+                                ("HopInternationalDraughtsStyle" (from)
+                                    (then 
+                                        ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To))) 
+                                            ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                        )
+                                    ) 
+                                ) 
+                            )
+                            (forEach Piece "DoubleCounter" ("HopDoubleCounter" (from) before:(count Rows) after:(count Rows) at:EndOfTurn))
+                            (forEach Piece "CounterStar" ("HopSequenceCapture" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                        })
+                    )
+                    (or {
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal)
+                            (then ("PromoteIfReach" (sites Next) "CounterStar"))
+                        )
+                        (forEach Piece "CounterStar" (move Slide))
+                    })
+                })
+            )
+        )
+        
+        (end ("BlockWin"))
+    )
+)
+

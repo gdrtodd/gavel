@@ -1,0 +1,81 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "NextSiteFromDist6" ("NextSiteOnTrack" 6 from:#1))
+
+(define "RemoveAPiece" (move Remove (site)))
+
+(define "Bar" (mapEntry (mover)))
+
+(define "NotEnemyOrOnlyOne" 
+    (or 
+        (and 
+            ("IsEnemyAt" (to)) 
+            ("IsSingletonStack" (to))
+        ) 
+        (and
+            (if 
+                (not (is In (to) (sites Mover))) 
+                True
+                (is Empty (to))
+            )
+            (not ("IsEnemyAt" (to)))
+        )
+    )
+)
+
+(define "AllPieceEscaped" (no Pieces Mover))
+
+(define "CanEscape" ("IsOffBoard" #1))
+
+(game "Ludus Anglicorum" 
+    (players 2) 
+    (equipment { 
+        ("BackgammonBoard" 
+            {
+            (track "Track1" {6 0..5 7..12 25..20 18..12} P1 directed:True)
+            (track "Track2" {19 12..18 20..25 12..7 5..0} P2 directed:True)
+            } 
+        ) 
+        (dice num:3)
+        (map {(pair 1 19) (pair 2 6)}) 
+        (piece "Disc" Each) 
+        (regions P1 { 0..5 }) 
+        (regions P2 { 13..18 }) 
+    })
+    
+    (rules
+        (start { 
+            (place Stack "Disc1" 0 count:15)
+            (place Stack "Disc2" 13 count:15)
+        })
+        
+        (play 
+            ("RollEachNewTurnMove"
+                (forEach Die
+                    if:("DieNotUsed")
+                    (forEach Site
+                        (sites Occupied by:Mover)
+                        (if ("CanEscape" ("NextSiteFrom" (site))) 
+                            ("RemoveAPiece")
+                            (move 
+                                (from (site))
+                                (to ("NextSiteFrom" (site))
+                                    if:("NotEnemyOrOnlyOne")
+                                    ("HittingCapture" ("Bar"))
+                                )
+                            )
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        
+        (end 
+            (if ("AllPieceEscaped")
+                (result Mover Win)
+            )
+        )
+    )
+)
+

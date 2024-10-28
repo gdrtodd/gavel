@@ -1,0 +1,74 @@
+(define "Columns" 10)
+
+(define "Sow" 
+    (move Select 
+        (from 
+            (if 
+                ("SameTurn") 
+                "LastHoleSowed" 
+                (sites Mover #1) 
+            ) 
+            if:(> (count at:(from)) 0)
+        )
+        (then 
+            (sow
+                apply:(if 
+                    (and { 
+                        (is In (to) (sites Mover "Home")) 
+                        (= (count at:(to)) 1) 
+                        (> (count at:("OppositePit" (to))) 0) 
+                    }) 
+                    (and 
+                        (fromTo 
+                            (from ("OppositePit" (to))) 
+                            (to (handSite Mover)) 
+                            count:(count at:("OppositePit" (to)))
+                        ) 
+                        (fromTo 
+                            (from (to)) 
+                            (to (handSite Mover)) 
+                            count:1
+                        ) 
+                    )
+                    (if (> (count at:(to)) 1) (moveAgain))
+                )
+            )
+        )
+    )
+)
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1 "Home"))))
+
+(game "Dabuda" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (regions "Home" P1 (sites Bottom)) 			
+        (regions "Home" P2 (sites Top)) 				
+        (regions "RightMost" P1 (sites {6..9})) 
+        (regions "RightMost" P2 (sites {10..13})) 
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(sites Track)))
+        
+        phases:{
+        (phase "Rightmost" 			 	
+            (play ("Sow" "RightMost"))
+            (nextPhase (= (count Turns) 2) "HomePhase")
+        )
+        (phase "HomePhase" 
+            (play ("Sow" "Home")) 
+        )
+        }
+        
+        (end ("MancalaByScoreWhen" (no Moves Mover)))
+        
+    )
+)
+

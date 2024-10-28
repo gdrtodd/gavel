@@ -1,0 +1,71 @@
+(define "CaptureAgain"
+    (then 
+        (if (can Move 
+                ("HopCapture"
+                    (from (last To)) 
+                    (difference Orthogonal OppositeDirection)
+                )
+            )
+            (moveAgain)
+        )
+    )	
+)
+
+(game "Bagh Bandi" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithBottomAndTopTriangles")
+        (piece "Goat" P2 "StepToEmpty")
+        (piece "Tiger" P1 
+            (or
+                ("StepToEmpty")
+                ("HopCapture"
+                    ~
+                    ~
+                    ("CaptureAgain")
+                )
+            )
+        )
+        (regions "CentralSites" (sites {6 8 16 18}))
+        (hand P1)
+    }) 
+    (rules 
+        (start {
+            (place Stack "Tiger1" (handSite P1) count:2)
+            (place Stack "Goat2" 6 count:8)
+            (place Stack "Goat2" 8 count:8)
+            (place Stack "Goat2" 16 count:8)
+            (place Stack "Goat2" 18 count:8)
+        })
+        phases:{
+        (phase "Placement" P1 
+            (play 
+                (move 
+                    (from (handSite P1)) 
+                    (to (sites Empty)) 
+                    (then (if ("HandOccupied" Mover) (moveAgain)))
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        (phase "Movement" 
+            (play 
+                (if ("SameTurn")
+                    (or 
+                        ("HopCapture" 
+                            (from (last To)) 
+                            (difference Orthogonal OppositeDirection)
+                            ("CaptureAgain")
+                        )
+                        (move Pass)
+                    )
+                    (forEach Piece top:True)
+                )
+            )
+        )
+        }
+        
+        (end ("NoMovesP1NoPiecesP2"))
+    )
+)
+

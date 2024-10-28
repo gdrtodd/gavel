@@ -1,0 +1,187 @@
+
+(define "CaptureToPieceAndResetCounter"
+    (apply
+        (if ("IsEnemyAt" (to))
+            (remove (to)
+                (then (set Counter))
+            )
+        )
+    )
+)
+
+(define "Directions"
+    ("P12" (directions #1) (directions #2))
+)
+
+(define "IsFromInStartCell"
+    (is In (from) (sites Start (piece (what at:(from)))))
+)
+
+(define "IsToEmpty"
+    (is In (to) (sites Empty))
+)
+
+(define "IsToEmptyOrEnemy"
+    (or "IsToEmpty"
+        ("IsEnemyAt" (to))
+    )
+)
+
+(define "P12"
+    (if (is Mover P1) #1 #2)
+)
+
+(define "PromoteTo"
+    (move Promote (last To) #1 Mover)
+)
+
+(define "SlideCaptureMove"
+    (move Slide
+        #1
+        (to if:("IsEnemyAt" (to))
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "KingCaptureStep"
+    (move Step
+        #1
+        (to if:"IsToEmptyOrEnemy"
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "PawnHop"
+    (move Hop
+        #1
+        (between if:(is In (between) (sites Empty)))
+        (to if:"IsToEmpty")
+        (then (and 
+                (set Pending (ahead (last To) #2))
+                (set Var (last To))
+            )
+        )
+    )
+)
+
+(define "PawnCapture_Ortho"
+    ("PawnStep_To" ("Directions" {WNW ENE} {WSW ESE}))
+)
+
+(define "PawnStep_Double"
+    ("PawnHop" Forward Backward)
+)
+
+(define "PawnStep_To" ("StepToEnemy" #1))
+
+(define "EnPassant_Base"
+    (move Step
+        #1
+        (to if:"IsEnPassantCapture")
+        (then (remove (var)))
+    )
+)
+
+(define "EnPassant_Ortho"
+    ("EnPassant_Base" ("Directions" {WNW ENE} {WSW ESE}))
+)
+
+(define "IsEnPassantCapture"
+    (and
+        (is Pending)
+        (= (to) (value Pending))
+    )
+)
+
+(game "Starchess"
+    ("TwoPlayersNorthSouth")
+    (equipment {
+        (board (rotate 30 (hex Star 2)))
+        
+        (piece "King" Each ("KingCaptureStep" Orthogonal ~))
+        (piece "Queen" Each ("SlideCaptureMove" Orthogonal ~))
+        (piece "Rook" Each ("SlideCaptureMove" (directions {N S}) ~))
+        (piece "Bishop" Each
+            ("SlideCaptureMove" (directions {WNW ENE WSW ESE}) ~)
+        )
+        ("ChessKnight" "Knight" (then (set Counter)))
+        
+        (piece "Pawn" Each
+            (or {
+                "StepForwardToEmpty"
+                (if "IsFromInStartCell" "PawnStep_Double")
+                "PawnCapture_Ortho"
+                "EnPassant_Ortho"
+                }
+                (then
+                    (and
+                        (if (is In (last To) (sites Mover "PromotionZone"))
+                            (moveAgain)
+                        )
+                        (set Counter)
+                    )
+                )
+            )
+        )
+        
+        (hand Each size:5)
+        
+        (regions "Home" P1 (sites {"A3" "B3" "C3" "C2" "C1"}))
+        (regions "Home" P2 (sites {"G9" "G8" "G7" "H7" "I7"}))
+        
+        (regions "PromotionZone" P1 (sites P2 "Home"))
+        (regions "PromotionZone" P2 (sites P1 "Home"))
+        
+        (regions "Region-Dark" (sites Phase 1))
+        (regions "Region-Light" (sites Phase 2))
+        (regions "Region-Medium" (sites Phase 0))
+    })
+    
+    (rules
+        (start {
+            (place "King" "Hand" count:1)
+            (place "Queen" "Hand" count:1)
+            (place "Rook" "Hand" count:1)
+            (place "Bishop" "Hand" count:1)
+            (place "Knight" "Hand" count:1)
+            
+            (place "Pawn1" {"B4" "C4" "D4" "D3" "D2"})
+            (place "Pawn2" {"F8" "F7" "F6" "G6" "H6"})
+        })
+        phases:{
+        (phase "Placement"
+            (play
+                (move
+                    (from (sites Occupied by:Mover container:(mover)))
+                    (to (intersection (sites Mover "Home") (sites Empty)))
+                )
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        (phase "Movement"
+            (play
+                (if ("SameTurn")
+                    ("PromoteTo" (piece {"Queen" "Rook" "Bishop" "Knight"}))
+                    (do (forEach Piece)
+                        ifAfterwards:(not ("IsInCheck" "King" Mover))
+                    )
+                )
+            )
+            (end {
+                ("Checkmate" "King")
+                (if (or
+                        (no Moves Mover)
+                        (= (counter) 100)
+                    )
+                    (result Mover Draw)
+                )
+            })
+        )
+        }
+    )
+)
+

@@ -1,0 +1,51 @@
+(define "RemoveEnemyPiece" 
+    (if (can Move ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) )
+        ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) 
+        ("RemoveAnyEnemyPiece")
+    )
+)
+
+(game "La Chascona"
+    (players 2)
+    
+    (equipment { 
+        ("NineMensMorrisBoard") 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~
+                (then ("ReplayIfLine3" Orthogonal exact:True)) 
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:9))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "RemoveEnemyPiece"
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3" Orthogonal exact:True)) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveEnemyPiece"
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end (if (or (no Moves Next) (<= (count Pieces Next) 2)) (result Mover Win)))
+    )
+)
+

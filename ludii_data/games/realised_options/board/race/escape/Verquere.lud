@@ -1,0 +1,56 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(define "AllPiecesInFinalQuadrant" ("AllOwnedPiecesIn" (sites Mover "FinalQuadrant")))
+
+(game "Verquere"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard" ("BackgammonTracksSameDirectionOppositeCornersWithBars2" End)) 
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (forEach Die
+                replayDouble:True 
+                if:("DieNotUsed")
+                (if ("IsEndTrack" ("NextSiteFrom" (from) (pips)))
+                    (if ("AllPiecesInFinalQuadrant")
+                        (move Remove (from))
+                    )
+                    (move 
+                        (from (from))
+                        (to 
+                            ("NextSiteFrom" (from) (pips))
+                            if:(and 
+                                ("NoEnemyOrOnlyOne" (to))
+                                (if (not (is In (to) (sites Mover "StartingSide")))
+                                    True
+                                    (is Empty (to))
+                                )
+                            )
+                            ("HittingCapture" (mapEntry "Bar" Next))
+                        )
+                    )
+                )
+                (then ("ReplayNotAllDiceUsed"))
+            )		
+        )
+        (regions "FinalQuadrant" P1 (sites {7..12}))
+        (regions "FinalQuadrant" P2 (sites {13..18}))
+        (regions "StartingSide" P1 (sites {25..20 18..13}))
+        (regions "StartingSide" P2 (sites {0..5 7..12}))
+        (map "Bar" {(pair P1 6) (pair P2 19)})
+    })
+    (rules 
+        (start { 
+            (place Stack "Disc1" 25 count:15)
+            (place Stack "Disc2" 0 count:15) 
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (forEach Piece top:True)
+            )		
+        )
+        
+        (end ("EscapeWin"))
+    )
+)
+

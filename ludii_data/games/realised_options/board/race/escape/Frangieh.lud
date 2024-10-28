@@ -1,0 +1,142 @@
+(define "IfEnemyBlotIt" ("HittingCapture" (mapEntry (next)))) 
+
+(define "BarEmpty" (is Empty "Bar"))
+
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "Bar" (mapEntry (mover)))
+
+(define "AllPieceInHome" ("AllOwnedPiecesIn" (sites Mover)))
+
+(define "RemoveAPiece" (move Remove (site)))
+
+(define "DieNotUsedAndNoEscapeAndNotOffTheTrack" 
+    (and { 
+        ("DieNotUsed") 
+        ("IsNotOffBoard" ("NextSiteFrom" (from))) 
+        ("IsNotEndTrack" ("NextSiteFrom" (from))) 
+    })		
+)
+
+(define "MoveAPiece" 
+    (move 
+        (from #1)
+        (to 
+            ("NextSiteFrom" #1) 
+            if:("NoEnemyOrOnlyOne" (to)) 
+            ("IfEnemyBlotIt")
+        )
+    )
+)
+
+(define "MoveAPieceIf" 
+    (forEach Die 
+        replayDouble:True 
+        if:#1
+        ("MoveAPiece" #2)
+    )		
+)
+
+(define "AllPieceEscaped" (no Pieces Mover))
+
+(define "NumPiece" (size Stack in:(sites Occupied by:#1)))
+
+(define "CanEscape" ("IsEndTrack" ("NextSiteFrom" (site))))
+
+(define "NotEmptyAndNotOffTheBoard" 
+    (and 
+        (is Occupied (site)) 
+        ("IsNotOffBoard" ("NextSiteFrom" (site)))
+    )
+)
+
+(define "SetScoreOf" 
+    (set Score 
+        #1 
+        (if (is Mover #1) 
+            (if 
+                (= ("NumPiece" #2) 15) 
+                2 
+                1
+            ) 
+            0
+        )
+    )
+)
+
+(define "HaveAPieceAndCanEscape" 
+    (and 
+        ("IsFriendAt" (site)) 
+        (< ("NextSiteOnTrack" (pips) from:(site)) 0)
+    )
+)
+
+(game "Frangieh" 
+    (players 2) 
+    (equipment { 
+        ("BackgammonBoard" ("BackgammonTracksWithBar" End))
+        (dice num:2)
+        (regions P1 { 20..25 }) 
+        (regions P2 { 7..12 }) 
+        (map {(pair 1 6) (pair 2 19)}) 
+        (piece "Disc" Each ("MoveAPieceIf" "DieNotUsedAndNoEscapeAndNotOffTheTrack" (from))) 
+    })
+    
+    (rules
+        (start { 
+            (place Stack "Disc1" 0 count:5) (place Stack "Disc1" 12 count:2) 
+            (place Stack "Disc1" 17 count:3) (place Stack "Disc1" 20 count:5)
+            (place Stack "Disc2" 4 count:3) (place Stack "Disc2" 7 count:5) 
+            (place Stack "Disc2" 13 count:5) (place Stack "Disc2" 25 count:2)
+        })
+        
+        (play 
+            ("RollEachNewTurnMove"
+                (if "AllPieceInHome"
+                    (forEach Die 
+                        replayDouble:True 
+                        if:("DieNotUsed")
+                        (forEach Site 
+                            (sites Occupied by:Mover)
+                            (if ("NotEmptyAndNotOffTheBoard") 
+                                (if ("CanEscape")
+                                    ("RemoveAPiece")
+                                    ("MoveAPiece" (site))
+                                )
+                            )
+                            noMoveYet:(firstMoveOnTrack "Track" Mover
+                                (if "HaveAPieceAndCanEscape"
+                                    "RemoveAPiece"
+                                )
+                            )
+                            (then ("ReplayNotAllDiceUsed"))
+                        )
+                    )
+                    (if "BarEmpty"
+                        (forEach Piece top:True)
+                        ("MoveAPieceIf" ("DieNotUsed") ("Bar"))
+                        (then 
+                            (if (not (all DiceUsed))
+                                (if (can Move 
+                                        (if "BarEmpty"
+                                            (forEach Piece top:True)
+                                            ("MoveAPieceIf" ("DieNotUsed") ("Bar"))
+                                        )
+                                    )
+                                    (moveAgain)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (if ("AllPieceEscaped")
+                (result Mover Win)
+            )
+        )
+    )
+)
+

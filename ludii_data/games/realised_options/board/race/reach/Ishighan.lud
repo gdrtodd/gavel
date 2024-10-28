@@ -1,0 +1,172 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+(define "NotThrow0" (!= ("ThrowValue") 0))
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #2 #1))
+(define "HyenaOnTrack" ("NextSiteOnTrack" #2 from:("WhereHyena") #1))
+(define "HyenaPhaseDone" (or 
+        (= ("WhereHyena") ("Center"))
+        (and {
+            (is Occupied ("Center"))
+            (>= 1 (count Sites in:(difference (sites Occupied by:All) ("WhereHyena"))))
+            ("IsSingletonStack" ("WhereHyena"))
+        })
+    )
+)
+
+(define "WhereHyena" (if ("IsNotOffBoard" (where "Hyena" Neutral)) (where "Hyena" Neutral) (handSite P1)))
+(define "LevelHyena" (where Level "Hyena" Neutral at:("WhereHyena")))
+
+(define "Center" 0)
+
+(define "MoveHyena"
+    (move
+        (from ("WhereHyena") level:("LevelHyena"))
+        (to ("HyenaOnTrack" "Track" ("ThrowValue")))
+        (then
+            (if (= (last To) ("Center"))
+                (forEach Site (sites Track "Track" from:(last From) to:(last To))
+                    (if (!= (site) (last To))
+                        (forEach Level (site) FromTop
+                            (remove (site) level:(level)) 
+                        )
+                    )
+                )
+                (forEach Site (sites Track "Track" from:(last From) to:(last To))
+                    (if (!= (site) (last To))
+                        (forEach Level (site) FromTop
+                            (fromTo 
+                                (from (site) level:(level))
+                                (to (last To)
+                                    (apply 
+                                        (if (and 
+                                                (= 0 (state at:(site) level:(level)))
+                                                (!= 0 (who at:(site) level:(level)))
+                                            )
+                                            (if (<= (site) (- (count Vertices) 1)) (set State at:(site) level:(level) (site)))
+                                        )
+                                    )	
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Ishighan"
+    (players 4)
+    (equipment {
+        (board 
+            (spiral turns:5 sites:86) 
+            {
+            (track "Track" {86..0} directed:True)
+            }
+            use:Vertex
+        )
+        ("StickDice" 4)
+        (map "Throw" {(pair 0 20) (pair 1 5) (pair 2 0) (pair 3 9) (pair 4 80)})
+        (piece "Stick" Each
+            (if ("IsOffBoard" ("SiteToMoveOnTrack" "Track" ("ThrowValue")))
+                (move
+                    (from (from) level:(level))
+                    (to 0)
+                    (then
+                        (if (= 1 (value Player Mover))
+                            (forEach Site (sites Track "Track" from:(last From) to:(last To)) 
+                                (forEach Level (site) FromTop
+                                    (if ("IsPieceAt" "Hyena" Neutral (site) level:(level))
+                                        (set Value Mover 2)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                (move
+                    (from (from) level:(level))
+                    (to
+                        ("SiteToMoveOnTrack" "Track" ("ThrowValue"))
+                        if:True
+                    )
+                    (then
+                        (if (= 1 (value Player Mover))
+                            (forEach Site (sites Track "Track" from:(last From) to:(last To)) 
+                                (forEach Level (site) FromTop
+                                    (if ("IsPieceAt" "Hyena" Neutral (site) level:(level))
+                                        (set Value Mover 2)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            maxState:85
+        )
+        (piece "Hyena" Neutral)
+        (hand P1)
+    })
+    (rules 
+        (start {
+            (place Stack items:{"Stick4" "Stick3" "Stick2" "Stick1"} (handSite P1))
+            (place Stack "Hyena0" (handSite P1))
+        })
+        
+        (play 
+            ("RollMove"
+                (if (= ("Center") (where "Stick" Mover))
+                    (if ("NotThrow0") 
+                        ("MoveHyena")
+                        (move Pass 
+                            (then 
+                                (forEach Site (sites Board)
+                                    (forEach Level (site) FromTop
+                                        (if (!= 0 (state at:(site) level:(level)))
+                                            (if (< 0 (value Player (who at:(site) level:(level))))
+                                                (remove (site) level:(level))
+                                                (fromTo
+                                                    (from (site) level:(level))
+                                                    (to (state at:(site) level:(level))
+                                                        (apply
+                                                            (and	
+                                                                (set State at:(site) level:(level) 0)
+                                                                (set Value (player (who at:(site) level:(level))) 1)
+                                                            )
+                                                        )		
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (if ("NotThrow0") 
+                        (or (forEach Piece) (forEach Piece container:1))
+                        (move Pass
+                            (then 
+                                (if (= 1 (value Player Mover))
+                                    (remove (where "Stick" Mover) level:(where Level "Stick" Neutral at:(where "Stick" Mover)))
+                                )
+                            )
+                        )
+                    )
+                )
+                (then (if ("NotThrow0") (moveAgain)))
+            )
+        )
+        (end {
+            (forEach Player
+                if:(no Pieces Player) 
+                (result Player Loss)
+            )
+            (forEach Player
+                if:("HyenaPhaseDone")
+                (result Player Win)
+            )
+        })
+    )
+)
+

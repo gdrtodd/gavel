@@ -1,0 +1,24 @@
+(game "Groups" 
+    (players 2) 
+    (equipment { 
+        (board (square 8)) 
+        (piece "Disc" Each 
+            (or 
+                ("StepToEmpty")
+                ("HopAllPiecesToEmpty")
+            )
+        )
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Disc1" {"D3" "C4" "E4" "D5" "F5" "E6"})
+            (place "Disc2" {"E3" "D4" "F4" "C5" "E5" "D6"})
+        })
+        
+        (play (forEach Piece))
+        
+        (end ("SingleGroupWin" Mover Orthogonal)) 
+    )
+)
+

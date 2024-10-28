@@ -1,0 +1,76 @@
+(define "ThrowValue" (min (face 26) (face 27)))
+
+(define "NextSiteFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(define "ThreePiecesOnFinalPoint" (= 3 (count Pieces Mover in:(sites {(mapEntry "FinalPoint" Mover)}))))
+
+(game "Tourne-Case"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard" 
+            {
+            (track "Track1" {6 0..5 7..12 25..20 18..13} P1 directed:True)
+            (track "Track2" {19 13..18 20..25 12..7 5..0} P2 directed:True)
+            } 
+        ) 
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (move
+                (from (from))
+                (to 
+                    ("NextSiteFrom" (from) ("ThrowValue"))
+                    if:(and
+                        (or 
+                            (is Empty (to)) 
+                            (and
+                                (= (to) (mapEntry "FinalPoint" Mover))
+                                (no Pieces Next in:(sites {(mapEntry "FinalPoint" Mover)}))
+                            )
+                        )
+                        (if (< 1 ("ThrowValue")) 
+                            (no Pieces Mover 
+                                in:(sites Track Mover
+                                    from:("NextSiteFrom" (from) 1) 
+                                    to:("NextSiteFrom" (from) (- ("ThrowValue") 1))
+                                )
+                            ) 
+                            True
+                        )
+                    )
+                    (apply
+                        (if (and 
+                                ("IsEnemyAt" (mapEntry "Opposite" (to)))
+                                ("IsSingletonStack" (mapEntry "Opposite" (to)))
+                            )
+                            (fromTo
+                                (from (mapEntry "Opposite" (to)))	
+                                (to (mapEntry "Bar" Next))	
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (map "FinalPoint" {(pair P1 13) (pair P2 0)})
+        (map "Bar" {(pair P1 6) (pair P2 19)})
+        (map "Opposite" {
+            (pair 0 13) (pair 1 14) (pair 2 15) (pair 3 16) (pair 4 17) (pair 5 18) 
+            (pair 7 20) (pair 8 21) (pair 9 22) (pair 10 23) (pair 11 24) (pair 12 25)
+            (pair 13 0) (pair 14 1) (pair 15 2) (pair 16 3) (pair 17 4) (pair 18 5) 
+            (pair 20 7) (pair 21 8) (pair 22 9) (pair 23 10) (pair 24 11) (pair 25 12)
+        })
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 6 count:3) 
+            (place Stack "Disc2" 19 count:3) 
+        })
+        (play 
+            ("RollMove"
+                (forEach Piece top:True)
+            )
+        )
+        (end (if ("ThreePiecesOnFinalPoint") (result Mover Win)))
+    )
+)
+

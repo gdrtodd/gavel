@@ -1,0 +1,1 @@
+(game "T'uk T'uk" (players 2) (equipment {(board (square 6)) (piece "Marker" Each (move Step Orthogonal (to if:(is Empty (to)))))}) (rules (start {(place "Marker1" (sites Bottom)) (place "Marker2" (sites Top))}) (play (forEach Piece)) (end (if (no Moves Next) (result Mover Win))))) 

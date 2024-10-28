@@ -1,0 +1,307 @@
+
+(define "SharedCells" (intersection (sites Around Cell #1) (sites Around Cell #2)))
+
+(define "HalfWayEdge" 
+    (regionSite
+        (difference
+            (sites Incident Edge of:Cell at:(regionSite ("SharedCells" #1 #2) index:0))
+            (difference
+                (sites Incident Edge of:Cell at:(regionSite ("SharedCells" #1 #2) index:0))
+                (sites Incident Edge of:Cell at:(regionSite ("SharedCells" #1 #2) index:1))
+            )
+        )
+        index:0
+    )
+)
+
+(define "BetweenEdge"
+    (regionSite
+        (difference
+            (sites Incident Edge of:Cell at:#1)
+            (difference
+                (sites Incident Edge of:Cell at:#1)
+                (sites Incident Edge of:Cell at:#2)
+            )
+        )
+        index:0
+    )
+)
+
+(define "EdgeIsOriented"  
+    (= 
+        (regionSite (sites Incident Cell of:Edge at:#1) index:0) 
+        (ahead Cell (regionSite (sites Incident Cell of:Edge at:#1) index:1) #2)
+    )
+) 
+
+(define "EdgeOrientationInteger" (if (or ("EdgeIsOriented" #1 E) ("EdgeIsOriented" #1 W)) 0 2)) 
+
+(define "AddConnector"
+    (if 
+        (can Move (leap (from Cell (last To)) {{F F #2 F}} (to Cell (sites Occupied by:Mover) if:("NeedsConnection"))))
+        (forEach Value
+            (results
+                from:(last To)
+                to:(sites To 
+                    (leap
+                        (from Cell (last To))
+                        {{ F F #2 F }} 
+                        (to Cell (sites Occupied by:Mover)
+                            if:("NeedsConnection")
+                        )
+                    )
+                )
+                ("HalfWayEdge" (to) (last To))
+            ) 
+            (add
+                (piece (id "I" Mover))
+                (to
+                    Edge
+                    (value)
+                    (apply (set Var "ToEdge" (value))) 
+                )
+                stack:True
+                (then (set State Edge at:(var "ToEdge") (+ #1 ("EdgeOrientationInteger" (var "ToEdge")))))
+            )
+        )
+    )
+)
+
+(define "RemoveConnector"
+    (and {
+        (forEach Site 
+            (sites Around Cell (last To) Orthogonal)
+            (apply if:(is Mover (who at:(site)))
+                (remove Edge ("BetweenEdge" (site) (last To)) count:2)
+        ))
+        (forEach Site 
+            (sites Incident Edge of:Cell at:(last To)) 
+            (apply if:(= (mover) (who Edge at:(site)))
+                (remove Edge (site) count:2)
+            )
+        )
+    })
+)
+
+(define "NeedsConnection"
+    (and {
+        (is Mover (who at:(to)))
+        (not
+            (is Within
+                (id "Ball" Mover) 
+                in:(intersection
+                    (sites Around Cell (to))
+                    (sites Around Cell (last To))
+                )
+            )
+        )
+        (> 2
+            (count Pieces All
+                in:(intersection
+                    (sites Around Cell (to) Adjacent)
+                    (sites Around Cell (last To) Adjacent)
+                )
+            )
+        )
+    })
+)
+
+(define "Twist"
+    (if 
+        (= #2 (ahead Cell #1 E)) (sites Around #3 N)
+        (if 
+            (= #2 (ahead Cell #1 N)) (sites Around #3 W)
+            (if 
+                (= #2 (ahead Cell #1 W)) (sites Around #3 S)
+                (sites Around #3 E)
+            )
+        )
+    )
+)
+
+(define "Break"
+    (or
+        (and
+            (!= 0 (count Pieces of:("Opponent" #3) in:("Twist" #2 #1 #1)))
+            (!= 0 (count Pieces of:("Opponent" #3) in:("Twist" #1 #2 #2)))
+        )
+        (and
+            (!= 0 (count Pieces of:("Opponent" #3) in:("Twist" #2 #1 #2)))
+            (!= 0 (count Pieces of:("Opponent" #3) in:("Twist" #1 #2 #1)))
+        )
+    )
+)
+
+(define "Opponent"
+    (- 3 (id #1))
+)
+
+(define "NotCrossingConnector" 
+    (or {
+        (= (to) (from))
+        (and
+            (is #1 (who at:(from)))  
+            (is #1 (who at:(to))) 
+        ) 
+        (not ("Break" (from) (to) #1))
+    })
+)
+
+(define "Liberties" (intersection (sites "Marked") (sites Empty)))
+
+(define "IsDeadSiteValueofPlayer"
+    (or
+        (= 0 (count Sites in:(difference ("Liberties" #2) #1)))
+        (= Infinity
+            (count Steps
+                (step
+                    (from (from))
+                    Orthogonal
+                    (to 
+                        if:(and
+                            
+                            (or
+                                (is Empty (to))
+                                (is #2 (who at:(to)))  
+                            )
+                            ("NotCrossingConnector" #2) 
+                            
+                        )
+                    )
+                )
+                (#1) 
+                (difference ("Liberties" #2) #1)
+            )
+        )
+    )
+)
+
+(define "Scoring"
+    (and
+        (do
+            "CheckMoverLoss"
+            next:(set Score Mover (- 0 (count Pieces Cell Mover in:(sites State Cell 1))))
+        )
+        (do
+            "CheckOpponentLoss"
+            next:(set Score Next (- 0 (count Pieces Cell Next in:(sites State Cell 1))))
+        )
+    )
+)
+
+(define "CheckMoverLoss"
+    (if
+        ("IsDeadSiteValueofPlayer" (last To) Mover)
+        (and {
+            (trigger "Enmeshed" Mover)
+            (set State at:(last To) 1) 
+            (forEach Value
+                (array (sites Occupied by:Mover on:Cell))
+                (if
+                    ("IsDeadSiteValueofPlayer" (value) Mover)
+                    (set State at:(value) 1)
+                )
+            )
+        })
+    )
+) 
+
+(define "CheckOpponentLoss"
+    (forEach Value
+        (array (sites Occupied by:Next on:Cell))
+        (if
+            ("IsDeadSiteValueofPlayer" (value) Next)
+            (and
+                (trigger "Enmeshed" Next)
+                (set State at:(value) 1)
+            )
+        )
+    )
+)
+
+(define "Add2EmptyWithConsequenses"
+    (move Add 
+        (piece (id "Ball" Mover))
+        (to (sites Empty))
+        (then 
+            (and {
+                ("AddConnector" 1 L)
+                ("AddConnector" 2 R)
+                ("RemoveConnector")
+                ("Scoring")
+            })
+        )
+    )
+)
+
+(game "N-Mesh"
+    (players 2)
+    (equipment {
+        "SquareGrid"
+        (regions "Marked" ("LibertyRegions")) 
+        (piece "Ball" P1 maxState:1)
+        (piece "Ball" P2 maxState:1)
+        (piece "I" P1 maxState:5)
+        (piece "I" P2 maxState:5)
+    })
+    (rules
+        (play
+            (or
+                (if
+                    (= 0 (counter))
+                    (move Add
+                        (to
+                            (sites Occupied by:Next)
+                            (apply (remove (to)))
+                        )
+                    )
+                )
+                ("Add2EmptyWithConsequenses")
+            )
+        )
+        (end 
+            (if 
+                (or
+                    (is Triggered "Enmeshed" Mover)
+                    (is Triggered "Enmeshed" Next)
+                )
+                { 
+                (if
+                    (= (score Mover) (score Next))
+                    (result Next Win)
+                )
+                (if
+                    (!= (score Mover) (score Next))
+                    (byScore)
+                ) 
+                }
+                (byScore)
+            )
+        )
+    )
+)
+
+(define "SquareGrid" (board (square 6) use:Cell))
+(define "LibertyRegions" 
+    
+    (forEach
+        (sites Board) 
+        if:(= 0
+            (%
+                (+ {
+                    (if (= 0 (% (- 6 1) 5)) 1 0) 
+                    (site)
+                    (*
+                        (- 7 6)
+                        (/ (site) 6)
+                    )
+                })
+                5
+            )
+        )
+    )
+)
+
+(define "ColourBackground" (colour 241 232 199))
+(define "Invisible" (colour 0 0 0 0))
+

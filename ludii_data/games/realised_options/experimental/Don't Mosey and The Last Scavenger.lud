@@ -1,0 +1,97 @@
+
+(define "PlayableSite" (difference (sites Inner) (sites Occupied by:Mover)))
+(define "IsPlayableSiteType" (is In (to) ("PlayableSite")))
+(define "AlongLine" (sites Distance (step #1 (to if:True)) from:(from) (min 1)))
+(define "FurtherAlongLine" (sites Distance (step #1 (to if:True)) from:(to) (min 1)))
+(define "MoveTowardFriendInSameLine" (< 0 (count Pieces Mover in:("FurtherAlongLine" #1)))) 
+
+(define "FirstFriend" 
+    (sites To
+        (move Hop 
+            #1
+            (between (min 0)
+                if:(or {
+                    (= (from) (between))
+                    (is Next (who at:(between)))
+                    (is Empty (between))
+                })
+            )
+            (to (sites Inner) if:(is Mover (who at:(to))))
+        )
+    )
+)
+
+(define "DestinationGroupSize"
+    (count Sites
+        in:(sites Distance Orthogonal
+            (step (to if:(and (!= (var "From") (to)) (is Mover (who at:(to))))))
+            from:(to)
+            (min 0)
+        )
+    )
+)
+
+(define "AdvancedSquishSlide"
+    (do
+        (set Var "OriginGroupSize" (size Group at:(from))
+            (then (set Var "From" (from)))
+        )
+        next:(move 
+            (from (from))
+            (to
+                ("AlongLine" #1) 
+                if:(and {
+                    (all Sites (sites Between from:(from) to:(to)) if:(is Empty (site)))
+                    ("IsPlayableSiteType")
+                    ("MoveTowardFriendInSameLine" #1)
+                    (or
+                        (is Next (who at:(to)))
+                        (<=
+                            (var "OriginGroupSize")
+                            ("DestinationGroupSize")
+                        )
+                    )
+                })
+                (apply 
+                    (remove (to))
+                )
+            )
+        )
+    )
+)
+
+(define "MoveByDirection"
+    (forEach Piece
+        (or {
+            ("AdvancedSquishSlide" NNE)
+            ("AdvancedSquishSlide" E)
+            ("AdvancedSquishSlide" SSE)
+            ("AdvancedSquishSlide" SSW)
+            ("AdvancedSquishSlide" W)
+            ("AdvancedSquishSlide" NNW)
+        })
+    )
+)
+
+(game "Don't Mosey and The Last Scavenger"
+    (players 2)
+    (equipment {
+        (board (hex Hexagon 5) use:Cell)
+        (piece "Disc" Each)
+    })
+    (rules
+        (start {(place "Disc1" {7 12 15 21 24 28 31 38 41 44 47 52}) (place "Disc2" {8 13 16 19 22 29 32 36 39 45 48 53})})
+        (play
+            "MoveByDirection"
+        )
+        (end 
+            "Last2MoveEnd"
+        )
+    )
+)
+
+(define "AMSEnd" (if (no Moves Next) (result Mover Loss)))
+(define "Last2MoveEnd" ("BlockWin"))
+
+(define "ColourBackground" (colour 245 245 245)) 
+

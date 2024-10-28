@@ -1,0 +1,66 @@
+(game "Qatranj"
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 10)) 
+        ("ChessRook" "Rook") 
+        ("ChessKnight" "Knight") 
+        ("ChessBishop" "Bishop_noCross") 
+        ("ChessQueen" "Queen")
+        
+        (piece "Commoner" Each
+            (or
+                ("SlideCapture")
+                ("LeapCapture" "KnightWalk")	
+            )
+        )
+        ("ChessKing" "King_noCross") 
+        (piece "Mann" Each 
+            (or
+                ("SlideCapture")
+                ("LeapCapture" "KnightWalk")	
+            )		
+        )
+        
+        (piece "Wazir" Each
+            (do
+                ("StepToNotFriend") 
+                ifAfterwards:(> (count Steps
+                        (last From)
+                        (where "King_noCross" Next)
+                    )
+                    (count Steps
+                        (last To)
+                        (where "King_noCross" Next)
+                    )
+                )
+            )
+        )
+        
+        (piece "Pawn" Each
+            (or 
+                "StepForwardToEmpty" 
+                ("StepToEnemy" (directions {FR FL}))
+            )		
+        )
+    })
+    (rules 
+        (start {
+            (place "Rook1" (sites {"A1" "J1"})) (place "Rook2" (sites {"A10" "J10"}))
+            (place "Knight1" (sites {"B1" "I1" "E3" "F3"})) (place "Knight2" (sites {"B10" "I10" "E8" "F8"}))
+            (place "Bishop_noCross1" (sites {"C1" "H1"})) (place "Bishop_noCross2" (sites {"C10" "H10"}))
+            (place "Queen1" coord:"D1") (place "Queen2" coord:"G10")
+            (place "Commoner1" coord:"E1") (place "Commoner2" coord:"F10")
+            (place "King_noCross1" coord:"F1") (place "King_noCross2" coord:"E10")
+            (place "Mann1" coord:"G1") (place "Mann2" coord:"D10")
+            (place "Wazir1" (sites {"E2" "F2"})) (place "Wazir2" (sites {"E9" "F9"}))
+            (place "Pawn1" (difference (sites Row 1) (sites {"E2" "F2"})))
+            (place "Pawn2" (difference (sites Row 8) (sites {"E9" "F9"})))
+        })
+        (play (do (forEach Piece) 
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))
+            )
+        )
+        (end ("Checkmate" "King_noCross"))
+    )
+)
+

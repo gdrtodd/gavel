@@ -1,0 +1,40 @@
+(game "Hund efter Hare (Thy)"
+    (players 2)
+    (equipment {
+        (board 
+            (remove
+                (add
+                    (merge {
+                        (rectangle 3 5) 
+                        (shift 1 0 (scale 0.5 (rectangle 5 1))) 
+                        (shift 3 0 (scale 0.5 (rectangle 5 1))) 
+                        (shift -1 1 (rectangle 1 7)) 
+                    })
+                    edges:{
+                    {0 15} {15 7} {7 18} {18 14} {17 4} {7 17} 
+                    {7 16} {16 10} {19 10} {0 19} {20 14} {20 4}
+                    {12 16} {16 5} {5 15} {15 2} {2 17} {17 9}
+                    {9 18} {18 12} 
+                    }
+                )
+                edges:{{11 6} {6 1} {13 8} {8 3}}
+            )
+            use:Vertex
+        )
+        (piece "Hare" P1 "StepToEmpty")
+        (piece "Dog" P2 E "StepForwardsToEmpty")
+    })
+    (rules 
+        (start {
+            (place "Hare1" coord:"C3")
+            (place "Dog2" (sites {"B3" "B1" "A3" "B5"}))
+        })
+        (play (forEach Piece))
+        
+        (end {
+            (if (no Moves P1) (result P2 Win))
+        }) 
+        
+    )
+)
+

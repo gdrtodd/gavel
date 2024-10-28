@@ -1,0 +1,102 @@
+
+(define "AnyOfTheseSitesMeetThisCondition"
+    
+    (< 0 (size Array (array (forEach #1 #2))))
+)
+
+(define "Side1" (union (sites Side NE) (sites Side N)))
+(define "Side2" (union (sites Side SE) (sites Side S)))
+(define "Side3" (union (sites Side NW) (sites Side SW)))
+
+(define "NeighborCountOf"
+    (count Pieces #1 in:(sites Around (to) Orthogonal))
+)
+
+(define "AddToEmpty"
+    (move Add 
+        (to (sites Empty))
+        (then
+            (set Var "MoveInTurn" (% (+ 3 (var "MoveInTurn")) 2))
+)))
+
+(define "FlipFromTo"
+    (move Add (piece (id "Disc" #2)) 
+        (to 
+            (sites Occupied by:#1)
+            if:(< ("NeighborCountOf" #2) (("NeighborCountOf" #1)))
+            (apply (remove (to)))
+)))
+
+(game "00'Y'"
+    (players 2)
+    (equipment
+        {
+        (board (tri Limping 4) use:Vertex)
+        (piece "Disc" Each )
+        (piece "Counter" Neutral maxState:2)
+        }
+    )
+    (rules
+        (play
+            (priority
+                {
+                (if
+                    ("SameTurn")
+                    (or ("FlipFromTo" Next Mover) ("FlipFromTo" Mover Next))
+                )
+                ("AddToEmpty")
+                }
+                (then
+                    (if 
+                        (or
+                            (= 1 (var "MoveInTurn"))
+                            (can Move (or ("FlipFromTo" Next Mover) ("FlipFromTo" Mover Next)))         
+                        )
+                        (moveAgain)
+                        (if
+                            ("AnyOfTheseSitesMeetThisCondition"
+                                (sites Occupied by:Next) 
+                                if:("IsWinningConnectionAtSite" (site))
+                            )
+                            (trigger "Win" Next )
+        )))))
+        (end 
+            {
+            (if 
+                (is Triggered "Win" Next)
+                (result Next Win)
+            )
+            (if 
+                (and
+                    (no Moves Mover) 
+                    ("AnyOfTheseSitesMeetThisCondition"
+                        (sites Occupied by:Next) 
+                        if:("IsWinningConnectionAtSite" (site))
+                ))
+                (result Next Win)
+            )
+            }
+)))
+
+(define "StonesOfIn" (intersection (sites Occupied by:#1) #2))
+
+(define "IsWinningConnectionAtSite"
+    
+    (is Connected 3 at:#1 {  "Side1" "Side2" "Side3" })
+)
+(define "IsConnectedAtStartOfFirstMove"
+    
+    (and (is Next (next)) ("IsConnectedPlayer"))
+    (and (= 1) ("IsConnectedPlayer" ))
+)
+
+(define "P1Colour" (colour DarkGreen))
+(define "P2Colour" (colour White))
+(define "BoardColour" (colour 215 203 170))
+(define "EdgesOfSide"
+    (intersection
+        (sites Outer Edge) 
+        (forEach of:(difference #1 (sites Corners Vertex))
+            (sites Incident Edge of:Vertex at:(site))
+)))
+

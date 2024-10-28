@@ -1,0 +1,49 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "English Draughts" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8))
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    ("HopCapture" (from (last To)) (directions {FR FL})
+                        (then 
+                            ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                            ) 
+                        ) 
+                    )
+                    ("HopDiagonalSequenceCaptureAgain")
+                )
+                (priority {
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("HopCapture" (from) (directions {FR FL}) 
+                                (then 
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                        ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                                    ) 
+                                ) 
+                            ) 
+                        )
+                        (forEach Piece "DoubleCounter" ("HopDiagonalSequenceCapture"))
+                    )
+                    
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" "StepDiagonalToEmpty")
+                    )
+                })
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

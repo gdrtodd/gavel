@@ -1,0 +1,62 @@
+(define "ThrowValue" (mapEntry "ThrowDiceValue" (count Pips)))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" ("ThrowValue")))
+
+(define "Goal" 12)
+
+(game "Main Pacheh"
+    (players 4)
+    (equipment {
+        (board 
+            (square 5)
+            {
+            (track "Track1" "2,E,N,W,S,E1,N3,E2,S2,W1,12" P1 directed:True)
+            (track "Track2" "22,W,S,E,N,W1,S3,W2,N2,E1,12" P2 directed:True)
+            (track "Track3" "14,N,W,S,E,N1,W3,N2,E2,S1,12" P3 directed:True)
+            (track "Track4" "10,S,E,N,W,S1,E3,S2,W2,N1,12" P4 directed:True)
+            }
+        )
+        (piece "Marker" Each
+            (if ("IsNotOffBoard" "SiteToMoveOnTrack")
+                (if (or
+                        (is Empty "SiteToMoveOnTrack")
+                        ("IsEnemyAt" "SiteToMoveOnTrack")
+                    )
+                    (move 
+                        (from (from) level:(level))
+                        (to 
+                            "SiteToMoveOnTrack" 
+                            ("HittingCapture" (mapEntry "StartingPoint" (who at:(to))))
+                        )
+                    )
+                )
+                (then 
+                    (if (= "Goal" (last To))
+                        (remove (last To))
+                    )
+                )
+            )
+        )
+        (map "ThrowDiceValue" {(pair 0 8) (pair 1 1) (pair 2 2) (pair 3 3) (pair 4 4)})
+        (map "StartingPoint" {(pair 1 2) (pair 2 22) (pair 3 14) (pair 4 10)})
+        ("StickDice" 4)
+    })
+    (rules 
+        (start {
+            (place Stack "Marker1" 2 count:4)
+            (place Stack "Marker2" 22 count:4)
+            (place Stack "Marker3" 14 count:4)
+            (place Stack "Marker4" 10 count:4)
+        })
+        (play 
+            ("RollMove"
+                (if (can Move (forEach Piece))
+                    (forEach Piece (then (if (= ("ThrowValue") 8) (moveAgain))))
+                    (move Pass (then (if (= ("ThrowValue") 8) (moveAgain))))
+                )
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

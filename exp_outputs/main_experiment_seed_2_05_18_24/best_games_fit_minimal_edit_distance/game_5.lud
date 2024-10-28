@@ -1,0 +1,95 @@
+(game "GAME_NAME" 
+    (players {
+            (player N)
+            (player S)
+    })
+
+    (equipment {
+            (board 
+                (square 5 diagonals:Solid)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (or 
+                    (move Step Forwards 
+                        (to if:(is Empty (to)))
+                    )
+                    (move Hop 
+                        (between if:
+                            (is Enemy (who at:
+                                    (between)
+                            ))
+                            (apply 
+                                (remove 
+                                    (between)
+                                )
+                            )
+                        )
+                        (to if:(is Empty (to)))
+                    )
+                    (then (if (is In (last To) (sites Next)) (promote 
+                                (last To)
+                                (piece "PIECE_BETA")
+                    Mover)))
+                )
+            )
+            (piece "PIECE_BETA" Each 
+                (or 
+                    (move Hop 
+                        (between before:
+                            (count Rows)
+                            after:
+                            (count Rows)
+                            if:
+                            (is Enemy (who at:
+                                    (between)
+                            ))
+                            (apply 
+                                (remove 
+                                    (between)
+                                )
+                            )
+                        )
+                        (to if:(is Empty (to)))
+                    )
+                    (move Slide)
+                )
+            )
+            (regions P1 
+                (sites Top)
+            )
+            (regions P2 
+                (sites Bottom)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (expand 
+                        (sites Bottom)
+                    )
+                )
+                (place "PIECE_ALPHA2" 
+                    (expand 
+                        (sites Top)
+                    )
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (is In (last To) (sites Mover)) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Knightthrough
+// Selection metric: 0.31
+// Fitness: 1.00
+// Novelty: 0.41
+// Cell distance: 5.00
+// Edit Distance: 0.31
+// Global Edit Distance: 0.08
+// Lineage length: 4.00

@@ -1,0 +1,16 @@
+(game "Y" 
+    (players 2) 
+    (equipment { 
+        (board (hex Triangle 11)) 
+        (piece "Disc")
+    }) 
+    (rules 
+        (play (move Add (to (sites Empty))))
+        (end 
+            (if (is Connected 3 Sides) 
+                (result Mover Win) 
+            ) 
+        )
+    )
+)
+

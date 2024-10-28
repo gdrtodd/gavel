@@ -1,0 +1,114 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #2 #1))
+
+(define "SiteToMove" 
+    (if (= (from) (handSite Mover))
+        ("SiteToMoveOnTrack" from:0 (- ("ThrowValue") 1))
+        ("SiteToMoveOnTrack" from:(from) ("ThrowValue"))
+    )	
+)
+
+(define "SiteHyenaToMove" 
+    ("SiteToMoveOnTrack" from:(where "Hyena" Shared) (* 2 ("ThrowValue")))
+)
+
+(define "HyenaPlayer" (var))
+
+(define "SetHyenaPlayer" 
+    (and
+        (add (piece "Hyena") (to 0) stack:True)
+        (set Var (id Mover))
+    )
+)
+
+(game "Nama"
+    (players 8)
+    (equipment {
+        (board 
+            (rectangle 100 1)
+            (track "Track" {0..99} directed:True)
+        )
+        (hand Each)
+        (hand Shared)
+        (piece "Marker" Each
+            (if ("IsOffBoard" ("SiteToMove"))
+                (move Remove (from) level:(level)
+                    (then 
+                        (if ("IsOffBoard" (where "Hyena" Shared))
+                            ("SetHyenaPlayer")
+                        )
+                    )
+                )
+                (move
+                    (from (from) level:(level))
+                    (to ("SiteToMove"))
+                    stack:True
+                )
+            )		
+        )
+        (piece "Hyena" Shared)
+        ("StickDice" 4)
+        (map "Throw" {(pair 0 0) (pair 1 0) (pair 2 2) (pair 3 0) (pair 4 20) })
+    })
+    (rules 
+        (start 
+            (place "Marker" "Hand")
+        )
+        (play 
+            ("RollMove"
+                (if (< 0 ("ThrowValue"))
+                    (if (= ("HyenaPlayer") (id Mover))
+                        (if ("IsOffBoard" ("SiteHyenaToMove"))
+                            (move Remove (where "Hyena" Shared) 
+                                (then
+                                    (forEach Site (sites Board)
+                                        (if (is Occupied (site))
+                                            (remove (site) count:(size Stack at:(site)))
+                                        )
+                                    )
+                                )
+                            )
+                            (move
+                                (from (where "Hyena" Shared))
+                                (to ("SiteHyenaToMove"))
+                                (then 
+                                    (forEach Value min:1 max:(- (* 2 ("ThrowValue")) 1)
+                                        (if
+                                            (is Occupied ("SiteToMoveOnTrack" from:(last From) (value)))
+                                            (remove 
+                                                ("SiteToMoveOnTrack" from:(last From) (value)) 
+                                                count:(size Stack at:("SiteToMoveOnTrack" from:(last From) (value)))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        (or (forEach Piece) (forEach Piece container:(mover)))
+                    )
+                )
+            )
+        )
+        (end {
+            (forEach Player
+                if:(and {
+                    (> ("HyenaPlayer") 0) 
+                    (!= (player) ("HyenaPlayer"))
+                    ("IsOffBoard" (where "Hyena" Shared))
+                }) 
+                (result Player Loss)
+            )
+            
+            (if 
+                (and (= (id Mover) ("HyenaPlayer")) ("IsOffBoard" (where "Hyena" Shared))) 
+                (result Mover Win)
+            )
+            (forEach Player
+                if:(and (!= (player) ("HyenaPlayer")) (no Pieces of:(player)))
+                (result Player Loss)
+            )
+        })
+    )
+)
+

@@ -1,0 +1,31 @@
+(game "Gonnect" 
+    (players 2) 
+    (equipment { 
+        (board (square 13) use:Vertex) 
+        (piece "Marker" Each)
+        (regions P1 {(sites Side N) (sites Side S) })
+        (regions P2 {(sites Side W) (sites Side E) })
+    })
+    
+    (rules 
+        (meta {
+            (swap)
+            (no Repeat)
+        })
+        (play 
+            (do
+                (move Add
+                    (to (sites Empty))
+                    (then ("EncloseCapture" Orthogonal))
+                )
+                ifAfterwards:("HasFreedom" Orthogonal)
+            )
+        )
+        
+        (end {
+            (if (is Connected Mover) (result Mover Win))
+            ("BlockWin")
+        }) 
+    )
+)
+

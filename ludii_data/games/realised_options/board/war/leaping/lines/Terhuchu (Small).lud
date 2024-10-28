@@ -1,0 +1,25 @@
+(game "Terhuchu (Small)" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Marker" Each
+            (or
+                ("StepToEmpty")
+                ("HopCapture")
+            )
+        )
+    }) 
+    
+    (rules 
+        
+        (start { 
+            (place "Marker1" (expand (sites Bottom)))
+            (place "Marker2" (expand (sites Top)))
+        })
+        
+        (play (forEach Piece))
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

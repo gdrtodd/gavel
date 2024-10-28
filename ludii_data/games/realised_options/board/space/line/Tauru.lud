@@ -1,0 +1,41 @@
+(game "Tauru"
+    (players 2)
+    (equipment {
+        (board (rectangle 5 6))
+        (hand Each)
+        (piece "Marker" Each
+            ("StepToEmpty" Orthogonal (then ("ReplayIfLine3")))
+        )
+    })
+    (rules
+        (start (place "Marker" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPiece")
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty))
+                        (then ("ReplayIfLine3")) 
+                    ) 
+                )
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        (phase "Movement"
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPiece")
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("HavingLessPiecesLoss" Next 2))
+    )	
+)
+

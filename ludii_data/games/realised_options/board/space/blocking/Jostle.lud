@@ -1,0 +1,45 @@
+(define "Score"
+    (+
+        (results
+            from:(sites {(from)})
+            to:(sites Around #1 Orthogonal)
+            (if (= (from) (to))
+                0
+                (if ("IsFriendAt" (to)) 
+                    1 
+                    (if ("IsEnemyAt" (to))
+                        -1 
+                        0
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Jostle"
+    (players 2)
+    (equipment {
+        (board (square 10))
+        (piece "Marker" Each
+            (move Step Orthogonal
+                (to if:(and 
+                        (is Empty (to))
+                        (< ("Score" (from)) ("Score" (to)))
+                    )
+                )
+            )
+        )
+    })
+    (rules
+        
+        (start {
+            (place "Marker1" (sites {23 25 27 32 34 36 43 47 52 63 72 74 76 65 67 56}))
+            (place "Marker2" (sites {22 24 26 33 35 37 42 46 53 57 62 64 66 73 75 77}))
+        })
+        
+        (play (forEach Piece))
+        (end ("BlockWin"))
+    )
+)
+

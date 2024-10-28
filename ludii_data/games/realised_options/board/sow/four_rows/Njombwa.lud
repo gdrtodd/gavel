@@ -1,0 +1,140 @@
+(define "Columns" 8)
+(define "NoPiece" (all Sites (sites Player) if:(= 0 (count at:(site)))))
+(define "NextHole" ("NextSiteOnTrack" #2 from:#1 "Track"))
+(define "NoSiteWith2Seeds"
+    (all Sites (sites Mover "Home") if:(!= 2 (count at:(site))))
+)
+(define "AllSitesNoMoreThanOne"
+    (all Sites (sites Mover "Home") if:(>= 1 (count at:(site))))
+)
+
+(game "Njombwa" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "16,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 29 to:(sites {0 (- (* 4 8) 1)})) 
+            (set Count 2 to:(sites {1 (- (* 4 8) 2)})) 
+            (set Count 1 to:(sites {2 (- (* 4 8) 3)})) 
+        })
+        
+        phases:{
+        (phase "Opening1"
+            (play 
+                (move Select
+                    (from
+                        (forEach (sites Mover "Home") if:(= 2 (count at:(site))))	
+                    )
+                    (then
+                        (sow
+                            "Track"
+                            owner:(mover)
+                            apply:(if (and
+                                    (is In (to) (sites Mover "Inner"))
+                                    (is Occupied ("OppositePit" (to)))
+                                )
+                                (remove ("OppositePit" (to)))
+                            )
+                        )
+                    )
+                )
+            )
+            (nextPhase ("NoSiteWith2Seeds") "Opening2")
+        )
+        
+        (phase "Opening2"
+            (play 
+                (move Select
+                    (from 
+                        (if 
+                            ("SameTurn") 
+                            "LastHoleSowed" 
+                            (forEach (sites Mover "Home") if:(= 29 (count at:(site))))	
+                        ) 
+                        if:(> (count at:(from)) 0)
+                    )
+                    (then
+                        (sow
+                            "Track"
+                            owner:(mover)
+                            apply:(if (< 1 (count at:(to)))
+                                (moveAgain)
+                            )
+                        )
+                    )
+                )
+            )
+            
+            (nextPhase (not (is Next Mover)) "Sowing")
+        )
+        
+        (phase "Sowing"
+            (play
+                (if ("AllSitesNoMoreThanOne")
+                    (move Select
+                        (from (sites Mover "Home") if:(and (is Occupied (from)) (is Empty ("NextHole" (from) 1))))
+                        (then 
+                            (sow
+                                "Track"
+                                owner:(mover)		
+                            )
+                        )
+                    )
+                    (move Select
+                        (from 
+                            (if 
+                                ("SameTurn") 
+                                "LastHoleSowed"
+                                (sites Mover "Home") 
+                            ) 
+                            if:(> (count at:(from)) 1)
+                        )
+                        (then
+                            (sow
+                                "Track"
+                                owner:(mover)
+                                apply:(if (< 1 (count at:(to)))
+                                    (moveAgain)
+                                    (if (and 
+                                            (is In (to) (sites Mover "Inner"))
+                                            (is Occupied ("OppositePit" (to)))
+                                        )
+                                        (and
+                                            (remove ("OppositePit" (to)))
+                                            (if (is Occupied ("OppositeOuterPit" (to)))
+                                                (remove ("OppositeOuterPit" (to)))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )		
+            )
+        )
+        }
+        
+        (end
+            (forEach NonMover
+                if:("NoPiece")
+                (result Player Loss)
+            )
+        )
+    )
+)
+

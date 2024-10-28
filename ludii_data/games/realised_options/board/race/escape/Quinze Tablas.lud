@@ -1,0 +1,78 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "Bar" (handSite Mover))
+
+(define "BarEmpty" (is Empty "Bar"))
+
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "MoveAPiece" 
+    (move 
+        (from #1)
+        (to 
+            ("NextSiteFrom" #1) 
+            if:("NoEnemyOrOnlyOne" (to)) 
+            ("HittingCapture" (handSite Next))
+        )
+    )
+)
+
+(define "MoveAPieceIf" 
+    (forEach Die 
+        replayDouble:True 
+        if:#1
+        ("MoveAPiece" #2)
+    )		
+)
+
+(game "Quinze Tablas"
+    (players 2)
+    (equipment {
+        ("TableBoard" ("TableTracksOppositeWithHands" End))
+        (dice d:6 num:3)
+        (hand Each)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsEndTrack" "SiteToMoveOnTrack")
+                    "RemoveAPiece"
+                    (if ("IsNotOffBoard" "SiteToMoveOnTrack")
+                        (if ("IsEmptyOrSingletonStack" ("SiteToMoveOnTrack"))
+                            (move 
+                                (from) 
+                                (to 
+                                    "SiteToMoveOnTrack"
+                                    ("HittingCapture" (handSite Next)) 
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (sites {0..6}) count:2)
+            (place Stack "Disc1" 7 count:1)
+            (place Stack "Disc2" (sites {12..18}) count:2)
+            (place Stack "Disc2" 19 count:1)
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (if ("BarEmpty")
+                    (forEach Piece top:True)
+                    ("MoveAPieceIf" ("DieNotUsed") ("Bar"))
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        (end {
+            (if (no Pieces P1) (result P1 Win))
+            (if (no Pieces P2) (result P2 Win))
+        })
+    )
+)
+

@@ -1,0 +1,178 @@
+
+(define "MoveTower"
+    (move Hop
+        (from if:(and (is Mover (who at:(from)))
+                (= (size Stack at:(from)) 2)
+            ) 
+        )
+        (between if:(or 
+                (is Empty (between))
+                (and 
+                    (is Mover (who at:(between)))
+                    (< (size Stack at:(between)) 2) 
+                ) 
+            ) 
+            (apply (fromTo (from) (to (between))))
+        )
+        
+        (to if:(or 
+                (is Empty (to))
+                (and (is Mover (who at:(to)))
+                    (< (size Stack at:(to)) 2)
+                ) 
+            ) 
+        )
+        stack:True
+    )
+)
+
+(define "SacrificeCaptureWall"
+    (move Step
+        (from if:(and (is Mover (who at:(from)))
+                (= (size Stack at:(from)) 2)
+            ) 
+        )
+        (to 
+            if:(and ("IsEnemyAt" (to)) ("IsSingletonStack" (to)))
+            (apply (remove (to))) 
+        )
+        stack:True
+        (then
+            (and
+                (fromTo
+                    (from (last To))
+                    (to (last From))
+                )
+                (remove (last To))  
+            ) 
+        )
+    )
+)
+
+(define "SacrificeCaptureCatapult"
+    (move Step
+        (from if:(and (is Mover (who at:(from)))
+                (= (size Stack at:(from)) 2)
+            ) 
+        )
+        (to 
+            if:(and ("IsEnemyAt" (to)) (= (size Stack at:(to)) 3))
+            (apply (remove (to))) 
+        )
+        stack:True
+        (then
+            (and {
+                (fromTo
+                    (from (last To))
+                    (to (last From))
+                )
+                (remove (last To)) 
+                (moveAgain) 
+            }) 
+        )
+    )
+)
+
+(define "ThrowStonetoEmpty"
+    (move Hop
+        (from if:(and (is Mover (who at:(from)))
+                (= (size Stack at:(from)) 3)
+            ) 
+        )          
+        (difference All Backwards)
+        (between (range 1 2) if:True)
+        (to if:
+            (and
+                (not ("IsEnemyAt" (to))) 
+                (not (is Mover (who at:(to)))) 
+            )
+        )
+    )
+)
+
+(define "ThrowStonetoEnemy"
+    (move Hop
+        (from if:(and (is Mover (who at:(from)))
+                (= (size Stack at:(from)) 3)
+            ) 
+        )          
+        (difference All Backwards)
+        (between (range 1 2) if:True)
+        (to if:
+            ("IsEnemyAt" (to)) 
+        )
+        (then
+            (and
+                (remove (last To))
+                (remove (last To))
+            )
+        )
+    )
+)
+
+(game "Murus Gallicus" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (rectangle 7 8)) 
+        (piece "Counter_isometric" Each) 
+        
+        (regions "RomanGoal1" P1 (sites Top))
+        (regions "GaulGoal2" P2 (sites Bottom))
+        
+    }) 
+    (rules
+        (start {
+            (place Stack "Counter_isometric1" (sites {0..7}) count:2)
+            (place Stack "Counter_isometric2" (sites {48..55}) count:2)
+        }) 
+        
+        (play
+            (if ("SameTurn")
+                (or
+                    (move
+                        (from (last From))
+                        (to (last To)) 
+                        stack:True    
+                        (then 
+                            (and 
+                                (remove (last To)) 
+                                (remove (last To)) 
+                            )
+                        )    
+                    )    
+                    (move Pass)
+                )
+                (forEach Piece "Counter_isometric"
+                    (or  
+                        {
+                        "MoveTower"
+                        "SacrificeCaptureWall"
+                        
+                        "SacrificeCaptureCatapult"
+                        "ThrowStonetoEmpty"
+                        "ThrowStonetoEnemy"
+                        }
+                    )
+                    top:True
+                )
+            )   
+        )
+        
+        (end {
+            ("BlockWin")
+            
+            (if 
+                (and 
+                    {
+                    (is In (last To) (sites Mover)) 
+                    (not ("IsEnemyAt" (last To)))
+                    (is Mover (who at:(last To)))
+                    } 
+                )
+                (result Mover Win)
+            )
+            
+        })
+    )
+)
+

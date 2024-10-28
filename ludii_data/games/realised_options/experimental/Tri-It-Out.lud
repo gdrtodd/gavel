@@ -1,0 +1,152 @@
+
+(define "Due2Step" 
+    (intersection
+        (sites Board)
+        (sites
+            (results 
+                from:#2 
+                to:(intersection (sites (from) { #1 } rotations:True) #3) 
+                (if
+                    (!= 0
+                        (size Array
+                            (intersection
+                                (intersection
+                                    (array (sites (from) { #1 } rotations:True))
+                                    (array (sites (to) { #1 } rotations:True))
+                                )
+                                (array #4) 
+                    )))
+                    (from)
+                    -1
+)))))  
+
+(define "TriangleSites"
+    (union
+        {
+        ("Due2Step" {F} #1 #2 #3)
+        ("Due2Step" {F R F} #1 #2 #3)
+        ("Due2Step" {F F} #1 #2 #3)
+        ("Due2Step" {F R F F} #1 #2 #3)
+        ("Due2Step" {F F R F} #1 #2 #3)
+        ("Due2Step" {F F R F F} #1 #2 #3)
+        ("Due2Step" {F F F} #1 #2 #3)
+        ("Due2Step" {F R F F F} #1 #2 #3)
+        ("Due2Step" {F F F R F} #1 #2 #3)
+        ("Due2Step" {F F R F F F} #1 #2 #3)
+        ("Due2Step" {F F F R F F} #1 #2 #3)
+        ("Due2Step" {F F F F} #1 #2 #3)
+        ("Due2Step" {F F F R F F F} #1 #2 #3)
+        ("Due2Step" {F R F F F F} #1 #2 #3)
+        ("Due2Step" {F F F F R F} #1 #2 #3)
+        ("Due2Step" {F F F F R F F} #1 #2 #3)
+        ("Due2Step" {F F R F F F F} #1 #2 #3)
+        ("Due2Step" {F F F F F} #1 #2 #3)
+        ("Due2Step" {F F F R F F F F} #1 #2 #3)
+        ("Due2Step" {F F F F R F F F} #1 #2 #3)
+        ("Due2Step" {F F F F F R F} #1 #2 #3)
+        ("Due2Step" {F R F F F F F} #1 #2 #3)
+        }
+))  
+
+(game "Tri-It-Out"
+    (players 2)
+    (equipment
+        {
+        (board (tri {3 4 3 4 3}) use:Vertex)
+        (piece "Counter" Each)
+        }
+    )
+    (rules 
+        (meta (no Repeat PositionalInTurn)) 
+        (start
+            {
+            (set Score Each 0)
+            }   
+        ) 
+        (play
+            (if
+                (is Pending)
+                (move Remove
+                    (sites Pending)
+                    (then
+                        (and
+                            (set Value Mover Infinity)
+                            (moveAgain)
+                )))
+                (move Add
+                    (to
+                        (difference
+                            (sites Empty) 
+                            ("TriangleSites"
+                                (sites Empty)  
+                                (sites Occupied by:P1) 
+                                (sites Occupied by:P2) 
+                        )) 
+                        (apply (set Value Mover (to)))
+                    )
+                    (then
+                        (if
+                            "OutstandingCaptures"
+                            (and
+                                (set Pending "Sites2Capture")
+                                (moveAgain)
+                ))))
+                (then
+                    (set Score  P1 (- (count Pieces  P1))
+                        (then
+                            (set Score P2 (- (count Pieces P2)))
+                )))
+        )) 
+        (end 
+            {
+            (if
+                (and
+                    {
+                    (no Moves Next)
+                    False
+                    }
+                )
+                (result Mover Loss)
+            )
+            
+            (if
+                (and
+                    (no Moves Next)
+                    (= (count Pieces P1) (count Pieces P2))
+                )
+                (result Mover Loss)
+            )
+            
+            (if 
+                (and
+                    (no Moves Next)
+                    (!= (count Pieces P1) (count Pieces P2))
+                )
+                (byScore)
+            )
+            }
+        )
+    )
+)
+
+(define "OutstandingCaptures" 
+    (< 0
+        (size Array
+            (array
+                "Sites2Capture"
+))))
+
+(define "Sites2Capture"
+    ("TriangleSites"
+        (sites Occupied by:Next) 
+        (sites Occupied by:Next)
+        { (value Player (mover)) }
+))
+
+(define "EndCondition" (no Moves Mover)) 
+
+(define "Tri46Bug"  (tri {4 6 4 7 4}))
+(define "Tri56Bug"  (tri {5 6 5 7 5}))
+(define "Tri57Bug"  (tri {5 7 5 8 5}))
+(define "Tri78Bug"  (tri {7 8 7 10 6}))
+

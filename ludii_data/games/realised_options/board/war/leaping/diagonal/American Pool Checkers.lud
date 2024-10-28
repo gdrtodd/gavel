@@ -1,0 +1,49 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "American Pool Checkers"
+    (players 2)
+    ("DraughtsEquipment" (square 8))
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    ("HopInternationalDraughtsStyle" (from (last To))
+                        (then 
+                            ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To)))
+                                ("PromoteIfReach" (sites Next) "DoubleCounter")
+                            ) 
+                        ) 
+                    )
+                    (max Moves ("HopDiagonalSequenceCaptureAgain" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                )
+                (priority {
+                    (or 
+                        (forEach Piece "Counter"
+                            ("HopInternationalDraughtsStyle" (from) 
+                                (then 
+                                    ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To)))
+                                        ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                    ) 
+                                ) 
+                            ) 
+                        )
+                        (max Moves 
+                            (forEach Piece "DoubleCounter" ("HopDiagonalSequenceCapture" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                        )
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal))
+                    )
+                })
+            )
+        ) 
+        (end ("BlockWin"))
+    )
+)
+

@@ -1,0 +1,56 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(game "Paumecary"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard"
+            {
+            (track "Track1" {26..20 End} P1 directed:True)
+            (track "Track2" {27 25..20 End} P2 directed:True)
+            }
+        )
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (or
+                (forEach Die 
+                    replayDouble:True 
+                    if:("DieNotUsed")
+                    (move 
+                        (from (from))
+                        (to 
+                            ("NextSiteFrom" (from) (pips))
+                            if:("NoEnemyOrOnlyOne" (to))
+                            ("HittingCapture" (handSite Next))
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+                (if (is Empty (handSite Mover))
+                    (forEach Die 
+                        replayDouble:True 
+                        if:(and
+                            ("DieNotUsed")
+                            ("IsEndTrack" ("NextSiteFrom" (from) (pips)))
+                        )
+                        (move Remove (from))
+                        (then ("ReplayNotAllDiceUsed"))
+                    )
+                )
+            )		
+        )
+        (hand Each)
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (handSite P1) count:15)
+            (place Stack "Disc2" (handSite P2) count:15)
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (or (forEach Piece) (forEach Piece container:(mover)))
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

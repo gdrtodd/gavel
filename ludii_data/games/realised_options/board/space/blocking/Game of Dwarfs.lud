@@ -1,0 +1,81 @@
+(game "Game of Dwarfs"
+    (players {(player S) (player N)})
+    
+    (equipment {
+        (board 
+            (add
+                (remove
+                    (rotate 90 ("ThreeMensMorrisGraphWithLeftAndRightTriangles"))
+                    vertices:{3 7 1}
+                )
+                edges:{{0 1} {4 5} {2 7} {0 4}}
+            )
+            use:Vertex
+        )
+        
+        (piece "Foot" P1 
+            (move Step Adjacent 
+                (to 
+                    if:(and
+                        (if (= 1 (count Turns)) (!= (centrePoint) (to)) True)
+                        (is Empty (to))
+                    )
+                )
+            )
+        )
+        
+        (piece "Gnome" P2 ("StepToEmpty" (directions {Forwards Rightward Leftward})))
+        
+        (hand P1)
+        (regions "Home" P2 (intersection (sites Outer) (expand (sites Bottom))))
+        (regions "Home" P1 (sites Top))
+    })
+    (rules
+        
+        (start {
+            (place "Gnome2" (intersection (sites Outer) (expand (sites Bottom))))
+            (place "Foot1" (handSite P1))
+        })
+        
+        phases:{
+        (phase "Opening" P1
+            (play
+                (move 
+                    (from (handSite Mover))
+                    (to (expand (sites Top)))
+                )
+            )
+            (nextPhase P1 "MainP1")
+        )
+        (phase "MainP1" P1 
+            (play 
+                (forEach Piece
+                    (then 
+                        (if (is In (where "Foot" P1) (sites P2))
+                            (set Score P1 2)
+                            (if (is Cycle)
+                                (set Score P1 1)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (phase "MainP2" P2 
+            (play (forEach Piece
+                    (then (if (no Moves Next)
+                            (set Score P2 1)
+                            (if (is Cycle)
+                                (set Score P1 1)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end (forEach Player if:(!= 0 (score Player)) (result Player Win))) 
+    )
+)
+

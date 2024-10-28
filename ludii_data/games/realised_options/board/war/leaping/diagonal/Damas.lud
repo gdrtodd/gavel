@@ -1,0 +1,125 @@
+(define "SitesWithPossibleCaptureInPreviousTurn" (sites Pending))
+
+(define "RememberSiteWithPossibleCapture"
+    (set Pending
+        (sites From
+            (max Moves
+                (or
+                    (forEach Piece "Counter"
+                        ("HopCapture" (from) (directions {FR FL})
+                            (then
+                                (if (is In (last To) (sites Next))
+                                    (and
+                                        (promote (last To) (piece "DoubleCounter") Mover)
+                                        ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal))
+                                    )
+                                    ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                                )
+                            )
+                        )
+                    )
+                    (forEach Piece "DoubleCounter"
+                        ("HopCaptureDistance" (from) Diagonal ~
+                            (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal)))
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+(define "StoreCapturingPiece" (set Value Mover (last To)))
+(define "LastCapturingPiece" (value Player Mover))
+
+(game "Damas" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8)) 
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if ("SameTurn")
+                (if "IsUnpromoted"
+                    (max Moves
+                        ("HopCapture" (from (last To)) (directions {FR FL})
+                            (then
+                                (if (is In (last To) (sites Next))
+                                    (and
+                                        (promote (last To) (piece "DoubleCounter") Mover)
+                                        ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal))
+                                    )
+                                    ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                                )
+                            )
+                        )
+                    )
+                    (max Moves 
+                        ("HopCaptureDistance" (from (last To)) Diagonal ~
+                            (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal)))
+                        ) 
+                    )
+                )
+                
+                (do 
+                    ("RememberSiteWithPossibleCapture") 
+                    next:(or {
+                        
+                        (forEach Piece "Counter"
+                            (max Moves
+                                ("HopCapture" (from) (directions {FR FL})
+                                    (then
+                                        (and
+                                            "StoreCapturingPiece"
+                                            (if (is In (last To) (sites Next))
+                                                (and
+                                                    (promote (last To) (piece "DoubleCounter") Mover)
+                                                    ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal))
+                                                )
+                                                ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        (forEach Piece "DoubleCounter"
+                            (max Moves 
+                                ("HopCaptureDistance" (from) Diagonal ~
+                                    (then 
+                                        (and
+                                            "StoreCapturingPiece"
+                                            ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal))
+                                        )
+                                    )	
+                                )
+                            )
+                        )
+                        
+                        (forEach Piece "Counter"
+                            ("StepToEmpty" 
+                                (directions {FR FL}) 
+                                (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                            )
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal))
+                    })
+                    (then
+                        (and
+                            (if (and (!= ("LastCapturingPiece") (last To)) (not (is In (last To) ("SitesWithPossibleCaptureInPreviousTurn"))))
+                                (remove ("SitesWithPossibleCaptureInPreviousTurn"))
+                            )
+                            (if (and (!= ("LastCapturingPiece") (last To)) (is In (last From) ("SitesWithPossibleCaptureInPreviousTurn")))
+                                (remove (last To))
+                            )
+                        )
+                    )
+                )
+            )
+        ) 
+        
+        (end ("ForEachPlayerNoMovesLoss"))
+    )
+)
+

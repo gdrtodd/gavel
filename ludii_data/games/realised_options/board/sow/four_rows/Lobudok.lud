@@ -1,0 +1,139 @@
+(define "Columns" 8)
+
+(game "Lobudok" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "16,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (regions "SideHoles" P1 (intersection (sites Track "Track1") (union (sites Left) (sites Right)))) 
+        (regions "SideHoles" P2 (intersection (sites Track "Track2") (union (sites Right) (sites Left)))) 
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 1 to:(sites {2 5 13 10 29 26 18 21})) 
+            (set Count 8 to:(sites {15 16 8 23})) 
+            (set Count 6 to:(sites {6 9 22 25})) 
+        })
+        
+        (play
+            (or
+                (move Select
+                    (from 
+                        (if ("SameTurn") 
+                            "LastHoleSowed" 
+                            (difference (sites Mover "Home") (sites Mover "SideHoles"))
+                        ) 
+                        if:(> (count at:(from)) 1)
+                    )
+                    (then
+                        (sow
+                            "Track"
+                            owner:(mover)
+                            apply:(if 
+                                (and {
+                                    (is In (to) (sites Mover "Inner"))
+                                    (< 1 (count at:(to)))
+                                    (is Occupied ("OppositeOuterPit" (to)))
+                                    (is Occupied ("OppositePit" (to)))
+                                })	
+                                (and {
+                                    (fromTo
+                                        (from ("OppositeOuterPit" (to)))
+                                        (to (last From))
+                                        count:(count at:("OppositeOuterPit" (to)))
+                                    )
+                                    (fromTo
+                                        (from ("OppositePit" (to)))
+                                        (to (last From))
+                                        count:(count at:("OppositePit" (to)))
+                                    )
+                                    (sow
+                                        (last From)
+                                        count:(+ (count at:("OppositePit" (to))) (count at:("OppositeOuterPit" (to))))
+                                        "Track"
+                                        owner:(mover)	
+                                        skipIf:(and (!= 1 (value Player Mover)) (is In (to) (sites "SideHoles")))
+                                    )
+                                })
+                                (if (< 1 (count at:(to)))
+                                    (moveAgain)
+                                )
+                            )
+                            skipIf:(and (!= 1 (value Player Mover)) (is In (to) (sites "SideHoles")))
+                        )
+                    )
+                )
+                (if 
+                    (if (= 1 (value Player Mover))
+                        True
+                        (all Sites (difference (sites Mover "Home") (sites Mover "SideHoles")) if:(<= (count at:(site)) 1))
+                    )
+                    (move Select
+                        (from 
+                            (if ("SameTurn") 
+                                "LastHoleSowed" 
+                                (sites Mover "SideHoles")
+                            ) 
+                            if:(> (count at:(from)) 1)
+                        )
+                        (then
+                            (and
+                                (sow
+                                    "Track"
+                                    owner:(mover)
+                                    apply:(if 
+                                        (and {
+                                            (is In (to) (sites Mover "Inner"))
+                                            (< 1 (count at:(to)))
+                                            (is Occupied ("OppositeOuterPit" (to)))
+                                            (is Occupied ("OppositePit" (to)))
+                                        })	
+                                        (and {
+                                            (fromTo
+                                                (from ("OppositeOuterPit" (to)))
+                                                (to (last From))
+                                                count:(count at:("OppositeOuterPit" (to)))
+                                            )
+                                            (fromTo
+                                                (from ("OppositePit" (to)))
+                                                (to (last From))
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                            (sow
+                                                (last From)
+                                                count:(+ (count at:("OppositePit" (to))) (count at:("OppositeOuterPit" (to))))
+                                                "Track"
+                                                owner:(mover)	
+                                            )
+                                        })
+                                        (if (< 1 (count at:(to)))
+                                            (moveAgain)
+                                        )
+                                    )
+                                )
+                                (if (= 0 (value Player Mover))
+                                    (set Value Mover 1)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("ForEachPlayerNoMovesLoss"))
+    )
+)
+

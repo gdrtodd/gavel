@@ -1,0 +1,66 @@
+(define "DroppableFromDirection"
+    (and
+        (
+            (= 0
+                (count Pieces All in:(sites LineOfSight at:(site) #1))
+            ) 
+            
+            (= 1
+                (count Pieces in:(sites Around (site) #2))
+            )       
+        )
+    )
+)
+
+(game "Centripetal Force"
+    (players 2)
+    
+    (equipment
+        {
+        (board (square 15))
+        
+        (piece "Cross" P1) 
+        (piece "Disc" P2)
+        
+        (piece "Square" Neutral)
+        }
+    )
+    
+    (rules
+        (start
+            (place "Square0" coord:"H8")
+        )
+        
+        (play
+            (move Add 
+                (to   
+                    (forEach (sites Empty)
+                        if:
+                        (and (
+                                (< 0
+                                    (count Pieces in:(sites Around (site) Orthogonal))
+                                )
+                                
+                                (or
+                                    {
+                                    ("DroppableFromDirection" N S)
+                                    ("DroppableFromDirection" S N)
+                                    ("DroppableFromDirection" W E)  
+                                    ("DroppableFromDirection" E W)
+                                    }
+                                )
+                        ))
+                    )
+                )
+            )
+        )
+        
+        (end
+            {
+            (if (is Line 5) (result Mover Win))
+            (if (no Moves Next) (result All Draw))
+            }
+        )
+    )
+)
+

@@ -1,0 +1,263 @@
+(define "PlayableSites" (sites (values Remembered "Playable")))
+(define "OneOrLessPieceOnBoard" (> 2 (count in:(union (sites Top) (sites Bottom)))))
+
+(game "Buqruru" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 4 store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (hand Each)
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 6 to:(sites Track)) 
+            (set RememberValue "Playable" (sites Board))
+        })
+        
+        phases:{
+        (phase "SelectingHole"
+            (play
+                (move Select 
+                    (from 
+                        (sites Mover)
+                        if:(is In (from) ("PlayableSites"))			
+                    )
+                    (then (set Value Mover (last To)))
+                )
+            )
+            (nextPhase Mover "Sowing")
+        )
+        
+        (phase "Sowing"
+            (play
+                (if (is Occupied (value Player Mover))
+                    (or {
+                        (move Select
+                            (from 
+                                (value Player Mover)
+                                if:(is In (from) ("PlayableSites"))	
+                            )
+                            (then
+                                (sow 
+                                    numPerHole:1
+                                    sowEffect:(if (and 
+                                            (is In (to) (sites Next))
+                                            (or { 
+                                                (= 1 (count at:(to)))
+                                                (= 3 (count at:(to)))
+                                                (= 5 (count at:(to)))
+                                                (= 7 (count at:(to)))
+                                            })
+                                        )
+                                        (fromTo
+                                            (from (to))
+                                            (to (handSite Mover))
+                                            count:(count at:(to))
+                                        )
+                                    )
+                                    apply:(if (or { 
+                                            (= 2 (count at:(to)))
+                                            (= 4 (count at:(to)))
+                                            (= 6 (count at:(to)))
+                                            (= 8 (count at:(to)))
+                                        })
+                                        (fromTo
+                                            (from (to))
+                                            (to (handSite Mover))
+                                            count:(count at:(to))
+                                        )
+                                    )
+                                    skipIf:(not (is In (to) ("PlayableSites")))
+                                    backtracking:True
+                                )
+                            )
+                        )
+                        (if (= 0 (% (count at:(value Player Mover)) 2))
+                            (move Select
+                                (from (value Player Mover))
+                                (then
+                                    (sow 
+                                        numPerHole:2
+                                        sowEffect:(if (and 
+                                                (is In (to) (sites Next))
+                                                (or { 
+                                                    (= 0 (count at:(to)))
+                                                    (= 2 (count at:(to)))
+                                                    (= 4 (count at:(to)))
+                                                    (= 6 (count at:(to)))
+                                                })
+                                            )
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        apply:(if (or { 
+                                                (= 2 (count at:(to)))
+                                                (= 4 (count at:(to)))
+                                                (= 6 (count at:(to)))
+                                                (= 8 (count at:(to)))
+                                            })
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        skipIf:(not (is In (to) ("PlayableSites")))
+                                        backtracking:True
+                                    )
+                                )
+                            )
+                        )
+                        (if (= 0 (% (count at:(value Player Mover)) 3))
+                            (move Select
+                                (from (value Player Mover))
+                                (then
+                                    (sow 
+                                        numPerHole:3
+                                        sowEffect:(if (and 
+                                                (is In (to) (sites Next))
+                                                (or { 
+                                                    (= 1 (count at:(to)))
+                                                    (= 3 (count at:(to)))
+                                                    (= 5 (count at:(to)))
+                                                })
+                                            )
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        apply:(if (or { 
+                                                (= 2 (count at:(to)))
+                                                (= 4 (count at:(to)))
+                                                (= 6 (count at:(to)))
+                                                (= 8 (count at:(to)))
+                                            })
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        skipIf:(not (is In (to) ("PlayableSites")))
+                                        backtracking:True
+                                    )
+                                )
+                            )
+                        )
+                        (if (= 0 (% (count at:(value Player Mover)) 4))
+                            (move Select
+                                (from (value Player Mover))
+                                (then
+                                    (sow 
+                                        numPerHole:4
+                                        sowEffect:(if (and 
+                                                (is In (to) (sites Next))
+                                                (or { 
+                                                    (= 0 (count at:(to)))
+                                                    (= 2 (count at:(to)))
+                                                    (= 4 (count at:(to)))
+                                                })
+                                            )
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        apply:(if (or { 
+                                                (= 2 (count at:(to)))
+                                                (= 4 (count at:(to)))
+                                                (= 6 (count at:(to)))
+                                                (= 8 (count at:(to)))
+                                            })
+                                            (fromTo
+                                                (from (to))
+                                                (to (handSite Mover))
+                                                count:(count at:(to))
+                                            )
+                                        )
+                                        skipIf:(not (is In (to) ("PlayableSites")))
+                                        backtracking:True
+                                    )
+                                )
+                            )
+                        )
+                    })
+                    
+                    (then
+                        (if ("OneOrLessPieceOnBoard")
+                            (and { 
+                                (forEach Site (sites P1)
+                                    (if (is Occupied (site))
+                                        (fromTo
+                                            (from (site))
+                                            (to (handSite P1))
+                                            count:(count at:(site))
+                                        )
+                                    )
+                                )
+                                (forEach Site (sites P2)
+                                    (if (is Occupied (site))
+                                        (fromTo
+                                            (from (site))
+                                            (to (handSite P2))
+                                            count:(count at:(site))
+                                        )
+                                    )
+                                )
+                                (forget Value "Playable" All)
+                            })
+                        )	
+                    )
+                )
+            )
+            (end {
+                (if (and (= 0 (count at:(value Player P1))) (= 0 (count at:(value Player P2)))) (result Mover Draw))
+                (if ("OneOrLessPieceOnBoard")
+                    {
+                    (if (= 0 (count Cell at:(handSite P1))) (result P2 Win))
+                    (if (= 0 (count Cell at:(handSite P2))) (result P1 Win))
+                    }
+                )
+            })
+            
+            (nextPhase ("OneOrLessPieceOnBoard") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (not (all Sites (sites Mover) if:(is Occupied (site))))
+                    (if (<= 6 (count at:(handSite Mover)))
+                        (move
+                            (from (handSite Mover))
+                            (to (sites Mover))
+                            count:6
+                            (then (remember Value "Playable" (last To)))
+                        )
+                        (move
+                            (from (handSite Mover))
+                            (to (sites Mover))
+                            count:(count at:(handSite Mover))
+                            (then (remember Value "Playable" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (all Passed) "SelectingHole")
+        )
+        }
+        
+    )
+)
+

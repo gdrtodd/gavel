@@ -1,0 +1,35 @@
+(game "Haretavl" 
+    (players 2) 
+    (equipment { 
+        ("ThreeMensMorrisBoardWithLeftAndRightTriangles")
+        (hand Each)
+        (piece "Dog" P1 "StepToEmpty")
+        (piece "Hare" P2 "StepToEmpty")
+    }) 
+    
+    (rules 
+        (start {
+            (place "Dog1" (handSite P1) count:3)
+            (place "Hare2" (handSite P2))
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                ) 
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end {
+            (if (no Moves P2) (result P1 Win))
+        }) 
+        
+    )
+)
+

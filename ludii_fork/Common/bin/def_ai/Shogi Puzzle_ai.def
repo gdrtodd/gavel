@@ -1,0 +1,7 @@
+(define "Shogi Puzzle_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (mobilitySimple weight:-1.0)
+    })
+    
+)

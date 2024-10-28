@@ -1,0 +1,106 @@
+(define "NumberOfDiscs" 10)
+
+(define "AllDiscsPlaced"
+    (>= 
+        (count Turns) 
+        (- (* (count Players) ("NumberOfDiscs")) 1)
+    ) 
+)
+
+(define "AddDisc" 
+    (move Add 
+        (piece (id "Disc" Mover)) 
+        (to 
+            (sites Occupied by:All component:"Ring") 
+            level:0
+            if:("IsSingletonStack" (to))
+        ) 
+        stack:True
+        (then (moveAgain))
+    )
+)
+
+(define "MoveRing"
+    (move
+        (from (last To))
+        (to 
+            (sites Around 
+                (difference (sites Occupied by:All component:"Ring") (last To))
+                Orthogonal
+                if:(is Empty (to)) 
+            )
+        )
+    )		
+)
+
+(define "MoveDisc" 
+    (move
+        (from 
+            (from) 
+            level:(level)
+        ) 
+        (to 
+            (sites Occupied by:All component:"Ring") 
+            level:0
+            if:("IsSingletonStack" (to))
+        ) 
+        (then (moveAgain))
+    )
+)
+
+(game "Ringo" 
+    (players 2) 
+    (equipment { 
+        (boardless Square) 
+        (piece "Disc" Each ("MoveDisc")) 
+        (piece "Ring" Each) 
+    }) 
+    (rules 
+        (start {
+            (place "Ring1" (ahead (centrePoint) NE)) 
+            (place "Ring1" (ahead (centrePoint) SE)) 
+            (place "Ring1" (ahead (centrePoint) SW)) 
+            (place "Ring1" (ahead (centrePoint) NW)) 
+            (place "Ring2" (ahead (centrePoint) N))
+            (place "Ring2" (ahead (centrePoint) E))
+            (place "Ring2" (ahead (centrePoint) S))
+            (place "Ring2" (ahead (centrePoint) W))
+        })
+        phases:{
+        (phase "PlacePhase"
+            (play
+                (do 
+                    (if ("NewTurn") 
+                        ("AddDisc") 
+                        ("MoveRing") 
+                        
+                    )
+                    ifAfterwards:(= 1 (count Groups))
+                )
+            )
+            (nextPhase Mover 
+                (and ("NewTurn") ("AllDiscsPlaced")) 
+                "MovePhase"
+            )
+        )
+        (phase "MovePhase"
+            (play
+                (do 
+                    (if ("NewTurn") 
+                        (forEach Piece) 
+                        ("MoveRing")
+                    )
+                    ifAfterwards:(= 1 (count Groups))
+                )
+            )
+        )
+        }
+        (end {
+            (if (is Line 4 what:(id "Disc" P1)) (result P1 Win))
+            (if (is Line 4 what:(id "Ring" P1)) (result P1 Win))
+            (if (is Line 4 what:(id "Disc" P2)) (result P2 Win))
+            (if (is Line 4 what:(id "Ring" P2)) (result P2 Win))
+        })
+    )
+)
+

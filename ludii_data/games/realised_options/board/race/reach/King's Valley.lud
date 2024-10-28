@@ -1,0 +1,21 @@
+(define "Move" (move (from) (to (sites LineOfSight Farthest at:(from)))))
+
+(game "King's Valley"
+    (players 2)
+    (equipment {
+        (board (square 5))
+        (piece "Disc" Each "Move")
+        (piece "King" Each "Move")
+    })
+    (rules 
+        (start {
+            (place "King1" (intersection (sites Bottom) (sites Column 2)))
+            (place "King2" (intersection (sites Top) (sites Column 2)))
+            (place "Disc1" (difference (sites Bottom) (sites Column 2)))
+            (place "Disc2" (difference (sites Top) (sites Column 2)))
+        })
+        (play (forEach Piece))
+        (end (if (is In (where "King" Mover) (sites Centre)) (result Mover Win)))
+    )
+)
+

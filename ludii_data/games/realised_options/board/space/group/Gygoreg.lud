@@ -1,0 +1,39 @@
+(define "Place"
+    (move Add
+        (to 
+            (sites Around (sites Occupied by:Mover) Empty Orthogonal)
+        )
+    )
+)
+
+(define "Remove"
+    (move Select
+        (from (sites Occupied by:Enemy))
+        (then (forEach Site (sites Group at:(last From) Orthogonal) (remove (site))))
+    )
+)
+
+(game "Gygoreg"
+    (players 2)
+    (equipment {
+        (board (square Diamond 10))
+        (piece "Disc" Each)
+    })
+    (rules
+        (start {
+            (place "Disc1" (forEach (sites Phase 0) if:(is Odd (site))))
+            (place "Disc2" (forEach (sites Phase 0) if:(is Even (site))))
+        })
+        (play
+            (or
+                ("Place")
+                ("Remove")
+            )
+        )
+        (end {
+            ("SingleGroupWin" P1 Orthogonal)
+            ("SingleGroupWin" P2 Orthogonal)
+        })
+    )
+)
+

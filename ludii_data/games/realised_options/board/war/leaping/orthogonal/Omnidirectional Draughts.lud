@@ -1,0 +1,70 @@
+(define "HopCounter" 
+    (move Hop 
+        (from #1) 
+        All
+        (between 
+            if:(and (not (is In (between) (sites ToClear))) ("IsEnemyAt" (between)))
+            (apply (remove (between) at:EndOfTurn))
+        ) 
+        (to if:(is Empty (to))) 
+        #2
+    ) 
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Omnidirectional Draughts" 
+    (players 2) 
+    ("DraughtsEquipment" (square 8))
+    
+    (rules 
+        
+        (start {
+            (place "Counter1" (expand (sites Bottom) steps: (- (/ 8 2) 2))) 
+            (place "Counter2" (expand (sites Top) steps: (- (/ 8 2) 2)))    
+        })
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    (max Moves
+                        ("HopCounter" (last To)
+                            (then 
+                                ("ReplayIfCanMove" ("HopCounter" (last To)) 
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        )
+                    )
+                    (max Moves ("HopSequenceCaptureAgain" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                )
+                (priority {
+                    (max Moves
+                        (or 
+                            (forEach Piece "Counter"
+                                ("HopCounter" (from) 
+                                    (then 
+                                        ("ReplayIfCanMove" ("HopCounter" (last To))
+                                            ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                        ) 
+                                    ) 
+                                ) 
+                            )
+                            (forEach Piece "DoubleCounter" ("HopSequenceCapture" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                        )
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions Forwards))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide))
+                    )
+                })
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

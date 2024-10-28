@@ -1,0 +1,74 @@
+(define "PromotedHopOrthogonalSequenceCapture" 
+    ("HopCaptureDistance"
+        #1
+        #2
+        ~
+        (then 
+            ("ReplayIfCanMove"
+                ("HopCaptureDistanceNotAlreadyHopped" 
+                    (from (last To)) 
+                    (difference Orthogonal OppositeDirection)
+                )
+            ) 
+        )
+    )
+)
+
+(define "HopMan" 
+    ("HopCapture"
+        (from #1) 
+        (directions {Forward Rightward Leftward}) 
+        #2
+    ) 
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Dama (Comoros)" 
+    (players 2) 
+    ("DraughtsEquipment" (square 8))
+    (rules 
+        (start { 
+            (place "Counter1" (union (sites Row 1) (sites Row 2)))
+            (place "Counter2" (union (sites Row 5) (sites Row 6)))
+        })
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    (if "IsUnpromoted"
+                        ("HopMan" (last To)
+                            (then 
+                                ("ReplayIfCanMove" ("HopMan" (last To)) 
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        )
+                        ("PromotedHopOrthogonalSequenceCapture" (from (last To)) (difference Orthogonal OppositeDirection))
+                    )
+                    (move Pass)
+                )
+                (or { 
+                    (forEach Piece "Counter" 
+                        ("HopMan" (from)
+                            (then 
+                                ("ReplayIfCanMove" ("HopMan" (last To))
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        ) 
+                    )
+                    (forEach Piece "DoubleCounter" ("PromotedHopOrthogonalSequenceCapture" (from) Orthogonal))
+                    (forEach Piece "Counter" 
+                        ("StepToEmpty" (directions {Forward Rightward Leftward}))
+                        (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                    )
+                    (forEach Piece "DoubleCounter" (move Slide Orthogonal))
+                })
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

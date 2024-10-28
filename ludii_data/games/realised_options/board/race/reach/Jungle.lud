@@ -1,0 +1,119 @@
+(define "StepMove"
+    (move Step 
+        Orthogonal 
+        (to 
+            if:(and 
+                (is In (to) (difference (union (sites Occupied by:Next) (sites Empty)) (union (sites "Water") (sites Mover)))) 
+                (<= (state at:(to)) (state at:(from))) 
+            ) 
+            (apply (remove (to))) 
+        )
+    )
+)
+
+(define "HopTheWater"
+    (move Hop 
+        #1 
+        (between 
+            #2 
+            if:(is In (between) (forEach (sites "Water") if:(is Empty (site)))) 
+            (apply (remove (between)))
+        ) 
+        (to if:(and { 
+                (not (is In (to) (sites "Water"))) 
+                (not ("IsFriendAt" (to))) 
+                (<= (state at:(to)) (state at:(from))) 
+            })
+        ) 
+    )
+)
+
+(define "LosePower" (set State at:(last To) 0))
+
+(define "RestoredPower" (set State at:(last To) (mapEntry (what at:(last To)))))
+
+(game "Jungle" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 9 7))
+        
+        (piece "Elephant" Each "StepMove") 
+        (piece "Lion" Each 
+            (or {
+                "StepMove" 
+                ("HopTheWater" (directions {W E}) (max 2))
+                ("HopTheWater" (directions {N S}) (max 3))
+            })
+        )  
+        (piece "Tiger" Each 
+            (or {
+                "StepMove"
+                ("HopTheWater" (directions {W E}) (max 2))
+                ("HopTheWater" (directions {N S}) (max 3))
+            })
+        )  
+        (piece "Leopard" Each "StepMove") 
+        (piece "Dog" Each "StepMove") 
+        (piece "Wolf" Each "StepMove") 
+        (piece "Cat" Each "StepMove") 
+        (piece "Rat" Each 
+            (move Step 
+                Orthogonal 
+                (to 
+                    if:(and 
+                        (is In (to) (difference (union (sites Occupied by:Next) (sites Empty)) (sites Mover))) 
+                        (or 
+                            (<= (state at:(to)) (state at:(from))) 
+                            
+                            (and 
+                                (not (is In (from) (sites "Water"))) 
+                                ("IsPieceAt" "Elephant" Next (to))
+                            )
+                        ) 
+                    ) 
+                    (apply (remove (to)))
+                )
+            )
+        ) 
+        
+        (regions "Water" (sites {"B4" "C4" "B5" "C5" "B6" "C6" "E4" "F4" "E5" "F5" "E6" "F6"})) 
+        (regions "Trap" (sites {"C1" "E1" "D2" "D8" "C9" "E9"})) 
+        (regions "Den" P1 (sites {"D1"})) 
+        (regions "Den" P2 (sites {"D9"})) 
+        
+        (map {(pair 1 8) (pair 2 8) (pair 3 7) (pair 4 7) (pair 5 6) (pair 6 6) (pair 7 5) (pair 8 5) (pair 9 4) (pair 10 4) (pair 11 3) (pair 12 3) (pair 13 2) (pair 14 2) (pair 15 1) (pair 16 1)}) 
+        }
+    ) 
+    (rules 
+        (start {
+            (place "Rat1" coord:"G3" state:1) (place "Rat2" coord:"A7" state:1)
+            (place "Cat1" coord:"B2" state:2) (place "Cat2" coord:"F8" state:2)
+            (place "Wolf1" coord:"C3" state:3) (place "Wolf2" coord:"E7" state:3)
+            (place "Dog1" coord:"F2" state:4) (place "Dog2" coord:"B8" state:4)
+            (place "Leopard1" coord:"E3" state:5) (place "Leopard2" coord:"C7" state:5)
+            (place "Tiger1" coord:"A1" state:6) (place "Tiger2" coord:"G9" state:6)
+            (place "Lion1" coord:"G1" state:7) (place "Lion2" coord:"A9" state:7)
+            (place "Elephant1" coord:"A3" state:8) (place "Elephant2" coord:"G7" state:8)
+        })
+        
+        (play 
+            (forEach Piece 
+                (then 
+                    (and 
+                        (if
+                            (is In (last From) (sites "Trap")) 
+                            "RestoredPower"
+                        ) 
+                        (if 
+                            (is In (last To) (sites "Trap")) 
+                            "LosePower"
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("ReachWin" (sites Next) Mover))
+    )
+)
+

@@ -1,0 +1,45 @@
+(game "Zurgaan Tal"
+    (players 2)
+    
+    (equipment { 
+        (board
+            (rotate 30 (concentric Hexagon rings:3 joinCorners:True))
+            use:Vertex
+        ) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ (then ("ReplayIfLine3")))
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:17))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3")) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,31 @@
+(game "Jeu Militaire" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (rotate 90 ("ThreeMensMorrisGraphWithLeftAndRightTriangles"))
+            use:Vertex
+        )
+        
+        (piece "Pawn" P1 ("StepToEmpty" ))
+        (piece "Pawn" P2 N ("StepToEmpty" (directions {Forwards Rightward Leftward})))
+        (regions "Home" P2 (sites {"B1" "C2" "A2"}))
+        (regions "Home" P1 (sites {"B2"}))
+    }) 
+    
+    (rules 
+        (start {
+            (place "Pawn1" (sites P1))
+            (place "Pawn2" (sites P2))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end {
+            (if (no Moves P1) (result P2 Win))
+            
+            (if (is In (where "Pawn" P1) (sites P2)) (result P1 Win))
+            
+        }) 
+    )
+)
+

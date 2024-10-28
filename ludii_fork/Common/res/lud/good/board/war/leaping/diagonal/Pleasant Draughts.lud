@@ -1,0 +1,81 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+//------------------------------------------------------------------------------
+
+(game "Pleasant Draughts" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8))
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    (if "IsUnpromoted"
+                        ("HopCapture" (from (last To)) (directions {FR FL})
+                            (then 
+                                ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                    ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL})))
+                                ) 
+                            ) 
+                        )
+                        ("HopDiagonalSequenceCaptureAgain")
+                    )
+                    (move Pass)
+                )
+                (or 
+                    (forEach Piece "Counter" 
+                        (or
+                            ("HopCapture" (from) (directions {FR FL})
+                                (then 
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                        ("ReplayIfCanMove" ("HopCapture" (from (last To)) (directions {FR FL}))) 
+                                    ) 
+                                ) 
+                            ) 
+                            ("StepToEmpty" (directions {FR FL})) 
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                    )
+                    (forEach Piece "DoubleCounter" 
+                        (or
+                            ("StepDiagonalToEmpty")
+                            ("HopDiagonalSequenceCapture") 
+                        )
+                    )
+                )
+            )
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(metadata 
+    
+    (info
+        {
+        (description "Pleasant Draughts was a game played in France and England in the seventeenth century, particularly in rural communities. It lacked the forced capture of regular English Draughts.")
+        (aliases {"Le Jeu Plaisant de Dames; Plaisant" "Pleasant"})
+        (rules "Played on an 8x8 board with each player having twelve pieces. Pieces move diagonally one space forward, and can capture opponent's pieces by jumping them if they are adjacent. Capturing is not mandatory. Multiple captures are allowed. Once pieces reach the opposite side of the board from their starting position, they become kings and can move diagonally either forwards or backwards. The goal is to capture all of the opponent's pieces.
+        ")
+        (source "van der Stoep 1984: 146-147.")
+        (id "882")
+        (version "1.3.10")
+        (classification "board/war/leaping/diagonal")
+        (credit "Eric Piette")
+        (origin "This game was played in England, around 1605.")
+        }
+    )
+    
+    (graphics {
+        (board Style Chess)
+        (piece Families {"Defined" "Isometric"})
+    })
+    
+    (ai
+        "Pleasant Draughts_ai"
+    )
+)

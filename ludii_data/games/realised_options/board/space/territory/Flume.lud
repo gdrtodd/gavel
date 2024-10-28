@@ -1,0 +1,32 @@
+(game "Flume"
+    (players 2)
+    (equipment {
+        (board (square 9))
+        (piece "Disc" Each)
+        (piece "Disc" Neutral)
+    })
+    (rules
+        (meta (swap))
+        (start (place "Disc0" (sites Outer)))
+        (play
+            (move Add
+                (to (sites Empty))
+                (then
+                    (and
+                        (addScore Mover 1)
+                        (if
+                            (< 2 (count Sites in:(sites Around (last To) NotEmpty Orthogonal)))
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+        )
+        (end 
+            (if (is Full) 
+                (byScore)
+            )
+        )
+    )
+)
+

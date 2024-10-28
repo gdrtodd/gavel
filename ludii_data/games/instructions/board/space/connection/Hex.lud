@@ -1,0 +1,2 @@
+Players take turns placing a piece of their colour at an empty cell, and win by connecting their board sides with a chain of their pieces. The game is played on a 11x11 board. The game uses the swap rule. The first player to connect their two sides wins.
+(game "Hex" (players 2) (equipment {(board (hex Diamond 11)) (piece "Marker" Each) (regions P1 {(sites Side NE) (sites Side SW)}) (regions P2 {(sites Side NW) (sites Side SE)})}) (rules (meta (swap)) (play (move Add (to (sites Empty)))) (end (if (is Connected Mover) (result Mover Win))))) 

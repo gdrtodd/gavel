@@ -1,0 +1,2 @@
+The first player begins the game by placing a stone anywhere on the board. Then, starting with the second player, players take turns placing a stone orthogonally adjacent to exactly one enemy stone and no friendly stones.
+(game "Gopher" (players 2) (equipment {(board (hex 6)) (piece "Disc" Each)}) (rules (play (if (equals 0 (count Moves)) (move Add (to (sites Empty))) (move Add (to (sites Empty) if:(and (equals 0 (count Sites in:(sites Around (to) Own))) (equals 1 (count Sites in:(sites Around (to) Enemy)))))))) (end (if (no Moves Next) (result Next Loss))))) 

@@ -1,0 +1,73 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #1))
+
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "RemoveAPiece" (move Remove (from) level:(level)))
+
+(define "Movement" 
+    (if (if 
+            (not (is In (from) (sites Mover "LastSide")))
+            True
+            (or {
+                (= ("ThrowValue") 1)
+                (= ("ThrowValue") 2)
+                (= ("ThrowValue") 3)
+            })
+        )
+        (or
+            (if (= 14 ("ThrowValue"))
+                (if ("IsEndTrack" ("SiteToMoveOnTrack" 1))
+                    "RemoveAPiece"
+                    (move 
+                        (from (from) level:(level))
+                        (to 
+                            ("SiteToMoveOnTrack" 1) 
+                            ("HittingStackCapture" (handSite (who at:(to) level:(level))))
+                        )
+                    )
+                )
+            )
+            (if ("IsEndTrack" ("SiteToMoveOnTrack" ("ThrowValue")))
+                "RemoveAPiece"
+                (move 
+                    (from (from) level:(level))
+                    (to 
+                        ("SiteToMoveOnTrack" ("ThrowValue")) 
+                        ("HittingStackCapture" (handSite (who at:(to) level:(level))))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Romavoa"
+    (players 2)
+    (equipment {
+        ("KintsBoard"
+            {
+            (track "Track1" "46,5,SSE,N,E,S,W,NNW2,End" P1 directed:True)
+            (track "Track2" "47,41,NNW,W,S,E,N,SSE2,End" P2 directed:True)
+            }
+        )
+        (regions "AllSites" (sites Board))
+        (regions "LastSide" P1 (sites {6..9 23..27}))
+        (regions "LastSide" P2 (sites {27 33..40}))
+        (dice d:2 facesByDie:{{0 4} {0 6} {0 14} {0 15}} num:4)
+        (piece "Marker" Each ("Movement"))
+        (hand Each)
+        (map "Throw" {
+            (pair 0 10) (pair 39 5) (pair 24 3) (pair 25 3) (pair 35 3) (pair 33 3)
+            (pair 10 2) (pair 18 2) (pair 19 2) (pair 20 2) (pair 21 2) (pair 29 2)
+        })
+    })
+    (rules 
+        (start {
+            (place Stack "Marker1" (handSite P1) count:2)
+            (place Stack "Marker2" (handSite P2) count:2)
+        })
+        (play ("RollMove" (or (forEach Piece) (forEach Piece container:(mover)))))
+        (end ("EscapeWin"))
+    )
+)
+

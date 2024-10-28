@@ -1,0 +1,29 @@
+(define "NotAllPieceInHome" (not (all Sites (sites Occupied by:Mover) if:(is In (site) (sites Mover)))))
+
+(game "Epelle"
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 3)
+        (piece "Marker" Each "StepToEmpty")
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (sites P1)) 
+            (place "Marker2" (sites P2)) 
+        })
+        (play (forEach Piece))
+        
+        (end 
+            (if 
+                (and 
+                    "NotAllPieceInHome"
+                    (is Line 3)
+                ) 
+                (result Mover Win)
+            )
+        ) 
+    )
+)
+

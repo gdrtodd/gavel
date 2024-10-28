@@ -1,0 +1,32 @@
+(game "Mysore Tiger Game (Two Tigers)" 
+    (players 2) 
+    (equipment {
+        ("AlquerqueBoardWithFourTriangles")
+        (hand Each) 
+        (piece "Human" P2 ("StepToEmpty"))
+        (piece "Tiger" P1
+            (or 
+                ("StepToEmpty")
+                ("HopCapture")
+            )
+        )
+    }) 
+    (rules 
+        (start {
+            (place "Human2" (handSite P2) count:25)
+            (place "Tiger1" (sites Centre))
+            (place "Tiger1" (handSite P1))
+        })
+        
+        phases:{
+        (phase "Opening" 
+            (play (move (from (handSite Mover)) (to (sites Empty))))
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("NoMovesP1NoPiecesP2"))
+    )
+)
+

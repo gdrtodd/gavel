@@ -1,0 +1,226 @@
+(define "Sahkku" (= 1 #1))
+(define "Die1" (face 45))
+(define "Die2" (face 46))
+(define "Die3" (face 47))
+
+(define "IsASahkku" (is AnyDie 1))
+
+(define "NumberOfSahkku"
+    (if (and ("Sahkku" ("Die1") 1) (all DiceEqual))
+        3
+        (if (or {
+                (and {(not ("Sahkku" ("Die1"))) ("Sahkku" ("Die2")) ("Sahkku" ("Die3"))})
+                (and {("Sahkku" ("Die1")) (not ("Sahkku" ("Die2"))) ("Sahkku" ("Die3"))})
+                (and {("Sahkku" ("Die1")) ("Sahkku" ("Die2")) (not ("Sahkku" ("Die3")))})
+            })
+            2
+            (if (or {
+                    (and {(not ("Sahkku" ("Die1"))) (not ("Sahkku" ("Die2"))) ("Sahkku" ("Die3"))})
+                    (and {("Sahkku" ("Die1")) (not ("Sahkku" ("Die2"))) (not ("Sahkku" ("Die3")))})
+                    (and {(not ("Sahkku" ("Die1"))) ("Sahkku" ("Die2")) (not ("Sahkku" ("Die3")))})
+                })
+                1
+                0	
+            )
+        )
+    )
+)
+
+(define "ActivePiece" (set State at:#1 level:#2 1))
+(define "IsActivated" (= 1 (state at:#1 level:#2)))
+
+(define "MovePieceWithStoredPips" 
+    (forEach Value (values Remembered "Pips")
+        (move
+            (from (from) level:(level)
+                if:(or ("IsActivated" (from) (level)) ("Sahkku" (value)))
+            )
+            (to ("NextSiteOnTrack" (value) from:(from))
+                if:(or {
+                    (= (id "Gonagas" Shared) (what at:(to))) 
+                    (is Empty (to))
+                    (and ("IsEnemyAt" (to)) ("IsActivated" (to) (topLevel at:(to))))
+                })
+                (apply 
+                    (and {
+                        (if (not ("IsActivated" (from) (level))) ("ActivePiece" (from) (level))) 
+                        (forget Value "Pips" (value))
+                        (if (= (what at:(to)) (id "Gonagas" Shared))
+                            (set State at:(to) (mover))
+                            (if ("IsEnemyAt" (to))
+                                (remove (to))
+                            )
+                        )
+                    })
+                )
+            )
+            (then
+                (if (!= 0 (size Array (values Remembered "Pips"))) (moveAgain))
+            )
+        )
+    )
+)
+
+(define "MoveGonagasWithStoredPips" 
+    (forEach Value (values Remembered "Pips")
+        (move Slide 
+            (from (from) level:(level)
+                if:(= (state at:(from) level:(level)) (mover))
+            )
+            Orthogonal
+            (between (exact (value)) if:True)
+            (to 
+                (apply 
+                    if:(or 
+                        (is Empty (to))
+                        (and ("IsEnemyAt" (to)) ("IsActivated" (to) (topLevel at:(to))))
+                    )
+                )
+            )
+            (then
+                (and {
+                    (forEach Level (last To)
+                        (if (!= (topLevel at:(last To)) (level))
+                            (remove (last To) level:(level))
+                        )
+                    )
+                    (forget Value "Pips" (count Steps (last From) (last To)))
+                    (if (!= 1 (size Array (values Remembered "Pips"))) (moveAgain))
+                })
+            )
+        )
+    )
+)
+
+(define "DieNotUsed" (!= (pips) 0))
+
+(game "Sahkku"
+    (players 2)
+    (equipment {
+        (board (rectangle 3 15)
+            {
+            (track "Track1" "0,E,N1,W,N1,E,S1,W" loop:True P1)
+            (track "Track2" "44,W,S1,E,S1,W,N1,E" loop:True P2)
+            }
+        )
+        (dice d:4 from:0 num:3)
+        (piece "Marker" Each
+            (forEach Die
+                if:("DieNotUsed")
+                (move
+                    (from (from) level:(level)
+                        if:(or ("IsActivated" (from) (level)) ("Sahkku" (pips)))
+                    )
+                    (to ("NextSiteOnTrack" (pips) from:(from))
+                        if:(or {
+                            (= (id "Gonagas" Shared) (what at:(to))) 
+                            (is Empty (to))
+                            (and ("IsEnemyAt" (to)) ("IsActivated" (to) (topLevel at:(to))))
+                        })
+                        (apply 
+                            (and {
+                                (if (not ("IsActivated" (from) (level))) ("ActivePiece" (from) (level))) 
+                                (forget Value "Pips" (pips))
+                                (if (= (what at:(to)) (id "Gonagas" Shared))
+                                    (set State at:(to) (mover))
+                                    (if ("IsEnemyAt" (to))
+                                        (remove (to))
+                                    )
+                                )
+                            })
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )		
+        )
+        (piece "Gonagas" Shared
+            (forEach Die
+                if:("DieNotUsed")
+                (move Slide
+                    (from (from) level:(level)
+                        if:(= (state at:(from) level:(level)) (mover))
+                    )
+                    Orthogonal
+                    (between (exact (pips)) if:True)
+                    (to 
+                        (apply 
+                            if:(or 
+                                (is Empty (to))
+                                (and ("IsEnemyAt" (to)) ("IsActivated" (to) (topLevel at:(to))))
+                            )
+                        )
+                    )
+                    (then
+                        (and
+                            (forEach Level (last To)
+                                (if (!= (topLevel at:(last To)) (level))
+                                    (remove (last To) level:(level))
+                                )
+                            )
+                            ("ReplayNotAllDiceUsed")
+                        )
+                    )
+                )
+            )
+        )
+    })
+    (rules 
+        (start { 
+            (place Stack "Marker1" (sites Bottom))
+            (place Stack "Marker2" (sites Top))
+            (place Stack "Gonagas" (centrePoint))
+        })
+        phases:{
+        (phase "Opening"
+            (play
+                (do (and 
+                        (roll)
+                        (if (and (!= 0 (value Player Mover)) (= 0 (count MovesThisTurn)))
+                            (set Value Mover 0)
+                        )
+                    )
+                    next:(move Pass 
+                        (then
+                            (and
+                                (if ("IsASahkku")
+                                    (set Value Mover (+ ("NumberOfSahkku")(value Player Mover)))
+                                )
+                                (forEach Die
+                                    (if (!= 0 (pips))
+                                        (remember Value "Pips" (pips))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (then 
+                        (if (or (<= 3 (value Player Mover)) (!= 2 (count MovesThisTurn)))
+                            (moveAgain)
+                            (and (forget Value "Pips" All) (set Value Mover 0))
+                        )
+                    )
+                )
+            )
+            (nextPhase Mover (<= 3 (value Player Mover)) "PlayingPips")
+        )
+        (phase "PlayingPips"
+            (play 
+                ("RollEachNewTurnMove"
+                    (or (forEach Piece "MovePieceWithStoredPips") (forEach Piece "MoveGonagasWithStoredPips" Shared))
+                )
+            )
+            (nextPhase Mover (= 0 (size Array (values Remembered "Pips"))) "Playing")
+        )
+        (phase "Playing"
+            (play 
+                ("RollEachNewTurnMove"
+                    (or (forEach Piece) (forEach Piece Shared))
+                )
+            )
+        )
+        }
+        (end ("CaptureAll" Next))
+    )
+)
+

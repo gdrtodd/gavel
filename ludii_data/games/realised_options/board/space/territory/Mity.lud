@@ -1,0 +1,140 @@
+(define "Placeable"
+    (not
+        (or {
+            (and 
+                ("OpponentHas" E W)
+                ("OpponentHas" NNW SSE)
+            )
+            (and
+                ("OpponentHas" E W)
+                ("OpponentHas" NNE SSW)
+            )
+            (and
+                ("OpponentHas" NNW SSE)
+                ("OpponentHas" NNE SSW)
+            )
+        })
+    )
+)
+
+(define "OpponentHas"
+    (>
+        (min
+            (count Sites
+                in:(if
+                    (< 0 
+                        (count Sites
+                            in:(intersection
+                                (sites Occupied by:Mover)
+                                (sites Direction
+                                    from:(to)
+                                    #1
+                                    stop:(= (mover) (who at:(to)))
+                                    stopIncluded:True
+                                ) 
+                            )
+                        )
+                    )
+                    (sites Direction
+                        from:(to)
+                        #1 
+                        stop:(= (mover) (who at:(to)))
+                    )
+                    (sites Board)
+                )
+            )
+            (count Sites
+                in:(if
+                    (< 0 
+                        (count Sites
+                            in:(intersection
+                                (sites Occupied by:Mover)
+                                (sites Direction
+                                    from:(to)
+                                    #2
+                                    stop:(= (mover) (who at:(to)))
+                                    stopIncluded:True
+                                ) 
+                            )
+                        )
+                    )
+                    (sites Direction
+                        from:(to)
+                        #2
+                        stop:(= (mover) (who at:(to)))
+                    )
+                    (sites Board)
+                )
+            )
+        )
+        (min
+            (count Sites
+                in:(if
+                    (< 0 
+                        (count Sites
+                            in:(intersection
+                                (sites Occupied by:Next)
+                                (sites Direction
+                                    from:(to)
+                                    #1
+                                    stop:(= (next) (who at:(to)))
+                                    stopIncluded:True
+                                ) 
+                            )
+                        )
+                    )
+                    (sites Direction
+                        from:(to)
+                        #1 
+                        stop:(= (next) (who at:(to)))
+                    )
+                    (sites Board)
+                )
+            )
+            (count Sites
+                in:(if
+                    (< 0 
+                        (count Sites
+                            in:(intersection
+                                (sites Occupied by:Next)
+                                (sites Direction
+                                    from:(to)
+                                    #2
+                                    stop:(= (next) (who at:(to)))
+                                    stopIncluded:True
+                                ) 
+                            )
+                        )
+                    )
+                    (sites Direction
+                        from:(to)
+                        #2
+                        stop:(= (next) (who at:(to)))
+                    )
+                    (sites Board)
+                )
+            )
+        )
+    )
+)
+
+(game "Mity"
+    (players 2)
+    (equipment {
+        (board (hex 5))
+        (piece "Disc" Each)
+    })
+    (rules
+        (meta (swap))
+        (play
+            (move Add
+                (to
+                    (sites Empty)
+                    if:("Placeable")
+                )
+            )
+        )
+        (end ("BlockWin"))
+    )
+)
+

@@ -1,0 +1,229 @@
+
+(define "SitesAtOmniDiagonal"
+    (difference
+        (difference 
+            (sites Around (sites Around (from) Orthogonal) Orthogonal)
+            (sites (from) {{F} {F F}}) 
+        )
+        (from)
+))
+
+(define "DiagonallyConnectedDomainsOf" 
+    (union
+        (sites Occupied by:(player #1))
+        (sites
+            (results
+                from:(sites Occupied by:(player #1))
+                to:(intersection (sites Occupied by:(player #1)) "SitesAtOmniDiagonal")
+                (regionSite
+                    (intersection
+                        (sites Around (from) Orthogonal)
+                        (sites Around (to) Orthogonal)
+                    )
+                    index:0
+)))))
+
+(define "SetDiagonalGroupScores"
+    (forEach Player
+        (set Score
+            (player (player)) 
+            (* #1
+                (max 0
+                    (+ 1
+                        (max 
+                            (results
+                                from:(sites Occupied by:(player (player)))
+                                to:(from)
+                                (size Array
+                                    (array 
+                                        (intersection
+                                            (sites
+                                                Distance Orthogonal
+                                                (step Orthogonal
+                                                    (to
+                                                        if:(is In (to) ("DiagonallyConnectedDomainsOf" (player)))
+                                                ))
+                                                from:(from)
+                                                (min 0)
+                                            )
+                                            (sites Occupied by:(player (player)))
+                        )))))
+))))))
+
+(define "SetStoneScores"
+    (set Score  P1 (* #1 (count Pieces  P1))
+        (then
+            (set Score P2 (* #1 (count Pieces P2)))
+)))
+
+(define "SetGroupScores"
+    (forEach Player
+        (set Score
+            (player (player)) 
+            (* #1
+                (max 0
+                    (max 
+                        (sizes Group Orthogonal of:(player)) 
+))))))
+
+(define "SetPairScores"
+    (forEach Player
+        (set Score
+            (player (player)) 
+            (* #1
+                (/
+                    (+
+                        (results 
+                            from:(sites Occupied by:(player (player)))
+                            to:(sites Around (from) Orthogonal if:(is In (to) (sites Occupied by:(player (player)))))
+                            1
+                    ))
+                    2
+)))))
+
+(define "SitesAllowedDiagonal"
+    (difference
+        (sites Empty)
+        (sites
+            (results 
+                from:(sites Occupied by:P1)
+                to:(forEach
+                    of:(intersection
+                        "SitesAtOmniDiagonal"
+                        (sites Occupied by:P2)
+                    )
+                    (intersection
+                        {
+                        (sites Around (from) Orthogonal) 
+                        (sites Around (site) Orthogonal) 
+                        (sites Empty) 
+                        }
+                ))
+                (to)
+))))
+
+(define "Sites2RemoveDiagonal" 
+    (sites
+        (results 
+            from:(last To) 
+            to:(forEach
+                of:(intersection
+                    "SitesAtOmniDiagonal"
+                    (sites Occupied by:#1) 
+                )
+                (intersection
+                    {
+                    (sites Around (from) Orthogonal)
+                    (sites Around (site) Orthogonal)
+                    (sites Occupied by:#1) 
+                    }
+            ))
+            (to)
+)))
+
+(define "SitesAllowedBetween"
+    (difference
+        (sites Empty)
+        (sites
+            (results 
+                from:(sites Occupied by:P1)
+                to:(forEach
+                    of:(sites Distance
+                        Orthogonal
+                        from:(from)
+                        (exact 2)
+                    )
+                    (sites Between
+                        Orthogonal
+                        from:(from)
+                        to:(site)
+                        cond:(and
+                            (is In (site) (sites Occupied by:P2))
+                            (is Empty (between))
+                )))
+                (to)
+))))
+
+(define "Sites2RemoveBetween"
+    (forEach 
+        of:(sites Distance 
+            (step (to if:(is Next (who at:(to)))))
+            from:(last To) 
+            (exact 2)
+        )
+        (sites Between
+            Orthogonal
+            from:(last To)
+            to:(site)
+            cond:(is In (between) (sites Occupied by:#1))
+)))
+
+(game "SnipSnip"
+    (players 2)
+    (equipment
+        {
+        (board (tri {2 4 2 4 2}) use:Vertex)
+        (piece "Ball" Each)
+        }
+    )
+    (rules
+        (start
+            {
+            (set Score Each 0)
+            }   
+        ) 
+        (play
+            (if
+                (= 1 (value Player Mover))
+                (move Remove ("Sites2RemoveDiagonal" Next)
+                    (then
+                        (and
+                            {
+                            (set Value Mover 0)
+                            (moveAgain) 
+                            }
+                )))
+                (move Add
+                    (to ("SitesAllowedDiagonal"))
+                    (then
+                        (if
+                            (< 0
+                                (count Pieces 
+                                    in:("Sites2RemoveDiagonal" Next)
+                            ))
+                            (set Value Mover 1 
+                                (then 
+                                    (moveAgain)
+                )))))
+                (then ("SetGroupScores"  "Misere"))
+        ))
+        (end 
+            {
+            
+            (if 
+                (and
+                    (no Moves Next)
+                    (= (score P1) (score P2))
+                )
+                (result Next Loss)
+            )
+            
+            (if 
+                (and
+                    (no Moves Next)
+                    (!= (score P1) (score P2))
+                )
+                (byScore)
+            )
+            }
+        )
+    )
+)
+
+(define "Misere" -1)
+
+(define "Tri46Bug"  (tri {4 6 4 7 4}))
+(define "Tri56Bug"  (tri {5 6 5 7 5}))
+(define "Tri57Bug"  (tri {5 7 5 8 5}))
+(define "Tri78Bug"  (tri {7 8 7 10 6}))
+

@@ -1,0 +1,77 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" #3 from:#1 #2))
+
+(define "EnemySite" ("NextSiteFrom" (mapEntry "Start" #1) #2 (- (pips) 1)))
+
+(define "RemoveEnemyPiece"
+    (if (is Mover P1)
+        ("IsSingletonStack" ("EnemySite" P2 "Track2"))
+        ("IsSingletonStack" ("EnemySite" P1 "Track1"))
+    )
+)
+
+(game "Ketch-Dolt"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard" 
+            {
+            (track "Track1" {26 12..7} P1 directed:True)
+            (track "Track2" {27 25..20} P2 directed:True)
+            } 
+        )
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (or
+                (if (is Empty (handSite Mover))
+                    (forEach Die
+                        if:("DieNotUsed")
+                        (if ("IsOffBoard" ("NextSiteFrom" (from) "Track" (pips)))
+                            (do
+                                (if ("RemoveEnemyPiece") (trigger "ShouldCapture" Mover))
+                                next:(move Remove (from))
+                            )
+                        )
+                        (then ("ReplayNotAllDiceUsed"))
+                    )
+                )
+                (forEach Die
+                    if:("DieNotUsed")
+                    (or
+                        (if ("RemoveEnemyPiece")
+                            (move 
+                                (from (if (is Mover P1) ("EnemySite" P2 "Track2") ("EnemySite" P1 "Track1")))
+                                (to (handSite Next))
+                            )
+                        )
+                        (move 
+                            (from (from))
+                            (to 
+                                ("NextSiteFrom" (from) "Track" (pips))
+                                (apply (if ("RemoveEnemyPiece") (trigger "ShouldCapture" Mover)))
+                            )
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )		
+            )
+        )
+        (hand Each)
+        (map "Start" {(pair P1 12) (pair P2 25)})
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" (handSite P1) count:15)
+            (place Stack "Disc2" (handSite P2) count:15)
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (or (forEach Piece) (forEach Piece container:(mover)))
+            )
+        )
+        (end {
+            (if (is Triggered "ShouldCapture" P1) (result P1 Loss))
+            (if (is Triggered "ShouldCapture" P2) (result P2 Loss))
+            ("EscapeWin")
+        })
+    )
+)
+

@@ -1,0 +1,20 @@
+(game "Magic Square" 
+    (players 1) 
+    
+    (equipment { 
+        (board (square 3) (values Cell (range 1 9))) 
+        (regions {Columns Rows Diagonals}) 
+    }) 
+    
+    (rules 
+        (play 
+            (satisfy {
+                (all Different (sites Board))
+                (is Sum 15)
+            })
+        )
+        
+        (end (if (is Solved) (result P1 Win)))
+    )
+)
+

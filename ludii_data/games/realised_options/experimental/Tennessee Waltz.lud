@@ -1,0 +1,198 @@
+
+(define "PairSitesOf"
+    (results 
+        from:(intersection (sites Board) (sites Occupied by:#1))
+        to:(forEach
+            (sites Around (from) "Adj")
+            if:(and
+                (is #1 (who at:(site)))
+                (= 2 (count Pieces #1 in:(union (sites Around (from) "Adj") (sites Around (site) "Adj"))))
+        ))
+        (from)
+))
+
+(define "ShiftTokenFromToAndScore"
+    (and
+        (set Score #2 (size Array ("PairSitesOf" #2)))   
+        (if
+            (>
+                (size Array ("PairSitesOf" #2))
+                (size Array ("PairSitesOf" #1))
+            )
+            (addScore #2 1
+                (then
+                    (if
+                        (no Pieces #2 in:(sites Hand #2))
+                        (add
+                            (piece (id "Disc" #2))
+                            (to (handSite #2))
+                            stack:False
+                            (then
+                                (remove (sites Hand #1))
+            )))))
+            (if
+                (and
+                    (not (no Pieces #2 in:(sites Hand #2)))
+                    (=
+                        (size Array ("PairSitesOf" #2))
+                        (size Array ("PairSitesOf" #1))
+                ))
+                (addScore #2 1)
+))))
+
+(define "Score4"
+    (+
+        (count Pieces #1 in:(sites Hand #1))
+        (size Array ("PairSitesOf" #1))
+))
+
+(define "PushDirection" (directions Vertex from:(var "LF") to:(var "LT")))
+
+(define "PairedSiteIsPushedOff" (= (var "PairedSite") (ahead (var "PairedSite") "PushDirection")))
+(define "CauseANullMove" (remove (var "LF")))
+(define "PushConsquences4ThePair"
+    (if
+        (= (var "PairedSite") (var "LT")) 
+        (push
+            (from (var "LF"))
+            "PushDirection" 
+        )
+        (if
+            (= (var "LF") (ahead (var "PairedSite") "PushDirection"))
+            (push
+                (from (var "PairedSite"))              
+                "PushDirection"
+            )
+            (if
+                ("PairedSiteIsPushedOff") 
+                ("CauseANullMove") 
+                (and
+                    (push
+                        (from (var "LF"))              
+                        "PushDirection"
+                    )
+                    (push
+                        (from (var "PairedSite"))
+                        "PushDirection"
+))))))
+
+(define "IsAPairOfAt"
+    (and
+        (= 1 (count Pieces #1 in:(sites Around #2 "Adj")))
+        (no Pieces #1 in:(sites Around (intersection (sites Around #2 "Adj") (sites Occupied by:#1)) "Adj"))
+))
+
+(define "PairHasStayedOnBoard" (not (is Repeat PositionalInTurn))) 
+(define "CurrentEnemyCount" (count Sites in:(sites Occupied by:Next)))
+(define "NoEnemyWasPushedOff" (= ("CurrentEnemyCount") (var "StartTurnEnemy")))
+
+(define "RecordTheSitesInvolvedInTheMove"
+    (set Var "LF" (last From)
+        (then
+            (set Var "LT" (last To)
+                (then
+                    (set Var "PairedSite" (regionSite (intersection (sites Around (var "LF") "Adj") (sites Occupied by:Mover)) index:0))
+)))))
+
+(define "PassingIsAllowedAfterFirstPairScores"
+    (if
+        (= 1 (mod (+ (score P1) (score P2)) 2)) 
+        (move Pass)
+))
+
+(game "Tennessee Waltz" 
+    (players 2)
+    (equipment
+        {
+        (board (square (+ 1 "LongEdge")) use:Vertex)
+        (hand Each size:1)
+        (piece "Disc" Each) 
+        }
+    )
+    (rules
+        (play
+            (or
+                {
+                ("PassingIsAllowedAfterFirstPairScores")
+                (move Add (to (sites Empty) if:(not ("IsAPairOfAt" Mover (to)))))
+                (do
+                    (set Var "StartTurnEnemy" ("CurrentEnemyCount"))
+                    next:(do
+                        (move Select
+                            (from (sites Empty) if:("IsAPairOfAt" Mover (from)))
+                            (to (sites Around (from) All )) 
+                            (then
+                                (and
+                                    "RecordTheSitesInvolvedInTheMove"
+                                    (add (piece (id "Disc" Mover)) (to (last From))
+                                        (then ("PushConsquences4ThePair"))
+                        ))))
+                        ifAfterwards:(and ("PairHasStayedOnBoard") ("NoEnemyWasPushedOff"))
+                ))
+                }
+                (then
+                    (and
+                        ("ShiftTokenFromToAndScore" Next Mover)
+                        ("ShiftTokenFromToAndScore" Mover Next)
+        ))))
+        (end 
+            (if
+                (or
+                    "IsWinningCondition"
+                    (all Passed)
+                )
+                (byScore)
+))))
+
+(define "IsWinningCondition"
+    (or
+        {
+        
+        (and
+            (> (score Mover) (score Next))
+            ("CannotMakeAPairOf" Next)
+        )
+        
+        (and
+            (< (score Mover) (score Next))
+            ("CannotMakeAPairOf" Mover)
+        )
+        
+        }
+))
+
+(define "ThereAreSurroundingEmptySitesWithNoPiecesOfAroundThemAt"
+    (< 0
+        (size Array
+            (array
+                (forEach
+                    (intersection (sites Around #2 "Adj") (sites Empty))
+                    if:(no Pieces #1 in:(sites Around (site) "Adj"))
+)))))
+
+(define "PairableSiteOf"
+    (sites To
+        (select
+            (from
+                (sites Empty)
+                if:(or
+                    {
+                    ("IsAPairOfAt" #1 (from))
+                    (and
+                        (no Pieces #1 in:(sites Around (from) "Adj"))
+                        ("ThereAreSurroundingEmptySitesWithNoPiecesOfAroundThemAt" #1 (from))
+                    )
+                    }
+)))))
+
+(define "CannotMakeAPairOf"
+    (= 0
+        (size Array
+            (array
+                ("PairableSiteOf" #1)
+))))
+
+(define "Adj" Orthogonal )
+
+(define "LongEdge" 4)
+

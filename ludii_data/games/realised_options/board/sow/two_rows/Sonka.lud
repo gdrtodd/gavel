@@ -1,0 +1,85 @@
+
+(define "Columns" 5)
+(define "LastHoleSowed" (sites {("NextSite" from:(last To afterConsequence:True))}))
+(define "NextSite" 
+    (if (= ("NextSiteOnTrack" 1 #1) (mapEntry Mover))
+        ("NextSiteOnTrack" 2 #1)
+        ("NextSiteOnTrack" 1 #1)
+    )
+)
+
+(game "Sonka"
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            {
+            (track "Track1" "11,10,W,S,E" loop:True P1)
+            (track "Track2" "0,1,E,N,W" loop:True P2)
+            }
+        )
+        (piece "Seed" Shared)
+        (regions "Home" P1 (sites Bottom))
+        (regions "Home" P2 (sites Top))
+        (map {(pair P1 LastSite) (pair P2 FirstSite)}) 
+    }) 
+    (rules 
+        (start (set Count 6 to:(union (sites Bottom) (sites Top))))
+        
+        phases:{
+        (phase "Sowing"
+            (play 
+                (move Select
+                    (from 
+                        (if 
+                            ("SameTurn") 
+                            "LastHoleSowed" 
+                            (sites Mover "Home") 
+                        ) 
+                        if:(< 0 (count at:(from)))
+                    )
+                    (then 
+                        (sow
+                            "Track"
+                            owner:(mover)
+                            apply:(if (!= 0 (count at:("NextSite" from:(to))))
+                                (moveAgain)
+                                (if (is In (to) (sites Mover "Home"))
+                                    (if (!= 0 (count at:("OppositePit" (to))))
+                                        (fromTo
+                                            (from ("OppositePit" (to)))
+                                            (to (mapEntry Mover))
+                                            count:(count at:("OppositePit" (to)))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (end (if (all Passed)
+                    {
+                    (if (> 6 (count at:(mapEntry P1))) (result P2 Win))
+                    (if (> 6 (count at:(mapEntry P2))) (result P1 Win))
+                    }
+                )
+            )
+            (nextPhase (all Passed) "BetweenRounds")
+        )
+        (phase "BetweenRounds"
+            (play
+                (if (<= 6 (count at:(mapEntry Mover)))
+                    (move
+                        (from (mapEntry Mover))
+                        (to (intersection (sites Empty) (sites Mover "Home")))
+                        count:6
+                    )
+                )
+            )
+            (nextPhase (all Passed) "Sowing")
+        )
+        }
+    )
+)
+

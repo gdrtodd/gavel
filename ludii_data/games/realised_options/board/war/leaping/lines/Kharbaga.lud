@@ -1,0 +1,28 @@
+(game "Kharbaga"
+    (players {(player S) (player N)})
+    (equipment {
+        (board (square 5 diagonals:Solid) use:Vertex)
+        (piece "Counter" Each 
+            (or
+                ("StepForwardsToEmpty")
+                ("HopCapture")
+                (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+            )
+        )
+        (piece "DoubleCounter" Each
+            (or
+                ("HopCaptureDistance")
+                (move Slide)
+            )
+        )
+        (regions P1 (sites Top))
+        (regions P2 (sites Bottom))
+    })
+    
+    (rules 
+        ("BeforeAfterCentreSetup" "Counter2" "Counter1")
+        (play (forEach Piece)) 
+        (end (if (no Moves Mover) (result Next Win))) 
+    )
+)
+

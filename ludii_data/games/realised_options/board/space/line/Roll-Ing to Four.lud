@@ -1,0 +1,16 @@
+(game "Roll-Ing to Four"
+    ("TwoPlayersNorthSouth")
+    (equipment {
+        (board (rectangle 10 4) use:Vertex)
+        (piece "Ball" Each ("StepToEmpty" (directions Forwards of:All)))
+    })
+    (rules
+        (start {
+            (place "Ball1" (sites {"A1" "B1" "C1" "B6" "C6" "D6"}))
+            (place "Ball2" (sites {"A5" "B5" "C5" "B10" "C10" "D10"}))
+        })
+        (play (forEach Piece))
+        (end (if (is Line 4 All) (result Mover Win))) 
+    )
+)
+

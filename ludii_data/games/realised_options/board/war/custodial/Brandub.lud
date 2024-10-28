@@ -1,0 +1,96 @@
+(define "Custodial" 
+    (custodial 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            (max 1) 
+            if:(= (what at:(between)) (id #1)) 
+            (apply (remove (between))) 
+        )
+        (to 
+            if:(or {
+                ("IsFriendAt" (to)) 
+                (is In (to) (sites "Fortresses")) 
+                "EmptyCentre"
+            })
+        ) 
+    )
+)
+
+(define "JarlIsCaptured" (apply (trigger "Surrounded" P2)))
+
+(define "JarlWasCaptured" (is Triggered "Surrounded" P2))
+
+(define "CentreOrFortress" (is In (to) (union (sites Centre) (sites "Fortresses"))))
+
+(define "FriendOrFortress" (or ("IsFriendAt" (to)) (is In (to) (sites "Fortresses"))))
+
+(define "FriendOrCentre" (or ("IsFriendAt" (to)) (is In (to) (sites Centre))))
+
+(define "EmptyCentre" (and (is In (to) (sites Centre)) (is Empty (to))))
+
+(define "JarlAndExpandedCentre" (and ("IsPieceAt" "Jarl" P2 (between)) (is In (between) (expand origin:(centrePoint) Orthogonal))))
+
+(define "JarlButNotTheExpandedCentre" (and ("IsPieceAt" "Jarl" P2 (between)) (not (is In (between) (expand origin:(centrePoint) Orthogonal)))))
+
+(game "Brandub" 
+    (players 2) 
+    (equipment { 
+        (board (square 7)) 
+        (regions "Fortresses" (sites Corners))
+        
+        (piece "Thrall" P1 
+            (move Slide
+                Orthogonal 
+                (to (apply if:(not "CentreOrFortress")))
+                (then 
+                    (or {
+                        ("Custodial" "Thrall2")
+                        (surround 
+                            (from (last To))
+                            Orthogonal
+                            (between if:"JarlAndExpandedCentre" "JarlIsCaptured")
+                            (to if:"FriendOrCentre")
+                        )
+                        (custodial 
+                            (from (last To)) 
+                            Orthogonal 
+                            (between (max 1) if:"JarlButNotTheExpandedCentre" "JarlIsCaptured")
+                            (to if:"FriendOrFortress")
+                        )
+                    })
+                )
+            )
+        )
+        (piece "Thrall" P2 
+            (move Slide
+                Orthogonal 
+                (to (apply if:(not "CentreOrFortress"))) 
+                (then ("Custodial" "Thrall1")) 
+            ) 
+        ) 
+        (piece "Jarl" P2 
+            (move Slide
+                Orthogonal 
+                (to (apply if:(not (= (to) (centrePoint))))) 
+                (then ("Custodial" "Thrall1")) 
+            )
+        )
+        }
+    ) 
+    (rules 
+        (start { 
+            (place "Thrall1" {"D1" "D2" "A4" "B4" "F4" "G4" "D6" "D7"})
+            (place "Thrall2" {"D3" "C4" "E4" "D5"})
+            (place "Jarl2" (centrePoint))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end {
+            ("PieceTypeReachWin" "Jarl2" (sites "Fortresses") P2)
+            (if "JarlWasCaptured" (result P1 Win))
+        })
+    )
+)
+

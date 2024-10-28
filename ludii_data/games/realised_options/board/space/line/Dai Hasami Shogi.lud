@@ -1,0 +1,63 @@
+(define "Surrounded" 
+    (surround 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            if:(and 
+                (is In (between) (sites Corners)) 
+                ("IsEnemyAt" (between))
+            ) 
+            (apply (remove (between)))
+        ) 
+        (to if:("IsFriendAt" (to))) 
+    )
+)
+
+(game "Dai Hasami Shogi" 
+    (players 2) 
+    
+    (equipment { 
+        (board (square 9))
+        
+        (piece "Marker" Each 
+            (or 
+                (move Slide Orthogonal) 
+                ("HopAllPiecesToEmpty" Orthogonal) 
+                (then 
+                    (or 
+                        ("CustodialCapture" Orthogonal (max 1))
+                        "Surrounded"
+                    )
+                )
+            )
+        )
+        (regions P1 (expand (sites Bottom)))
+        (regions P2 (expand (sites Top)))
+    })
+    
+    (rules 
+        (start { 
+            (place "Marker1" (sites P1))
+            (place "Marker2" (sites P2))
+        })
+        
+        (play
+            (forEach Piece)
+        )
+        
+        (end {
+            (if 
+                (is Line 5 Orthogonal if:(not (is In (to) (sites Mover)))) 
+                (result Mover Win)
+            ) 
+            (if 
+                (and 
+                    (< (count Pieces P1) 5) 
+                    (< (count Pieces P2) 5) 
+                ) 
+                (result Mover Draw)
+            ) 
+        })
+    )
+)
+

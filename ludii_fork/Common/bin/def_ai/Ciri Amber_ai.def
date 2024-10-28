@@ -1,0 +1,7 @@
+(define "Ciri Amber_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (score)
+    })
+    
+)

@@ -1,0 +1,1 @@
+(game "Score Four" (players 2) (equipment {(board (skew 0.5 (scale 1 0.5 (square 4)))) (piece "discFlat" Each)}) (rules (play (move Add (to (forEach (sites Board) if:(< (size Stack at:(site)) 4))) stack:True)) (end (if (is Line 4 byLevel:True) (result Mover Win))))) 

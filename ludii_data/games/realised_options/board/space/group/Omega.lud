@@ -1,0 +1,35 @@
+(game "Omega" 
+    (players 2) 
+    (equipment { 
+        (board (hex 5))
+        (piece "Marker" Each) 
+    }) 
+    (rules 
+        (play 
+            (move Add 
+                (piece (+ 1 (% (count Moves) (count Players)))) 
+                (to (sites Empty)) 
+                (then 
+                    (if 
+                        (!= (count MovesThisTurn) (- (count Players) 1)) 
+                        (moveAgain)
+                    )
+                )
+            )
+        ) 
+        
+        (end
+            (if (and {
+                    (not (is Mover P1)) 
+                    (is Next P1) 
+                    (> 
+                        (pow (count Players) 2) 
+                        (count Sites in:(sites Empty))
+                    )
+                })
+                (byScore {(score P1 (* (sizes Group P1))) (score P2 (* (sizes Group P2)))})
+            )
+        )
+    )
+)
+

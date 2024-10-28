@@ -1,0 +1,1 @@
+(game "Latin Square" (players 1) (equipment {(board (square 5) (values Cell (range 1 5))) (regions {Columns Rows})}) (rules (play (satisfy (all Different))) (end (if (is Solved) (result P1 Win))))) 

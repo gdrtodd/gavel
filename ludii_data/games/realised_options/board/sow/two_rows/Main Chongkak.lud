@@ -1,0 +1,132 @@
+(define "Columns" 6)
+(define "PlayableSites" (sites (values Remembered "Playable")))
+(define "NoPieceOnBoard" (all Sites (union (sites Top) (sites Bottom)) if:(= 0 (count at:(site)))))
+(define "OneRowIsEmpty"
+    (or
+        (all Sites (sites Bottom) if:(= 0 (count at:(site))))
+        (all Sites (sites Top) if:(= 0 (count at:(site))))
+    )
+)
+
+(define "RightMostEmpty" 
+    (trackSite FirstSite 
+        from:(mapEntry "RightMost" Mover)
+        if:(is Empty (to))
+    )
+)
+
+(game "Main Chongkak" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            (track "Track" "0,ENE,E,ESE,WSW,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map {(pair P1 FirstSite) (pair P2 LastSite)}) 
+        (map "RightMost" {(pair P1 ("Columns")) (pair P2 (+ ("Columns") 1))})
+    }) 
+    (rules 
+        
+        (start {
+            (set RememberValue "Playable" (union (sites Top) (sites Bottom)))
+            (set Count "Columns" to:(union (sites Bottom) (sites Top)))
+        })
+        
+        phases:{
+        (phase "Sowing"
+            (play
+                (or {
+                    (move Select
+                        (from
+                            (if 
+                                (and (not (is Pending)) ("SameTurn")) 
+                                (sites {(var "Replay")}) 
+                                (sites Mover) 
+                            ) 
+                            if:(and (is Occupied (from)) (is In (from) ("PlayableSites")))
+                        )
+                        (then
+                            (sow
+                                apply:(if (and (is In (to) (sites Mover)) (= 1 (count at:(to))))
+                                    (if (is Occupied ("OppositePit" (to)))
+                                        (fromTo
+                                            (from ("OppositePit" (to)))
+                                            (to (mapEntry Mover))
+                                            count:(count at:("OppositePit" (to)))
+                                        )
+                                    )
+                                    (if (= (to) (mapEntry Mover))
+                                        (and
+                                            (set Pending)
+                                            (moveAgain)
+                                        )
+                                        (if (and (< 1 (count at:(to))) (!= (to) (mapEntry Next)))
+                                            (and
+                                                (moveAgain)
+                                                (set Var "Replay" (to))
+                                            )
+                                        )
+                                    )
+                                )
+                                skipIf:(and {(not (is In (to) ("PlayableSites"))) (!= (to) (mapEntry P1)) (!= (to) (mapEntry P2))})
+                            )
+                        )
+                    )
+                    }
+                    (then
+                        (if ("OneRowIsEmpty")
+                            (and { 
+                                (forEach Site (sites P1)
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P1))
+                                        count:(count at:(site))
+                                    )
+                                )
+                                (forEach Site (sites P2)
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P2))
+                                        count:(count at:(site))
+                                    )
+                                )
+                                (forget Value "Playable" All)
+                            })
+                        )
+                    )
+                )
+            )
+            
+            (end (if ("NoPieceOnBoard")
+                    {
+                    (if (> ("Columns") (count at:(mapEntry P1))) (result P2 Win))
+                    (if (> ("Columns") (count at:(mapEntry P2))) (result P1 Win))
+                    }
+                )
+            )
+            
+            (nextPhase ("NoPieceOnBoard") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (not (all Sites (sites Mover) if:(is Occupied (site))))
+                    (if (<= ("Columns") (count at:(mapEntry Mover)))
+                        (move
+                            (from (mapEntry Mover))
+                            (to "RightMostEmpty")
+                            count:("Columns")
+                            (then (remember Value "Playable" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (all Passed) "Sowing")
+        )
+        }
+    )
+)
+

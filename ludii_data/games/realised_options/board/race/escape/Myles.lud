@@ -1,0 +1,71 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "NextSiteFromDist6" ("NextSiteOnTrack" 6 from:#1))
+
+(define "RemoveAPiece" (move Remove (site)))
+
+(define "Bar" (mapEntry (mover)))
+
+(define "AllPieceEscaped" (no Pieces Mover))
+
+(define "CanEscape" ("IsOffBoard" #1))
+
+(define "Move"
+    (forEach Site
+        (sites Occupied by:Mover)
+        (if ("CanEscape" #1) 
+            ("RemoveAPiece")
+            (move 
+                (from (site))
+                (to #1
+                    if:("NoEnemyOrOnlyOne" (to))
+                    ("HittingCapture" ("Bar"))
+                )
+            )
+        )
+    )	
+)
+
+(game "Myles" 
+    (players 2) 
+    (equipment { 
+        ("BackgammonBoard" ("BackgammonTracksSameDirectionWithBar")) 
+        (dice num:2)
+        (map {(pair 1 19) (pair 2 6)}) 
+        (piece "Disc" Each) 
+    })
+    
+    (rules
+        (start { 
+            (place Stack "Disc1" 12 count:5)
+            (place Stack "Disc1" 20 count:4)
+            (place Stack "Disc1" 21 count:4)
+            (place Stack "Disc1" 15 count:2)
+            (place Stack "Disc2" 25 count:3) 
+            (place Stack "Disc2" 24 count:3)
+            (place Stack "Disc2" 23 count:3)
+            (place Stack "Disc2" 22 count:3)
+            (place Stack "Disc2" 21 count:3)
+        })
+        
+        (play 
+            ("RollEachNewTurnMove"
+                (if (all DiceUsed)
+                    ("Move" ("NextSiteFromDist6" (site)))
+                    (forEach Die
+                        if:("DieNotUsed")
+                        ("Move" ("NextSiteFrom" (site)))
+                        (then (moveAgain))
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (if ("AllPieceEscaped")
+                (result Mover Win)
+            )
+        )
+    )
+)
+

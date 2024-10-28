@@ -1,0 +1,49 @@
+(game "Slitherlink"
+    (players 1) 
+    (equipment 
+        {
+        (board (rectangle 8 8) (values Edge (range 0 1)) use:Edge)
+        (hints { 
+            (hint {0} 3)
+            (hint {2} 3)
+            (hint {4} 0)
+            (hint {5} 2)
+            (hint {14} 3)
+            (hint {15} 1)
+            (hint {17} 2)
+            (hint {21} 3)
+            (hint {22} 0)
+            (hint {26} 3)
+            (hint {27} 0)
+            (hint {31} 3)
+            (hint {33} 3)
+            (hint {34} 1)
+            (hint {43} 0)
+            (hint {44} 2)
+            (hint {46} 1)
+            (hint {48} 3)
+        } Cell)
+        }
+    )
+    (rules
+        (play
+            (satisfy {
+                (forAll Cell 
+                    (or 
+                        (= (hint Cell at:(from)) Off) 
+                        (is Count Edge (sites Incident Edge of:Cell at:(from)) (hint Cell at:(from)))
+                    )
+                )
+                (forAll Vertex 
+                    (or 
+                        (is Count Edge (sites Incident Edge of:Vertex at:(from)) 0)
+                        (is Count Edge (sites Incident Edge of:Vertex at:(from)) 2)
+                    )
+                )
+                (< (count Groups Edge) 2)
+            })
+        )
+        (end (if (is Solved) (result P1 Win)))
+    )
+)
+

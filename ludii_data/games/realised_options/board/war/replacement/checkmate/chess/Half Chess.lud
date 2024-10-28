@@ -1,0 +1,26 @@
+(game "Half Chess" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 4 8)) 
+        
+        ("ChessRook" "Rook" (then (set Counter)))
+        ("ChessKing" "King" (then (set Counter)))
+        ("ChessBishop" "Bishop" (then (set Counter)))
+        ("ChessKnight" "Knight" (then (set Counter)))
+        ("ChessQueen" "Queen" (then (set Counter)))
+    }) 
+    (rules 
+        (start { 
+            (place "Rook1" {"H1" "H4"}) (place "Knight1" {"G1" "G4"}) (place "Bishop1" {"G2" "G3"}) (place "Queen1" coord:"H3") (place "King1" coord:"H2") 
+            (place "Rook2" {"A1" "A4"}) (place "Knight2" {"B1" "B4"}) (place "Bishop2" {"B2" "B3"}) (place "Queen2" coord:"A3") (place "King2" coord:"A2") 
+        })
+        
+        (play (do (forEach Piece) ifAfterwards:(not ("IsInCheck" "King" Mover))))
+        
+        (end {
+            ("Checkmate" "King")
+            (if (or (no Moves Mover) (= (counter) 100)) (result Mover Draw)) 
+        })
+    )
+)
+

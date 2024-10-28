@@ -1,0 +1,102 @@
+(define "InitHand" 
+    (place #1 (handSite #2) state:0) 
+    (place #1 (handSite #2 1) state:1) 
+    (place #1 (handSite #2 2) state:2) 
+    (place #1 (handSite #2 3) state:3) 
+    (place #1 (handSite #2 4) state:4) 
+    (place #1 (handSite #2 5) state:5) 	
+)
+(define "SumFingers" (+ (state at:0) (state at:1)))
+(define "MaxFingers" (* 5 (count Players)))
+(define "ShowHand" 
+    (move 
+        (from (sites Occupied by:#1)) 
+        (to (- (id #1) 1)) 
+        copy:True
+        #1
+        (then 
+            (if (= "SumFingers" (amount #1))
+                (addScore #1 1)
+            )
+            applyAfterAllMoves:True
+        )
+    )
+)
+
+(game "Morra" 
+    (players 2) 
+    
+    (mode Simultaneous) 
+    
+    (equipment { 
+        (board 
+            (union 
+                (square 1) 
+                (shift 0 2 (square 1))
+            )
+        )
+        (hand Each size:6) 
+        (hand Shared)
+        (piece "Hand0" Each)
+    }) 
+    
+    (rules 
+        (start { 
+            ("InitHand" "Hand01" P1)
+            ("InitHand" "Hand02" P2)
+            
+        })
+        
+        phases:{
+        (phase "Bet" 
+            (play 
+                (or {
+                    (move Bet P1 (range 0 ("MaxFingers")) (then (set Pot (+ (pot) (amount P1)))))
+                    (move Bet P2 (range 0 ("MaxFingers")) (then (set Pot (+ (pot) (amount P2)))))
+                    
+                })
+            )
+            (nextPhase "Hand")
+        )
+        
+        (phase "Hand" 
+            (play 
+                (or {
+                    ("ShowHand" P1)
+                    ("ShowHand" P2)
+                    
+                })
+            )
+            (nextPhase "Observe")
+        )
+        
+        (phase "Observe" 
+            (play 
+                (move 
+                    Pass 
+                    (then 
+                        (and {
+                            (remove 0) 
+                            (remove 1)
+                            
+                        })
+                    )
+                )
+            )
+            (nextPhase "Bet")
+        )
+        }
+        
+        (end 
+            (if 
+                (or {
+                    (= (score P1) 3) 
+                    (= (score P2) 3)
+                    
+                }) 
+                (byScore)
+            )
+        ) 
+    )
+)
+

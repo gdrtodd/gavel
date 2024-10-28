@@ -1,0 +1,26 @@
+(game "Alquerque" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Counter" Each)
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Counter1" (union {(expand (sites Bottom)) (sites {"D3" "E3"}) }))
+            (place "Counter2" (union {(sites {"A3" "B3"}) (expand (sites Top)) }))
+        })
+        
+        (play 
+            (forEach Piece "Counter" 
+                (or 
+                    ("HopCapture") 
+                    ("StepToEmpty")
+                )
+            )
+        )
+        
+        (end ("NoMoves" Loss)) 
+    )
+)
+

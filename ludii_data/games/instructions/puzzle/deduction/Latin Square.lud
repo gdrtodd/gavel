@@ -1,0 +1,2 @@
+A Latin Square puzzle is one in which an n x n grid is filled with n symbols, which cannot repeat in a row or column of the grid. 
+(game "Latin Square" (players 1) (equipment {(board (square 5) (values Cell (range 1 5))) (regions {Columns Rows})}) (rules (play (satisfy (all Different))) (end (if (is Solved) (result P1 Win))))) 

@@ -1,0 +1,131 @@
+(define "Surrounded"
+    (surround 
+        (from (last To)) 
+        Orthogonal
+        (between 
+            #1
+            (apply (remove (between)))
+        )
+        (to if:("IsFriendAt" (to))) 
+        #2
+    )
+)
+
+(define "SurroundedThrall" 
+    ("Surrounded" 
+        if:(and 
+            (or
+                (not (is In (between) (sites Outer)))
+                (and
+                    (is In (between) (sites Outer)) 
+                    ("IsPhaseOne" (between))
+                )
+            )
+            ("IsPieceAt" "Thrall" Next (between))
+        ) 
+    )
+)
+
+(define "SurroundedJarl" 
+    ("Surrounded" 
+        if:(and 
+            (or
+                (not (is In (between) (sites Outer)))
+                (and
+                    (is In (between) (sites Outer))
+                    ("IsPhaseOne" (between)) 
+                )
+            )
+            ("IsPieceAt" "Jarl" Next (between))
+        ) 
+        with:(piece (id "Jarl" Mover))
+    )
+)
+
+(define "SurroundedEnemyOnOuterEdge" 
+    ("Surrounded" 
+        if:(and {
+            (is In (between) (sites Outer)) 
+            ("IsPhaseZero" (between))
+            ("IsEnemyAt" (between))
+        }) 
+        with:(piece (id "Jarl" Mover))
+    )
+)
+
+(define "SiteSurrounded"
+    (= 3 
+        (count Sites 
+            in:(intersection 
+                (sites Around (last To) Orthogonal) 
+                (sites Occupied by:Next)
+            )
+        )
+    )	
+)
+
+(define "SuicideSurrounded" 
+    (if (not 
+            (can Move 
+                (or {
+                    ("SurroundedEnemyOnOuterEdge") 
+                    ("SurroundedThrall")
+                    ("SurroundedJarl")
+                })
+            )
+        )
+        (if 
+            ("SiteSurrounded")
+            (remove (last To))
+        )
+    )
+)
+
+(define "PieceMove"
+    (move Step 
+        (to 
+            if:(and 
+                (is Empty (to)) 
+                (= (phase of:(from)) (phase of:(to)))
+            )
+        )
+        (then
+            (and {
+                ("SuicideSurrounded")
+                ("SurroundedEnemyOnOuterEdge")
+                ("SurroundedThrall")
+                ("SurroundedJarl")
+            })
+        )
+    )	
+)
+
+(game "Bizingo" 
+    (players 2)
+    (equipment {
+        (board
+            (remove
+                (tri 13)
+                cells:{ 0 1 13 25 11 12 24 36 165..168}
+            )
+        )
+        (piece "Thrall" Each ("PieceMove"))
+        (piece "Jarl" Each ("PieceMove"))
+    }) 
+    (rules 
+        (start {
+            (place "Thrall1" (sites {32..36 53..58 72 74..76 78}))
+            (place "Jarl1" (sites {73 77}))
+            (place "Thrall2" (sites {137..139 126..129 113..117 98 100 101 103}))
+            (place "Jarl2" (sites {99 102}))
+        })
+        (play (forEach Piece)) 
+        (end 
+            (forEach Player 
+                if:(<= (count Pieces Player) 2) 
+                (result Player Loss)
+            )
+        ) 
+    )
+)
+

@@ -1,0 +1,21 @@
+(game "Ratti-Chitti-Bakri" 
+    (players 2)
+    (equipment { 
+        ("AlquerqueBoard" 9 9)
+        (piece "Marker" Each 
+            (or 
+                ("HopCapture")
+                ("StepToEmpty")
+            )
+        )
+    }) 
+    
+    (rules 
+        ("BeforeAfterCentreSetup" "Marker1" "Marker2")
+        
+        (play (forEach Piece))
+        
+        (end ("ForEachPlayerNoPiecesLoss"))
+    )
+)
+

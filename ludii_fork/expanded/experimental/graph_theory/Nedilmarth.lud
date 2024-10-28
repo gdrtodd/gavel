@@ -1,0 +1,2 @@
+The board graph is initially coloured with a neutral colour. Players take turns removing colour from a coloured edge. The game is won by the player who removes the last cycle from the coloured graph. The game is played on the Graph1.
+(game "Nedilmarth" (players 2) (equipment {(board (merge (scale 0.707 (concentric {1 8})) (shift -0.5 -0.5 (square 2))) use:Edge) (piece "Marker" Neutral)}) (rules (start {(set Neutral Edge (sites Board Edge))}) (play (move Remove (sites Occupied by:Neutral on:Edge))) (end (if (is Tree Neutral) (result Mover Win))))) 

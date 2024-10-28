@@ -1,0 +1,88 @@
+(define "RemoveEnemyPiece" 
+    (move Remove
+        (forEach
+            (sites Occupied by:Next container:"Board") 
+            if:("IsSingletonStack" (site))
+        )
+    )
+)
+
+(define "RemoveDeadPieces" 
+    (forEach Site
+        (forEach 
+            (sites Occupied by:#1 container:"Board")
+            if:(= (size Stack at:(site)) 2)
+        )
+        (and 
+            (remove (site)) 
+            (remove (site)) 
+        )
+    )
+)
+
+(game "Dig Dig"
+    (players 2)
+    
+    (equipment { 
+        (board (concentric Square rings:3 joinCorners:True) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ 
+                (then ("ReplayIfLine3" if:("IsSingletonStack" (to))))
+            )
+        ) 
+    }) 
+    
+    (rules 
+        (start {
+            (place Stack "Marker1" (handSite P1))
+            (place Stack "Marker2" (handSite P2))
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "RemoveEnemyPiece"
+                    (move 
+                        (from (handSite Mover)) 
+                        (to 
+                            (union 
+                                (forEach
+                                    (sites Occupied by:Next container:"Board") 
+                                    if:(= 1 (size Stack at:(site)))
+                                )
+                                (sites Empty)
+                            )
+                        )
+                        copy:True
+                        (then ("ReplayIfLine3" if:("IsSingletonStack" (to)))) 
+                    )
+                    (then 
+                        (if 
+                            (and (not (is Next Mover)) (is Full))	
+                            (and {
+                                ("RemoveDeadPieces" P1) 
+                                ("RemoveDeadPieces" P2)
+                                (set Pending)
+                            })
+                        )		
+                    )
+                )
+            ) 
+            (nextPhase (is Pending) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveEnemyPiece"
+                    (forEach Piece)
+                )
+            )
+            (end (if (all Sites (sites Occupied by:Next) if:(not (is In (site) (sites Board)))) (result Mover Win)))
+        )
+        }
+    )
+)
+

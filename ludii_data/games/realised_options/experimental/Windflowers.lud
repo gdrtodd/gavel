@@ -1,0 +1,138 @@
+
+(define "Scoring" 
+    (if
+        (all Passed)
+        (do
+            (forEach Player
+                (remember Value "Scores" #1)
+            )
+            next:(do
+                (forEach Player
+                    (if
+                        ("Tied4FirstPlace" #1)
+                        (and
+                            (remember Value "Tied" (player))
+                            (set Score Player #1)
+                        )
+                        (set Score Player #1) 
+                    )
+                )
+                next:(do
+                    (forEach Value
+                        (values Remembered "Tied")
+                        (forEach
+                            (players All if:(is In (player) (values Remembered "Tied")))
+                            (addScore (player (player)) ("CascadeLoses")) 
+                        )
+                    )
+                    next:(forget Value "Scores" All 
+                        (then
+                            (forget Value "Tied" All)
+                        )
+                    )
+                )
+            )
+        )
+        (forEach Player (set Score Player #1))
+    )
+)
+
+(define "CascadeWins" (max 0 (- ("LargerGroup" (player) (value)) ("LargerGroup" (value) (player)))))
+(define "CascadeLoses" (max 0 (- ("LargerGroup" (value) (player)) ("LargerGroup" (player) (value)))))
+
+(define "LargerGroup"
+    (max 0
+        (max
+            (difference
+                (sizes Group "ScoreConnection" of:#1)
+                (sizes Group "ScoreConnection" of:#2)
+            )
+        )
+    )
+)
+
+(define "Tied4FirstPlace"
+    (= 
+        (#1)
+        (max
+            (difference 
+                (values Remembered "Scores") 
+                #1 
+            )
+        )
+    )
+)
+
+(define "GroupCount"
+    (max 0 (max (sizes Group "ScoreConnection" of:#1)))
+)
+
+(define "StoneCount" 
+    (count Sites in:(sites Occupied by:Player)) 
+)
+
+(define "LessQtyAroundSiteThanAnother" 
+    (>
+        (max 0 (count Pieces of:#1 in:(sites Around (site) "ConnectionDirection")))
+        (max 0 (count Pieces of:(mover) in:(sites Around (site) "ConnectionDirection")))
+    )
+)
+
+(define "Anemone" 
+    (or {
+        (move Pass)
+        (move Claim (to (sites Empty)))
+        (forEach Site
+            (difference
+                (difference (sites Board) (sites Empty))
+                (sites Occupied by:Mover)
+            )
+            (if
+                ("LessQtyAroundSiteThanAnother" (who at:(site)))
+                (move Remove (site)
+                    (then
+                        (claim (to (last To)))
+                    )
+                )
+            )
+        )
+        }
+        (then ("Scoring" ("StoneCount" (player)))) 
+    )
+)
+
+(game "Windflowers"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Ball" Each)
+    })
+    (rules
+        (start
+            (set Score Each 0)
+        )
+        (play
+            "Anemone" 
+        )
+        (end 
+            (if 
+                (all Passed)
+                (byScore)
+            )    
+        )
+    )
+)
+
+(define "ScoreConnection" Adjacent)
+(define "ConnectionDirection" All)
+(define "BoardUsed" "TriSquare")
+
+(define "HexLimp" (board (hex Limping (- 4 1)) use:Cell))
+(define "Hex2Limp" (board (hex (- 4 1) (+ 4 1)) use:Cell))
+(define "HexCell" (board (hex Hexagon 4) use:Cell))
+(define "TriSquare" (board (tiling T33434 (- 4 2)) use:Vertex))
+(define "SquareGrid" (board (square 4) use:Cell))
+(define "SquareDiagonal" (board (square (- (* 2 4) 2)) use:Vertex))
+
+(define "ColourBackground" (colour 136 175 96)) 
+

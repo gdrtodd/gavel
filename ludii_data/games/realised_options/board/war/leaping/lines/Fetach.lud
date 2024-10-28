@@ -1,0 +1,66 @@
+(define "LargeDiagonals"
+    (union
+        (sites Direction from:4 NW included:True)
+        (sites Direction from:0 NE included:True)
+    )
+)
+
+(define "HopLargeDiagonals" 
+    (move Hop
+        (from
+            (from)
+            if:(is In (from) ("LargeDiagonals"))
+        )
+        Adjacent
+        (between 
+            before:(count Rows) 
+            after:(count Rows)
+            if:(and ("IsEnemyAt" (between)) (is In (between) ("LargeDiagonals"))) 
+            (apply (remove (between)))
+        )
+        (to if:(and (is Empty (to)) (is In (to) ("LargeDiagonals"))))
+    )
+)
+
+(game "Fetach"
+    ("TwoPlayersNorthSouth") 
+    
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Counter" Each
+            (or {
+                ("StepToEmpty" 
+                    (if (!= 0 (count Moves))
+                        (difference Adjacent Backwards)
+                        Forwards
+                    )
+                    (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                )
+                ("HopCapture" ~
+                    (difference Adjacent Backwards)
+                    (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                    
+                )
+            })
+        )
+        (piece "DoubleCounter" Each
+            (or {
+                ("StepToEmpty" Adjacent) 
+                ("HopCapture" ~ Adjacent)
+                ("HopLargeDiagonals")
+            })
+        )
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Counter1" (union {(expand (sites Bottom)) (sites {"D3" "E3"}) }))
+            (place "Counter2" (union {(sites {"A3" "B3"}) (expand (sites Top)) }))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

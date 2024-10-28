@@ -1,0 +1,86 @@
+(define "CaptureSurroundedGroup"
+    (enclose 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            if:(is #1 (who at:(between))) 
+            (apply    
+                (remove (between)) 
+            ) 
+        )
+        #2
+    )
+)
+
+(define "ReachesRegion"
+    (>
+        Infinity
+        (count Steps
+            Orthogonal
+            (step
+                (to
+                    if:(or
+                        (is Empty (to))
+                        (is In (to) #2)
+                    )
+                )
+            )
+            #1
+            #2
+        )
+    )
+)
+
+(game "Cavity" 
+    (players 2) 
+    (equipment { 
+        (board (square 11) use:Vertex) 
+        (piece "Marker" Each)
+    })
+    (rules 
+        (meta (swap))
+        phases:{
+        (phase "Opening"
+            (play (move Add (to (sites Empty))))
+            (nextPhase 
+                (and
+                    (= 1 (count Sites in:(sites Occupied by:P1)))
+                    (= 1 (count Sites in:(sites Occupied by:P2)))
+                )
+                "Play"
+            )
+        )
+        (phase "Play"
+            (play 
+                (move Add
+                    (to 
+                        (sites Empty)
+                        if:("ReachesRegion" 
+                            (to)
+                            (sites Occupied by:Mover)
+                        )
+                    )
+                    (then 
+                        (if 
+                            (can Move ("CaptureSurroundedGroup" Enemy))
+                            ("CaptureSurroundedGroup" Enemy)
+                            ("CaptureSurroundedGroup" Mover)
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end 
+            (forEach Player
+                if:(and
+                    (< 2 (count Moves))
+                    (no Pieces Player) 
+                )
+                (result Player Loss)
+            )
+        )
+    )
+)
+

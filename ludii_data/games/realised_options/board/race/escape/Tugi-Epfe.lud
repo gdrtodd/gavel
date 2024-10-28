@@ -1,0 +1,112 @@
+(define "ThrowValue" (mapEntry "ThrowDiceValue" (count Pips)))
+
+(define "SiteToMoveOnSelectedTrack" 
+    (if (= (value Player Mover) 2)
+        ("NextSiteOnTrack" ("ThrowValue") "TrackCCW")
+        ("NextSiteOnTrack" ("ThrowValue") "TrackCW")
+    )
+)
+
+(define "SiteToMoveOnTrackCW" ("NextSiteOnTrack" ("ThrowValue") "TrackCW"))
+(define "SiteToMoveOnTrackCCW" ("NextSiteOnTrack" ("ThrowValue") "TrackCCW"))
+
+(define "SelectCW" (set Value Mover 1))
+
+(define "SelectCCW" (set Value Mover 2))
+
+(define "RememberSelectedTrack"
+    (then 
+        (if 
+            ("IsOffBoard" (value Player Mover)) 
+            #1
+        )
+    )
+)
+
+(define "Goal" 0)
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:("IsEnemyAt" (to)) 
+        (and (fromTo (from (to)) (to "Goal")) (set Value (player (who at:(to))) Off))
+    ) 
+)
+
+(define "MoveOn" 
+    (if ("IsNotOffBoard" #1)
+        (if (or
+                (is Empty #1)
+                (and 
+                    ("IsEnemyAt" #1)
+                    (or 
+                        (= (value Player Mover) (value Player (who at:#1))) 
+                        ("IsOffBoard" (value Player Mover))
+                    ) 
+                )
+            )
+            (move 
+                (from (from) level:(level)) 
+                (to 
+                    #1 
+                    "CaptureEnemyPiece"
+                )
+            )
+        )
+        #2
+    )
+)
+
+(game "Tugi-Epfe"
+    (players 2)
+    (equipment {
+        (board 
+            (merge {
+                (rectangle 1 11)
+                (rectangle 11 1)
+                (shift 0 10 (rectangle 1 11))
+                (shift 10 0 (rectangle 11 1))
+            })
+            {
+            (track "TrackCW" {0 10..19 20..29 39..30 9..0} directed:True)
+            (track "TrackCCW" {0..9 30..39 29..20 19..10 0} directed:True)
+            }
+            use:Edge
+        ) 
+        (dice d:2 facesByDie:{{0 10} {0 1} {0 1}} num:3) 
+        (map "ThrowDiceValue" {
+            (pair 0 5) 
+            (pair 12 5) 
+            (pair 2 1) 
+            (pair 1 3) 
+            (pair 10 15) (pair 11 15) 
+        })
+        (piece "Horse" Each
+            (if ("IsOffBoard" (value Player Mover))
+                (or 
+                    ("MoveOn" ("SiteToMoveOnTrackCW") ("RememberSelectedTrack" ("SelectCW")))
+                    ("MoveOn" ("SiteToMoveOnTrackCCW") ("RememberSelectedTrack" ("SelectCCW")))
+                )
+                ("MoveOn" "SiteToMoveOnSelectedTrack")
+            )
+        )
+        (regions "AllSites" (sites Board))
+    })
+    (rules 
+        (start 
+            (place Stack items:{"Horse2" "Horse1"} 0)
+        )
+        (play 
+            ("RollMove"
+                (forEach Piece)
+                (then 
+                    (if 
+                        (= (last To) ("Goal"))
+                        (remove (last To))
+                    )
+                )
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

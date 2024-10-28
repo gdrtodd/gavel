@@ -1,0 +1,69 @@
+(define "NumTiles" 32)
+
+(define "PathLength" (/ "NumTiles" 4))
+
+(define "PositionOfTileX" (from (handSite Shared)))
+
+(define "PositionOfTileCurved" (from (handSite Shared 1)))
+
+(define "AnotherConnectedTile" (sites Around (sites Occupied by:All) Orthogonal if:(is Empty (to))))
+
+(define "PlaceATileTo" 
+    (or 
+        (move "PositionOfTileX" (to #1 (rotations {N E})) copy:True)
+        (move "PositionOfTileCurved" (to #1 (rotations Orthogonal)) copy:True)
+    )
+)
+
+(game "Trax" 
+    (players 2) 
+    (equipment { 
+        (boardless Square) 
+        (hand Shared size:2)
+        (tile "TileX" 
+            numSides:4
+            { 
+            (path from:0 to:2 colour:1)
+            (path from:1 to:3 colour:2)
+            }
+        ) 
+        (tile "TileCurved" 
+            numSides:4
+            { 
+            (path from:0 to:1 colour:1)
+            (path from:2 to:3 colour:2)
+            }
+        )
+    }) 
+    (rules 
+        
+        (meta (automove))
+        
+        (start {
+            (place "TileX" (handSite Shared)) 
+            (place "TileCurved" (handSite Shared 1)) 
+        })
+        
+        phases:{
+        (phase "Opening"
+            (play ("PlaceATileTo" (centrePoint)))
+            (nextPhase "Connection")
+        )
+        
+        (phase "Connection"
+            (play  
+                (do
+                    ("PlaceATileTo" "AnotherConnectedTile")
+                    ifAfterwards:(is SidesMatch)
+                )
+            )
+            (end {
+                (if (or (is Loop (mover) path:True) (<= "PathLength" (pathExtent (mover)))) (result Mover Win))
+                (if (or (is Loop (next) path:True) (<= "PathLength" (pathExtent (next)))) (result Next Win))
+                (if (>= (count Sites in:(sites Occupied by:All)) (* (count Players) "NumTiles")) (result Mover Draw))
+            })
+        )
+        }
+    )
+)
+

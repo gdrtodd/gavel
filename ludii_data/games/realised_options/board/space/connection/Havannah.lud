@@ -1,0 +1,22 @@
+(game "Havannah" 
+    (players 2) 
+    (equipment { 
+        (board (hex 8)) 
+        (piece "Marker" Each) 
+    }) 
+    (rules 
+        
+        (play (move Add (to (sites Empty))))
+        (end 
+            (if 
+                (or {
+                    (is Loop) 
+                    (is Connected 3 SidesNoCorners) 
+                    (is Connected 2 Corners) 
+                })
+                (result Mover Win)
+            )
+        ) 
+    )
+)
+

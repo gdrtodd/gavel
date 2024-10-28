@@ -1,0 +1,2 @@
+Players take turns placing pieces on the board. There are three winning conditions: 1. Connect any three edges (without corner points), or 2. Make a bridge connection between any two corners, or 3. loop around any site. The game is played on a 8x8 board The game does not use the swap rule.
+(game "Havannah" (players 2) (equipment {(board (hex 8)) (piece "Marker" Each)}) (rules (play (move Add (to (sites Empty)))) (end (if (or {(is Loop) (is Connected 3 SidesNoCorners) (is Connected 2 Corners)}) (result Mover Win))))) 

@@ -1,0 +1,160 @@
+(define "Swap"
+    (do 
+        (add (piece (who at:(last From)))
+            (to
+                (last To)
+                (apply
+                    (do
+                        (set Var "StateToBeAtLastFrom" (state at:(to)))
+                        next:(remove (to))
+                    )
+                )
+            )
+        )
+        next:(add (piece 3 state:(var "StateToBeAtLastFrom"))
+            (to
+                (last From)
+                (apply
+                    (remove (to))
+                )
+            )
+        )
+    )
+)
+
+(define "BalanceProtocol"
+    (phase "Swapping"
+        (play
+            (or
+                (move Pass
+                    (then (set Var "Passed" 1))
+                )
+                (move Select
+                    (from 
+                        (sites Board)
+                        if:(and
+                            (!= 3 (who at:(from)))
+                            (not 
+                                (is In (from) (values Remembered))
+                            )
+                        )
+                    )
+                    (to
+                        (sites Board)
+                        if:(= 3 (who at:(to)))
+                    )
+                    (then
+                        (and {
+                            (remember Value (last To))
+                            ("Swap")
+                            (if
+                                (!= 3 (size Array (values Remembered)))
+                                (moveAgain)
+                            )
+                        })
+                    )
+                )
+            )
+        )
+        (nextPhase
+            (or
+                (= 1 (var "Passed"))
+                (= 4 (size Array (values Remembered)))
+            )
+            "Choose"
+        )
+    )
+    (phase "Choose"
+        (play
+            (or
+                (move Swap Players P1 P2
+                    (then (set NextPlayer (player 1)))
+                )
+                (move Pass)
+            )
+        )
+        (nextPhase "Play")
+    )
+)
+
+(game "Paintscape"
+    (players 2)
+    (equipment {
+        (board (square 8))
+        (piece "Disc" Each)
+        (piece "Square" Shared maxState:5)
+    })
+    (rules
+        (start {
+            (place Random (sites Empty) {"Disc1" "Disc2"} count:2)
+            (place Random (sites Empty) {"Square"} count:12 state:1)
+            (place Random (sites Empty) {"Square"} count:12 state:2)
+            (place Random (sites Empty) {"Square"} count:12 state:3)
+            (place Random (sites Empty) {"Square"} count:12 state:4)
+            (place Random (sites Empty) {"Square"} count:12 state:5)
+        })
+        phases:{
+        ("BalanceProtocol")
+        (phase "Play"
+            (play
+                (move Add
+                    (to 
+                        (sites Around 
+                            (sites Occupied by:Mover)
+                            Orthogonal
+                        )
+                        if:(not
+                            (or
+                                (= (mover) (who at:(to)))
+                                (= (next) (who at:(to)))
+                            )
+                        )
+                    )
+                    stack:True
+                    (then
+                        (if 
+                            (and
+                                (= 3 (who at:(last To) level:0))
+                                (= 6
+                                    (count Sites
+                                        in:(forEach
+                                            (sites Occupied by:Mover)
+                                            if:(= 
+                                                (state at:(last To) level:0)
+                                                (state at:(site) level:0)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            (and
+                                (remove
+                                    (forEach
+                                        (sites Board)
+                                        if:(= 
+                                            (state at:(last To) level:0)
+                                            (state at:(site) level:0)
+                                        )
+                                    )
+                                    count:2
+                                )
+                                (addScore Mover 1)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        (end
+            (if
+                (or
+                    (= 3 (score P1))
+                    (= 3 (score P2))
+                )
+                (byScore)
+            )
+        )
+    )
+)
+

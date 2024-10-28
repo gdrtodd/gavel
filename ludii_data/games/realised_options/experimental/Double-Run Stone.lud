@@ -1,0 +1,221 @@
+
+(define "SetupHands"
+    (start {
+        (set Score Each 0)
+        (place "3Dot1" (handSite P1 0))
+        (place "3Dot1" (handSite P1 1))
+        (place "3Dot1" (handSite P1 2))
+        
+        (place "2Dot1" (handSite P1 4))
+        (place "2Dot1" (handSite P1 5))
+        (place "2Dot1" (handSite P1 6))
+        (place "2Dot1" (handSite P1 7))
+        
+        (place "1Dot1" (handSite P1 9))
+        (place "1Dot1" (handSite P1 10))
+        (place "1Dot1" (handSite P1 11))
+        (place "1Dot1" (handSite P1 12))
+        (place "1Dot1" (handSite P1 13))
+        
+        (place "3Dot2" (handSite P2 0))
+        (place "3Dot2" (handSite P2 1))
+        (place "3Dot2" (handSite P2 2))
+        
+        (place "2Dot2" (handSite P2 4))
+        (place "2Dot2" (handSite P2 5))
+        (place "2Dot2" (handSite P2 6))
+        (place "2Dot2" (handSite P2 7))
+        
+        (place "1Dot2" (handSite P2 9))
+        (place "1Dot2" (handSite P2 10))
+        (place "1Dot2" (handSite P2 11))
+        (place "1Dot2" (handSite P2 12))
+        (place "1Dot2" (handSite P2 13))
+    })
+)
+
+(define "ScoreWinCondition"
+    (and
+        (forEach Group "Connection" if:(is In (to) (sites Occupied by:Mover))
+            (if 
+                (and {
+                    (= 4 (count Sites in:(sites)))
+                    (is Within (id "1Dot" Mover) in:(sites))
+                    (is Within (id "2Dot" Mover) in:(sites))
+                    (is Within (id "3Dot" Mover) in:(sites))
+                })
+                
+                (forEach Site (sites)
+                    (and
+                        (addScore Mover
+                            (if (is Within (id "3Dot" Mover) at:(site))
+                                3
+                                (if (is Within (id "2Dot" Mover) at:(site)) 1 -1)
+                            )
+                        )
+                        (set State at:(site) 1)
+                    )
+                )
+            )
+        )
+        
+        (forEach Group "Connection" if:(is In (to) (sites Occupied by:Next))
+            (if 
+                (and {
+                    (= 4 (count Sites in:(sites)))
+                    (is Within (id "1Dot" Next) in:(sites))
+                    (is Within (id "2Dot" Next) in:(sites))
+                    (is Within (id "3Dot" Next) in:(sites))
+                })
+                (forEach Site (sites)
+                    (and
+                        (addScore Next
+                            (if (is Within (id "3Dot" Next) at:(site))
+                                6
+                                (if (is Within (id "2Dot" Next) at:(site)) 2 -2)
+                            )
+                        )
+                        (set State at:(site) 1)
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "IntolerableSite"
+    (and {
+        (or
+            (is Within (id "1Dot" P1) in:(difference (sites Around (#1) "Connection") (#2)))
+            (is Within (id "1Dot" P2) in:(difference (sites Around (#1) "Connection") (#2)))
+        )
+        (or
+            (is Within (id "2Dot" P1) in:(difference (sites Around (#1) "Connection") (#2)))
+            (is Within (id "2Dot" P2) in:(difference (sites Around (#1) "Connection") (#2)))
+        ) 
+        (or 
+            (is Within (id "3Dot" P1) in:(difference (sites Around (#1) "Connection") (#2)))
+            (is Within (id "3Dot" P2) in:(difference (sites Around (#1) "Connection") (#2)))
+        )
+    })
+)
+
+(define "AddPiece"
+    (move Add 
+        (piece (id #1 Mover))
+        (to (sites Empty) 
+            if:(and
+                (< 0 (count Pieces Mover #1 in:(sites Hand Mover)))
+                (not
+                    ("IntolerableSite" (to) (to))
+                )
+            )
+        )
+        (then 
+            (and {
+                (remove (min (array (forEach (sites Hand Mover) if:(= (id #1 Mover) (what at:(site)))))))
+                (forEach Site 
+                    (sites Around (last To) "Connection") 
+                    (if 
+                        ("IntolerableSite" (site) (site))
+                        (remove (site))
+                    )
+                )
+                (forEach Site (sites Occupied by:Mover) (set State at:(site) 0)) 
+            })
+        )
+    )
+)
+
+(define "StepPiece"
+    (forEach Site
+        (intersection (sites Occupied by:Mover) (sites State 0)) 
+        (move Step 
+            (from (site))
+            "Connection"
+            (to 
+                if:(and {
+                    (is Empty (to)) 
+                    (not ("IntolerableSite" (to) (from)))
+                })
+            )
+            (then
+                (and
+                    (forEach Site 
+                        (sites Around (last To) "Connection") 
+                        (if 
+                            ("IntolerableSite" (site) (site))
+                            (remove (site))
+                        )
+                    ) 
+                    (set State at:(last To) 2) 
+                )
+            )
+        )
+    )
+)
+
+(define "Connection" Orthogonal)
+(define "BoardUsed" "HexLimp")
+
+(define "SquareGrid" (square 3))
+(define "HexLimp" (trim (tri Limping (- 3 1))))
+(define "TriSquare" (tiling T33434 (- 3 2)))
+(define "HexHex" (tri Hexagon 3))
+(define "Icosahedron" (add (remove (tri Limping 4) vertices:{0 1 3 4 5 6 7 8 9 10 11 13 15 17 18 19 20 23 24 25 26 27 31 32 34 35 36 37 39 40 42 43 44 45 46 47}) edges:{ {0 1} {0 2} {0 3} {0 9} {0 10} {1 2} {1 4} {1 6} {6 11} {7 11} {8 11} {1 9} {2 3} {3 5} {3 8} {3 10} {6 9} {8 10} {9 10} {9 11} {10 11} }))
+
+(define "Stalemate" 
+    (if 
+        (no Moves Mover)
+        (move Pass (then (forEach Site (sites State 1) (set State at:(site) 0)))) 
+        (move Pass (then (set Score Mover (count Pieces Mover in:(sites Board)))))
+    )
+)
+
+(game "Double-Run Stone"
+    (players 2)
+    (equipment {
+        (board "BoardUsed" use:Vertex)
+        (hand Each size:15)
+        (piece "1Dot" Each)
+        (piece "2Dot" Each)
+        (piece "3Dot" Each)
+    })
+    (rules
+        ("SetupHands")
+        (play
+            (if 
+                (= 0 (count Sites in:(sites State 1)))
+                (priority {
+                    (or {
+                        ("AddPiece" "1Dot")
+                        ("AddPiece" "2Dot")
+                        ("AddPiece" "3Dot")
+                    })
+                    ("StepPiece")
+                    (do (forEach Site (sites State 0) (set State at:(site) 1))
+                        next:("Stalemate")
+                    )
+                    (move Pass
+                        (then
+                            (forEach Site (sites State 0) (set State at:(site) 1)) 
+                        )
+                    )
+                    }
+                    (then 
+                        ("ScoreWinCondition")
+                    )
+                )
+                ("Stalemate")
+            )
+        )
+        (end 
+            (if 
+                (!= 0 (count Sites in:(sites State 1)))
+                
+                (byScore)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,76 @@
+(define "HopDiagonalCounter" 
+    ("HopCapture" (from) Diagonal
+        (then ("ReplayIfCanMove" ("HopCapture" (from (last To)) Diagonal)
+                ("PromoteIfReach" (sites Next) "DoubleCounter")
+            )
+        )
+    )
+)
+
+(define "HopDiagonalDoubleCounter" 
+    ("HopCaptureDistance" (from) Diagonal (range 1 (count Rows))
+        (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows)))))
+    )
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Damspel" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8)) 
+    (rules 
+        ("WhiteCellsSetup" 3)
+        
+        (play 
+            (if	("SameTurn")
+                (if ("IsUnpromoted")
+                    (or
+                        (move Pass 
+                            (then 
+                                (forEach Site (sites Next) 
+                                    (if ("IsPieceAt" "Counter" Mover (site))
+                                        (promote (site) (piece "DoubleCounter") Mover) 
+                                    )
+                                )
+                            )
+                        )
+                        ("HopCapture" (from (last To)) Diagonal
+                            (then ("ReplayIfCanMove" 
+                                    ("HopCapture" (from (last To)) Diagonal)
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                )
+                            )
+                        )
+                    )
+                    (or 
+                        (move Pass)
+                        ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows))
+                            (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows)))))
+                        )
+                    )
+                )
+                
+                (or
+                    (forEach Piece "Counter" 
+                        (or 
+                            ("StepToEmpty" (directions {FR FL})
+                                (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                            )
+                            "HopDiagonalCounter"
+                        )
+                    )
+                    (forEach Piece "DoubleCounter" 
+                        (or
+                            (move Slide Diagonal)
+                            ("HopDiagonalDoubleCounter")
+                        )
+                    )
+                )
+            )
+            
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

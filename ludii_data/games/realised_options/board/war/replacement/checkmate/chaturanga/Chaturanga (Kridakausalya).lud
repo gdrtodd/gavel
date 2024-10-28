@@ -1,0 +1,60 @@
+(define "OnlyRajaAndPadati"
+    (and {
+        (no Pieces #1 "Ferz_noCross")
+        (no Pieces #1 "Knight")
+        (no Pieces #1 "Elephant")
+        (no Pieces #1 "Rook")
+    })
+)
+
+(define "Move" 
+    (do
+        (forEach Piece)
+        ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))
+    )
+)
+
+(game "Chaturanga (Kridakausalya)"
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8)) 
+        ("ChessKing" "King_noCross")
+        ("ChessQueen" "Ferz_noCross")
+        ("ChessKnight" "Knight")
+        ("ChessBishop" "Elephant")
+        ("ChessRook" "Rook")
+        ("ChessPawn" "Pawn" ~
+            (then
+                (if (is In (last To) (sites Mover "Promotion"))
+                    (and
+                        (promote (last To) (piece "Ferz_noCross") Mover)
+                        (fromTo (from (last To)) (to (last From)))	
+                    )
+                )
+            )		
+        )
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+    })
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 1))
+            (place "Pawn2" (sites Row 6))
+            (place "Rook1" {"A1" "H1"}) (place "Knight1" {"B1" "G1"}) (place "Elephant1" {"C1" "F1"}) (place "Ferz_noCross1" coord:"D1") (place "King_noCross1" coord:"E1") 
+            (place "Rook2" {"A8" "H8"}) (place "Knight2" {"B8" "G8"}) (place "Elephant2" {"C8" "F8"}) (place "Ferz_noCross2" coord:"D8") (place "King_noCross2" coord:"E8") 
+        })
+        
+        (play 
+            (if (can Move ("Move"))
+                ("Move")
+                (move Remove (difference (sites Occupied by:Next) (sites Occupied by:Next component:"King_noCross")))
+            )
+        )
+        
+        (end {
+            ("Checkmate" "King_noCross")
+            (if ("OnlyRajaAndPadati" Next) (result Mover Win))
+        })
+    )
+)
+

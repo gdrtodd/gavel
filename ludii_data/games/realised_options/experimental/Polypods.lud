@@ -1,0 +1,396 @@
+
+(define "IsAliveAt" 
+    (<= 0
+        (+
+            (results
+                from:#1 
+                to:(from)
+                (if (!= 1 (state at:(to))) 1 (- 1))
+            )
+        )
+    )
+)
+
+(define "CaptureSites" 
+    
+    (intersection
+        (sites Around (intersection (sites Group at:(last To)) (sites State 1)))
+        (difference (sites Occupied by:Next) (sites State 1))
+    )
+)
+
+(define "KeySitesOfAffectedGroups"
+    (sites
+        (results
+            from:"CaptureSites"
+            to:(min (array (difference (sites Group at:(from)) "CaptureSites")))
+            (to)
+        )
+    )
+)
+
+(define "AffectedGroupAt"  
+    (difference (sites Group at:#1) (sites (values Remembered "CS")))
+)
+
+(define "Check4IllegalCapture"
+    (and {
+        ("UpdateTerminals" (sites Group at:(var "ConvertedFootSite"))) 
+        }
+        (then
+            (if
+                
+                (not ("IsAliveAt" (sites Group at:(var "ConvertedFootSite"))))
+                (trigger "IllegalCapture" Mover)
+            )
+        )
+    )
+)
+
+(define "ClaimCapture" 
+    (if 
+        (= 1 (state at:(site)))
+        (remove (site))
+        (add
+            (to (site)
+                (apply
+                    (and
+                        (set Var "ConvertedFootSite" (to))
+                        (remove (to))
+                    )
+                )
+            )
+            (then ("Check4IllegalCapture"))
+        )
+    )
+)
+
+(define "Captures"
+    (do
+        (forEach Site "CaptureSites"
+            (remember Value "CS" (site) unique:True)
+            (then
+                (forEach Site "KeySitesOfAffectedGroups"
+                    (remember Value "KS" (site) unique:True)
+                )
+            )
+        )
+        next:(forEach Site (sites (values Remembered "CS")) (remove (site))
+            (then
+                (forEach Value
+                    (values Remembered "KS")  
+                    ("UpdateTerminals" ("AffectedGroupAt" (value)))
+                )
+            )
+        )
+        (then 
+            (and
+                (forEach Value (values Remembered "KS")  
+                    (if 
+                        (not ("IsAliveAt" ("AffectedGroupAt" (value))))
+                        (forEach Site
+                            ("AffectedGroupAt" (value)) 
+                            ("ClaimCapture") 
+                        )
+                    )
+                )
+                (forget Value "CS" All
+                    (then (forget Value "KS" All))
+                )
+            )
+        )
+    )
+)
+
+(define "SurroundingSitesInGroup"
+    (array (intersection #1 (sites Around (site))))
+)
+
+(define "UpdateTerminals"
+    (if
+        (= 6 (count Sites in:(sites Corners)))
+        ("UpdateTerminalsHex" #1)
+        ("UpdateTerminalsSquareOriented" #1)
+))
+
+(define "UpdateTerminalsHex"  
+    (forEach Site #1
+        (if
+            (or
+                (< 2 (size Array ("SurroundingSitesInGroup" #1)))
+                (and
+                    (= 2 (size Array ("SurroundingSitesInGroup" #1)))
+                    (< 1 
+                        (count Steps 
+                            (min ("SurroundingSitesInGroup" #1))
+                            (max ("SurroundingSitesInGroup" #1))
+                        )
+                    )
+                )
+            )
+            (set State at:(site) 1)
+            (set State at:(site) 0)
+        )
+    )
+)
+
+(define "UpdateTerminalsSquareOriented"  
+    (forEach Site #1
+        (if
+            (< 1 (size Array ("SurroundingSitesInGroup" #1)))
+            (set State at:(site) 1)
+            (if
+                (is Within (what at:(site)) in:(sites Around (site) N))
+                (set State at:(site) 2)
+                (if
+                    (is Within (what at:(site)) in:(sites Around (site) E))
+                    (set State at:(site) 3)
+                    (if
+                        (is Within (what at:(site)) in:(sites Around (site) S))
+                        (set State at:(site) 4)
+                        (if
+                            (is Within (what at:(site)) in:(sites Around (site) W))
+                            (set State at:(site) 5)
+                            (set State at:(site) 0)
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "ToAllowedSites"
+    (to
+        (difference
+            (sites Empty)
+            (sites Around
+                (intersection (sites Occupied by:Next) (sites State 1))
+            )
+        )
+        
+    )
+)
+
+(game "Polypods"
+    (players 2)
+    (equipment {
+        (board (square 8) use:Vertex)
+        (piece "Disc" Each maxState:1 maxValue:4)
+    })
+    (rules
+        (play
+            (or
+                (move Pass)
+                (do
+                    (do
+                        (move Add "ToAllowedSites" 
+                            (then
+                                (and
+                                    (set Value at:(last To) (layer of:(last To)))
+                                    ("UpdateTerminals" (sites Group at:(last To)))
+                                )
+                            )
+                        )
+                        ifAfterwards:("IsAliveAt" (sites Group at:(last To)))
+                        (then ("Captures"))
+                    )
+                    ifAfterwards:(not (is Triggered "IllegalCapture" Mover))
+                )
+                (then 
+                    ("Score")
+                )
+            )
+        )
+        (end 
+            (if
+                (all Passed) {
+                (if
+                    (> (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                (if
+                    (and
+                        (= (score Mover) (score Next))
+                        (>= ("FringeScoreOf" Mover) ("FringeScoreOf" Next))
+                    )
+                    (result Mover Win)
+                )
+                (if
+                    (and
+                        (= (score Mover) (score Next))
+                        (= ("FringeScoreOf" Mover) ("FringeScoreOf" Next))
+                    )
+                    (result Mover Draw)
+                )
+                }
+                (result Next Win)
+            )
+        )
+    )
+)
+
+(define "Score"
+    (and
+        ("ScoreCore4" Mover)
+        ("ScoreCore4" Next)
+))
+
+(define "ScoreFringe4" (set Score #1 ("FringeScoreOf" #1)))
+
+(define "ScoreCore4"
+    (set Score #1
+        (count Sites 
+            in:(intersection
+                (sites Occupied by:#1) 
+                (sites State 1)
+            )
+        )
+    )
+)
+
+(define "FringeScoreOf"
+    (count Sites
+        in:(difference
+            (sites Around (sites Occupied by:#1))
+            (sites Around (difference (sites Occupied by:All) (sites Occupied by:#1)) includeSelf:True)
+        )
+    )
+)
+
+(define "ThreeD456Board" (layers 4 (rectangle 5 6)))
+
+(define "ThreeD4Board" (layers 4 (rectangle 4 4)))
+
+(define "Graphics"  ("GraphicsOption" "counter.svg" 0.98  "disc.svg" 0.75))
+
+(define "P1Colour" (colour DarkGreen))
+(define "P2Colour" (colour White))
+
+(define "GraphicsOption" 
+    (graphics
+        {
+        (player Colour P1 (colour DarkGreen))
+        (player Colour P2 (colour Cream))
+        (board Style Graph)
+        (board Background
+            fillColour:(colour 150 120 30 90) 
+            edgeColour:(colour 150 120 30 90)
+        )
+        (board StyleThickness InnerEdges .2)
+        (board StyleThickness OuterEdges .2)
+        (board StyleThickness InnerVertices .5)
+        (no Sunken False)
+        (show Edges Diagonal Hidden)
+        (piece Scale .04) 
+        (piece Foreground "Disc1" state:0 image:#3
+            fillColour:(colour DarkGreen) scale:#4 
+            rotation:0
+        )
+        (piece Background "Disc1" state:1 image:#1
+            fillColour:(colour DarkGreen) scale:#2 
+            rotation:90
+        )
+        (piece Foreground "Disc1" state:2 image:#3
+            fillColour:(colour DarkGreen) scale:#4 
+            rotation:180
+        )
+        (piece Foreground "Disc1" state:3 image:#3
+            fillColour:(colour DarkGreen) scale:#4 
+            rotation:270
+        )
+        (piece Foreground "Disc1" state:4 image:#3
+            fillColour:(colour DarkGreen) scale:#4 
+            rotation:0
+        )
+        (piece Foreground "Disc1" state:5 image:#3
+            fillColour:(colour DarkGreen) scale:#4 
+            rotation:90
+        )
+        (piece Foreground "Disc2" state:0 image:#3
+            fillColour:"P2Colour" scale:#4 rotation:0
+        )
+        (piece Background "Disc2" state:1 image:#1
+            fillColour:"P2Colour" scale:#2 
+            rotation:90
+        )
+        (piece Foreground "Disc2" state:2 image:#3
+            fillColour:"P2Colour" scale:#4 
+            rotation:180
+        )
+        (piece Foreground "Disc2" state:3 image:#3
+            fillColour:"P2Colour" scale:#4 
+            rotation:270
+        )
+        (piece Foreground "Disc2" state:4 image:#3
+            fillColour:"P2Colour" scale:#4 
+            rotation:0
+        )
+        (piece Foreground "Disc2" state:5 image:#3
+            fillColour:"P2Colour" scale:#4 
+            rotation:90
+        )
+        
+        (show Symbol "X"
+            (forEach
+                (sites Around (sites Occupied by:All) if:(is Empty (to)))
+                if:(and 
+                    {
+                    (all Passed)
+                    (no Pieces P2 in:(sites Around (site)))
+                    }
+            ))
+            edgeColour:"P1Colour"
+            scale:.4 
+        )
+        (show Symbol "X"
+            (forEach
+                (sites Around (sites Occupied by:All) if:(is Empty (to)))
+                if:(and 
+                    {
+                    (all Passed)
+                    (no Pieces P1 in:(sites Around (site)))
+                    }
+            ))
+            edgeColour:"P2Colour"
+            scale:.4 
+        )
+        }
+))
+
+(define "Graphics3D" 
+    (graphics
+        {
+        (player Colour P1 (colour DarkGreen))
+        (player Colour P2 (colour Cream))
+        (board Style Graph)
+        (board StyleThickness InnerEdges .2)
+        (board StyleThickness OuterEdges .2)
+        (board StyleThickness InnerVertices .5)
+        (show Edges Diagonal Hidden)
+        
+        (piece Colour fillColour:(colour 0 0 0 0) strokeColour:(colour 0 0 0 0))
+        (piece Foreground "Disc1" state:0 value:0 image:#1 fillColour:(colour DarkGreen) scale:1 rotation:0)
+        (piece Foreground "Disc1" state:0 value:1 image:#1 fillColour:(colour DarkGreen) scale:.8 rotation:0)
+        (piece Foreground "Disc1" state:0 value:2 image:#1 fillColour:(colour DarkGreen) scale:.6 rotation:0)
+        (piece Foreground "Disc1" state:0 value:3 image:#1 fillColour:(colour DarkGreen) scale:.4 rotation:0)
+        (piece Foreground "Disc1" state:0 value:4 image:#1 fillColour:(colour DarkGreen) scale:.2 rotation:0)
+        (piece Foreground "Disc2" state:0 value:0 image:#1 fillColour:(colour Cream) scale:1 rotation:0)
+        (piece Foreground "Disc2" state:0 value:1 image:#1 fillColour:(colour Cream) scale:.8 rotation:0)
+        (piece Foreground "Disc2" state:0 value:2 image:#1 fillColour:(colour Cream) scale:.6 rotation:0)
+        (piece Foreground "Disc2" state:0 value:3 image:#1 fillColour:(colour Cream) scale:.4 rotation:0)
+        (piece Background "Disc2" state:0 value:4 image:#1 fillColour:(colour Cream) scale:.2 rotation:0)
+        (piece Background "Disc1" state:1 value:0 image:#2 fillColour:(colour DarkGreen) scale:1 rotation:0)
+        (piece Background "Disc1" state:1 value:1 image:#2 fillColour:(colour DarkGreen) scale:.8 rotation:0)
+        (piece Background "Disc1" state:1 value:2 image:#2 fillColour:(colour DarkGreen) scale:.6 rotation:0)
+        (piece Background "Disc1" state:1 value:3 image:#2 fillColour:(colour DarkGreen) scale:.4 rotation:0)
+        (piece Background "Disc1" state:1 value:4 image:#2 fillColour:(colour DarkGreen) scale:.2 rotation:0)
+        (piece Background "Disc2" state:1 value:0 image:#2 fillColour:(colour Cream) scale:1 rotation:0)
+        (piece Background "Disc2" state:1 value:1 image:#2 fillColour:(colour Cream) scale:.8 rotation:0)
+        (piece Background "Disc2" state:1 value:2 image:#2 fillColour:(colour Cream) scale:.6 rotation:0)
+        (piece Background "Disc2" state:1 value:3 image:#2 fillColour:(colour Cream) scale:.4 rotation:0)
+        (piece Background "Disc2" state:1 value:4 image:#2 fillColour:(colour Cream) scale:.2 rotation:0)
+        
+        }
+))
+

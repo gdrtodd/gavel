@@ -1,0 +1,85 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (count Pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "CaptureEnemyPiece" ("HittingCapture" (handSite (who at:(to))))) 
+
+(game "Kawade Kelia" 
+    (players 4)
+    (equipment {
+        (board 
+            (merge {
+                (rectangle 1 12)
+                (shift 3.5 3.25 (scale 1 1.5 (rotate 90 (rectangle 1 4))))
+                (shift 0 7 (rectangle 1 12))
+                (shift -5.5 12.5 (rotate 90 (rectangle 1 12)))
+                (shift 2.5 10.5 (rotate 90 (rectangle 1 6)))
+                (shift 5.5 12.5 (rotate 90 (rectangle 1 12)))
+                (shift 0 18 (rectangle 1 11))
+                (shift 1 11 (rotate 45 (rectangle 1 4)))
+                (shift 5 13
+                    (graph
+                        vertices:{ { 0 0 } {0 1} {-0.94 0.26 } {-0.23 -0.44} } 
+                        edges:{ {0 1} {1 2} {2 3} {3 0}} 
+                    )
+                )
+            })
+            {
+            (track "Track1" "71,0,E5,N5,E,N,W,S,E5,N,WSW,SW,End" P1 directed:True)
+            (track "Track2" "72,11,W6,N5,W,N,E,S,W6,N,WSW,SW,End" P2 directed:True)
+            
+            (track "Track3" "73,0,E5,N5,E,N,W,S,E5,N,WSW,SW,End" P3 directed:True)
+            (track "Track4" "74,11,W6,N5,W,N,E,S,W6,N,WSW,SW,End" P4 directed:True)
+            
+        })
+        (piece "Paddle" Each
+            (if ("IsEndTrack" "SiteToMoveOnTrack")
+                "RemoveAPiece"
+                (if ("IsNotOffBoard" "SiteToMoveOnTrack") 	 			
+                    (if (or {
+                            (is Empty "SiteToMoveOnTrack")
+                            ("IsFriendAt" "SiteToMoveOnTrack")
+                            (and 
+                                ("IsEnemyAt" "SiteToMoveOnTrack")
+                                (not (is In "SiteToMoveOnTrack" (sites "Protect")))
+                            )
+                        })
+                        (move 
+                            (from (from) level:(level))
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                "CaptureEnemyPiece"
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ("StickDice" 6)
+        (hand Each)
+        (regions "Protect" (sites {5 17 19 27 41 57 46 62 63 34 35 51 52}))
+    })
+    (rules
+        (start {
+            (place Stack "Paddle1" (handSite P1) count:3)
+            (place Stack "Paddle2" (handSite P2) count:3)
+            
+            (place Stack "Paddle3" (handSite P3) count:3)
+            (place Stack "Paddle4" (handSite P4) count:3)
+            (set Team 1 {P1 P3})
+            (set Team 2 {P2 P4})
+            
+        })
+        (play 
+            ("RollMove"
+                (or (forEach Piece) (forEach Piece container:(mover) top:True))
+            )
+        )
+        (end {
+            
+            ("EscapeTeamWin")
+            
+        })
+    )
+)
+

@@ -1,0 +1,43 @@
+(define "GroupCount"
+    (+ 
+        (count Groups if:(= (who at:(to)) P1) min:5) 
+        (count Groups if:(= (who at:(to)) P2) min:5)
+    )
+)
+
+(game "Odd" 
+    (players 2) 
+    (equipment { 
+        (board (rotate 90 (hex 5))) 
+        (piece "Marker" Each)
+        (hand Shared size:2)
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (handSite Shared)) 
+            (place "Marker2" (handSite Shared 1))
+        })
+        (play 
+            (move 
+                (from (sites Hand Shared)) 
+                (to (sites Empty))
+                copy:True
+            )
+        )
+        (end 
+            (if (is Full) 
+                (if 
+                    (is Odd 
+                        (+ 
+                            (count Groups if:(= (who at:(to)) P1) min:5) 
+                            (count Groups if:(= (who at:(to)) P2) min:5)
+                        )
+                    ) 
+                    (result P1 Win)
+                )
+                (result P2 Win)
+            ) 
+        )
+    )
+)
+

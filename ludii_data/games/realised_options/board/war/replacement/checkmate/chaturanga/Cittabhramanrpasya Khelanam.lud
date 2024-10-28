@@ -1,0 +1,60 @@
+(game "Cittabhramanrpasya Khelanam"
+    (players {(player S) (player N)}) 
+    (equipment { 
+        (board (square 8))
+        
+        (piece "Pawn" P1 
+            (or 
+                "StepForwardToEmpty" 
+                ("StepToEnemy" (directions {FR FL}))
+                (then
+                    (if (is In (last To) (sites Mover "Promotion")) 
+                        (and
+                            (promote (last To) (piece "Ferz_noCross") Mover)	
+                            (fromTo (from (last To)) (to (last From)))
+                        )
+                    )
+                )
+            )
+        )
+        (piece "Rook" P1 ("SlideCapture" ~ Orthogonal))
+        (piece "King_noCross" P1 ("StepToNotFriend"))
+        (piece "Elephant" P1 ("SlideCapture" ~ Diagonal))
+        (piece "Knight" P1 ("LeapCapture"  "KnightWalk"))
+        (piece "Ferz_noCross" P1  ("SlideCapture"))
+        (piece "King_noCross" P2 
+            (or
+                (move Leap 
+                    "KnightWalk" 
+                    (to 
+                        if:(and (not ("IsFriendAt" (to))) (not (is In (to) (sites Around (where "King-noCross" Next)))))
+                        (apply (remove (to))) 
+                    ) 
+                )
+                
+                (move Slide 
+                    (to 
+                        if:("IsEnemyAt" (to)) 
+                        (apply 
+                            if:(not (is In (to) (sites Around (where "King-noCross" Next))))
+                            (remove (to))
+                        )
+                    ) 
+                )
+            )
+        )
+        (regions "Promotion" P1 (sites Bottom))
+    }) 
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 6))
+            (place "Rook1" {"A8" "H8"}) (place "Knight1" {"B8" "G8"}) (place "Elephant1" {"C8" "F8"}) (place "Ferz_noCross1" coord:"E8") (place "King_noCross1" coord:"D8") 
+            (place "King_noCross2" coord:"E1")
+        })
+        
+        (play (do (forEach Piece) ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))))
+        
+        (end ("Checkmate" "King_noCross"))
+    )
+)
+

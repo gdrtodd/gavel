@@ -1,0 +1,1 @@
+(game "Pathway" (players 2) (equipment {(board (square 6)) (piece "Disc" Each)}) (rules (play (move Add (to (sites Empty) if:(or (all Sites (sites Around (to) Orthogonal) if:(is Empty (site))) (= 1 (count Sites in:(sites Around (to) Own Orthogonal))))))) (end (if (no Moves Next) (result Next Win))))) 

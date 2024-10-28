@@ -1,0 +1,152 @@
+(define "CaptureToPiece"
+    (apply 
+        (if (is Occupied (to))
+            (remove (to))
+        )
+    ) 
+)
+
+(define "EmptySitesInHome" 
+    (forEach 
+        (sites Mover "Home") 
+        if:(is Empty (site))
+    )
+)
+
+(define "CubeInHand" 
+    (sites Occupied by:Mover container:(mover))
+)
+
+(define "GoalReached" 
+    (all Sites 
+        (sites Mover "Goal") 
+        if:(is In (site) (sites Occupied by:Mover))
+    )
+)
+
+(define "MoveForwards" 
+    (move Step
+        Forwards
+        (to 
+            if:True
+            "CaptureToPiece"
+        ) 
+    )
+)
+
+(define "SameValue" 
+    (= (state at:(from)) (count Pips))
+)
+
+(define "ValueNextHigher" 
+    (if ("IsNotOffBoard" (where "Square" Mover state:(+ (count Pips) 1)))
+        (= (state at:(from)) (+ (count Pips) 1))
+        (if ("IsNotOffBoard" (where "Square" Mover state:(+ (count Pips) 2)))
+            (= (state at:(from)) (+ (count Pips) 2))
+            (if ("IsNotOffBoard" (where "Square" Mover state:(+ (count Pips) 3)))
+                (= (state at:(from)) (+ (count Pips) 3))
+                (if ("IsNotOffBoard" (where "Square" Mover state:(+ (count Pips) 4)))
+                    (= (state at:(from)) (+ (count Pips) 4))
+                    (= (state at:(from)) (+ (count Pips) 5))
+                )
+            )
+        )
+    )
+)
+
+(define "ValueNextLower" 
+    (if ("IsNotOffBoard" (where "Square" Mover state:(- (count Pips) 1)))
+        (= (state at:(from)) (- (count Pips) 1))
+        (if ("IsNotOffBoard" (where "Square" Mover state:(- (count Pips) 2)))
+            (= (state at:(from)) (- (count Pips) 2))
+            (if ("IsNotOffBoard" (where "Square" Mover state:(- (count Pips) 3)))
+                (= (state at:(from)) (- (count Pips) 3))
+                (if ("IsNotOffBoard" (where "Square" Mover state:(- (count Pips) 4)))
+                    (= (state at:(from)) (- (count Pips) 4))
+                    (= (state at:(from)) (- (count Pips) 5))
+                )
+            )
+        )
+    )
+)
+
+(define "MoveAPieceOf" 
+    (forEach Piece  
+        (if 
+            #1
+            ("MoveForwards")
+        )
+    )
+)
+
+(define "PieceIsOnTheBoard" 
+    ("IsNotOffBoard" (where "Square" Mover state:(count Pips)))
+)
+
+(game "EinStein Wurfelt Nicht" 
+    (players {(player SE) (player NW)}) 
+    (equipment { 
+        (board (square 5)) 
+        (piece "Square" Each) 
+        (hand Each size:6)
+        (dice num:1)
+        (regions "Home" P1 (expand (intersection (sites Top) (sites Left)) steps:2 Orthogonal))
+        (regions "Home" P2 (expand (intersection (sites Bottom) (sites Right)) steps:2 Orthogonal))
+        (regions "Goal" P1 (intersection (sites Bottom) (sites Right)))
+        (regions "Goal" P2 (intersection (sites Top) (sites Left)))
+    }) 
+    (rules 
+        (start {
+            
+            (place "Square1" (handSite P1) state:1) 
+            (place "Square1" (handSite P1 1) state:2) 
+            (place "Square1" (handSite P1 2) state:3) 
+            (place "Square1" (handSite P1 3) state:4) 
+            (place "Square1" (handSite P1 4) state:5) 
+            (place "Square1" (handSite P1 5) state:6) 
+            
+            (place "Square2" (handSite P2) state:1) 
+            (place "Square2" (handSite P2 1) state:2) 
+            (place "Square2" (handSite P2 2) state:3) 
+            (place "Square2" (handSite P2 3) state:4) 
+            (place "Square2" (handSite P2 4) state:5) 
+            (place "Square2" (handSite P2 5) state:6) 
+            
+        })
+        phases:{
+        (phase "Placement" 	  
+            (play 
+                (move 
+                    (from ("CubeInHand")) 
+                    (to ("EmptySitesInHome"))
+                )
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        (phase "Movement" 	  
+            (play 
+                ("RollMove"
+                    (if ("PieceIsOnTheBoard")
+                        ("MoveAPieceOf" ("SameValue"))
+                        (or
+                            ("MoveAPieceOf" ("ValueNextHigher"))
+                            ("MoveAPieceOf" ("ValueNextLower"))
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end 
+            (if 
+                (or 
+                    (no Pieces Next) 
+                    ("GoalReached")
+                ) 
+                (result Mover Win)
+            )
+        )
+    )
+)
+

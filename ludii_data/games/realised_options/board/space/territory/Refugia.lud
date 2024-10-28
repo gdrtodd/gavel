@@ -1,0 +1,159 @@
+
+(define "TieBreaker" (count Pieces #1))
+
+(define "Unfriendlies" 
+    (count Sites 
+        in:(intersection 
+            (sites Around #1)
+            (union
+                (sites Occupied by:Next)
+                (sites Occupied by:Neutral)
+            )
+        )
+    )
+)
+
+(define "MoveAllowed"
+    (< ("Unfriendlies" (to)) ("Unfriendlies" (from)))
+)
+
+(define "NonAdjacent"
+    (not (is Within (id "Disc" Mover) in:(sites Around (to))))
+)
+
+(define "Option2"
+    (not (is Within (id "Disc" Mover) in:(sites LineOfSight Piece at:(to))))
+)
+
+(define "UpdateScore"
+    (set Score #1 
+        (/ 
+            (+ 
+                (results 
+                    from:(sites Occupied by:#1) 
+                    to:(sites Around (from) if:(is #1 (who at:(to))))
+                    1
+                )
+            )
+            2
+        )
+    )
+)
+
+(define "Placement"
+    (move Add (piece (id "Disc" Mover))
+        (to 
+            (sites Empty) 
+            if:"NonAdjacent"
+        )
+    )
+)
+
+(define "StepMove"
+    (forEach Piece
+        (move Step
+            (to (sites Around (from)) 
+                if:(and
+                    (is Empty (to))
+                    ("MoveAllowed")
+                )
+            )
+            (then ("UpdateScore" Mover))
+        )
+        Mover
+    )
+)
+
+(define "HopNeutral"
+    (forEach Piece
+        (move Hop
+            (between 
+                if:(is Next (who at:(between)))
+                (apply 
+                    (and 
+                        (remove (between))
+                        (add (piece (id "Fan" Neutral)) (to (between)))
+                    )
+                )
+            )
+            (to 
+                if:(and 
+                    (is Empty (to))
+                    ("MoveAllowed")
+                )
+            )
+            (then (and ("UpdateScore" Mover) ("UpdateScore" Next)))
+        )
+        Mover
+    )
+)
+
+(define "HopEnemy"
+    (forEach Piece
+        (move Hop
+            (between 
+                if:(is Within (id "Fan" Neutral) at:(between)) 
+                (apply 
+                    (and 
+                        (remove (between))
+                        (add (piece (id "Disc" Mover)) (to (between)))
+                    )
+                )
+            )
+            (to 
+                if:(and 
+                    (is Empty (to))
+                    ("MoveAllowed")
+                )
+            )
+            (then (and ("UpdateScore" Mover) ("UpdateScore" Next)))
+        )
+        Mover
+    )
+)
+
+(game "Refugia" 
+    (players 2)
+    (equipment {
+        (board (hex {3 4 3 4 3}))
+        (piece "Disc" P1)
+        (piece "Disc" P2)
+        (piece "Fan" Neutral)
+    })
+    (rules 
+        (start (set Score Each 0))
+        (play
+            (or {
+                ("StepMove")
+                ("HopEnemy")
+                ("HopNeutral")
+                ("Placement")
+                (move Pass) 
+            })
+        )
+        (end 
+            (if 
+                (all Passed) {
+                (if 
+                    (> (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                (if 
+                    (< (score Mover) (score Next))
+                    (result Next Win)
+                )
+                (if 
+                    (> ("TieBreaker" Mover) ("TieBreaker" Next))
+                    (result Mover Win)
+                )
+                (if 
+                    (< ("TieBreaker" Mover) ("TieBreaker" Next))
+                    (result Next Win)
+                )
+                }
+                (result Next Win)
+            )
+        )
+    )
+)   
+

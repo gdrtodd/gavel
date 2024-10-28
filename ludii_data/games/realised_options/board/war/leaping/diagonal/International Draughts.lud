@@ -1,0 +1,53 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "International Draughts" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 10))
+    
+    (rules 
+        ("BlackCellsSetup" 4)
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    (max Moves
+                        ("HopInternationalDraughtsStyle" (from (last To))
+                            (then 
+                                ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To)))
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                ) 
+                            ) 
+                        )
+                    )
+                    (max Moves ("HopDiagonalSequenceCaptureAgain" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                )
+                (priority {
+                    (max Moves
+                        (or 
+                            (forEach Piece "Counter"
+                                ("HopInternationalDraughtsStyle" (from)
+                                    (then 
+                                        ("ReplayIfCanMove" ("HopInternationalDraughtsStyle" (from (last To))) 
+                                            ("PromoteIfReach" (sites Next) "DoubleCounter")
+                                        ) 
+                                    ) 
+                                ) 
+                            )
+                            (forEach Piece "DoubleCounter" ("HopDiagonalSequenceCapture" before:(count Rows) after:(count Rows) at:EndOfTurn))
+                        )
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal))
+                    )
+                })
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

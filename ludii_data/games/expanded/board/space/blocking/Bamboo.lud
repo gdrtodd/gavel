@@ -1,0 +1,1 @@
+(game "Bamboo" (players 2) (equipment {(board (hex 5)) (piece "Disc" Each) (piece "Disc" Neutral)}) (rules (play (do (move Add (to (sites Empty))) ifAfterwards:(<= (max (results from:(sites Occupied by:Mover) to:1 (* 1 (size Group at:(from))))) (count Groups if:(= (who at:(to)) (mover)))))) (end (if (no Moves Next) (result Next Loss))))) 

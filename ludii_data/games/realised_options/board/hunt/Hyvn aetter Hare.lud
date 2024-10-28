@@ -1,0 +1,43 @@
+(game "Hyvn aetter Hare"
+    (players 2) 
+    (equipment {
+        (board 
+            (splitCrossings
+                (merge
+                    (shift .5 .5 (scale 0.707 (concentric {1 8})))
+                    (square 2)
+                )
+            )
+            use:Vertex
+        )
+        (piece "Hare" P1 "StepToEmpty") 
+        (piece "Dog" P2 "StepToEmpty") 
+        (hand Each)
+    }) 
+    (rules 
+        (start { 
+            (place "Hare1" (handSite P1) count:1)
+            (place "Dog2" (handSite P2) count:3)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (if ("HandOccupied" Mover)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty))
+                    ) 
+                )
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement"
+            (end ("NoMoves" Loss))
+        )
+        }
+        
+    )
+)
+

@@ -1,0 +1,140 @@
+(define "OwnedHoles" 
+    (if (is Mover P1)
+        (sites (values Remembered "OwnedP1"))
+        (sites (values Remembered "OwnedP2"))
+    )
+)
+
+(define "RemmemberOwnedHoles" 
+    (if (is Mover P1)
+        (remember Value "OwnedP1" #1)
+        (remember Value "OwnedP2" #1)
+    )
+)
+
+(define "EightPiecesOnBoard" (>= 8 (count Pieces All in:(sites Board))))
+
+(game "J'erin" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 6 store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 4 to:(sites Track)) 
+            (set RememberValue "OwnedP1" (sites Bottom))
+            (set RememberValue "OwnedP2" (sites Top))	
+        })
+        
+        phases:{
+        (phase "Sowing"
+            (play
+                (or {
+                    (move Select
+                        (from 
+                            (if ("SameTurn")
+                                ("LastHoleSowed") 
+                                ("OwnedHoles") 
+                            )
+                            if:(< 0 (count at:(from)))
+                        )
+                        (then
+                            (do
+                                (set Var "NumSowed" (count at:(last To)))
+                                next:(if (and 
+                                        ("EightPiecesOnBoard") 
+                                        (not (all Sites (sites Track from:("NextSiteOnTrack" 1 from:(last From) "Track") to:("NextSiteOnTrack" (var "NumSowed") from:(last From) "Track"))
+                                                if:(!= 3 (count at:(site)))
+                                        ))
+                                    )
+                                    (forEach Site (sites Board)
+                                        (if (is Occupied (site))
+                                            (fromTo
+                                                (from (site))
+                                                (to Cell (handSite Mover))
+                                                count:(count at:(site))
+                                            )
+                                        )
+                                    )
+                                    (sow
+                                        apply:(if
+                                            (if (= 4 (count at:(to)))
+                                                (not (is In (to) ("OwnedHoles")))
+                                                (!= 0 (count at:(to))) 
+                                            )
+                                            (moveAgain)
+                                        )
+                                    )
+                                    (then
+                                        (and
+                                            (forEach Site (intersection ("OwnedHoles") (sites Track from:(last From) to:(trackSite Move from:(last From) "Track" steps:(var "NumSowed"))))
+                                                (if (= 4 (count at:(site)))
+                                                    (fromTo
+                                                        (from (site))
+                                                        (to (handSite Mover))
+                                                        count:4
+                                                    )
+                                                )
+                                            )
+                                            (set Var "NumSowed" 0)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    }
+                    (then (if ("NoPieceOnBoard")
+                            (and
+                                (forget Value "OwnedP1" All)
+                                (forget Value "OwnedP2" All)
+                            )
+                        )
+                    )
+                )
+            )
+            
+            (end (if ("NoPieceOnBoard")
+                    {
+                    (if (> 4 (count Cell at:(handSite P1))) (result P2 Win))
+                    (if (> 4 (count Cell at:(handSite P2))) (result P1 Win))
+                    }
+                )
+            )
+            
+            (nextPhase ("NoPieceOnBoard") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (<= 4 (count Cell at:(handSite Mover)))
+                    (if (not (all Sites (sites Mover) if:(is Occupied (site))))
+                        (move
+                            (from (handSite Mover))
+                            (to (sites Mover) if:(is Empty (to)))
+                            count:4
+                            (then ("RemmemberOwnedHoles" (last To)))
+                        )
+                        (move
+                            (from (handSite Mover))
+                            (to (sites Board) if:(is Empty (to)))
+                            count:4
+                            (then ("RemmemberOwnedHoles" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (and (> 4 (count Cell at:(handSite P1))) (> 4 (count Cell at:(handSite P2)))) "Sowing")
+        )
+        }
+    )
+)
+

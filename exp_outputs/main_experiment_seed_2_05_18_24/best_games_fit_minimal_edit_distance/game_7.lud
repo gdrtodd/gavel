@@ -1,0 +1,135 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 10)
+            )
+            (piece "PIECE_ALPHA" Each)
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (sites Phase 1)
+                )
+                (place "PIECE_ALPHA2" 
+                    (sites Phase 0)
+                )
+        })
+        phases:{
+
+            (phase "OpeningP1" P1 
+                (play 
+                    (move Remove 
+                        (intersection 
+                            (union 
+                                (sites Corners)
+                                (sites Centre)
+                            )
+                            (sites Phase 1)
+                        )
+                    )
+                )
+                (nextPhase Mover "Movement")
+            )
+
+            (phase "OpeningP2" P2 
+                (play 
+                    (move Remove 
+                        (sites Around 
+                            (last To)
+                        Own)
+                    )
+                )
+                (nextPhase Mover "Movement")
+            )
+
+            (phase "Movement" 
+                (play 
+                    (if (is Prev Mover) (or 
+                            (move Hop 
+                                (from (last To))
+                                SameDirection 
+                                (between if:
+                                    (is Enemy (who at:
+                                            (between)
+                                    ))
+                                    (apply 
+                                        (remove 
+                                            (between)
+                                        )
+                                    )
+                                )
+                                (to if:(is Empty (to)))
+                                (then (if (can Move 
+                                            (move Hop 
+                                                (from (last To))
+                                                SameDirection 
+                                                (between if:
+                                                    (is Enemy (who at:
+                                                            (between)
+                                                    ))
+                                                    (apply 
+                                                        (remove 
+                                                            (between)
+                                                        )
+                                                    )
+                                                )
+                                                (to if:(is Empty (to)))
+                                            )
+                                ) (moveAgain)))
+                            )
+                            (move Pass)
+                            ) (forEach Piece "PIECE_ALPHA" 
+                            (move Hop 
+                                (from (from))
+                                Orthogonal 
+                                (between if:
+                                    (is Enemy (who at:
+                                            (between)
+                                    ))
+                                    (apply 
+                                        (remove 
+                                            (between)
+                                        )
+                                    )
+                                )
+                                (to if:(is Empty (to)))
+                                (then (if (can Move 
+                                            (move Hop 
+                                                (from (last To))
+                                                SameDirection 
+                                                (between if:
+                                                    (is Enemy (who at:
+                                                            (between)
+                                                    ))
+                                                    (apply 
+                                                        (remove 
+                                                            (between)
+                                                        )
+                                                    )
+                                                )
+                                                (to if:(is Empty (to)))
+                                            )
+                                ) (moveAgain)))
+                            )
+                    ))
+                )
+            )
+        } 
+
+        (end 
+            (if (no Moves Next) (result Next Loss))
+        )
+    )
+)
+
+// Ancestor: Konane
+// Selection metric: 0.00
+// Fitness: 1.00
+// Novelty: 0.50
+// Cell distance: 0.00
+// Edit Distance: 0.00
+// Global Edit Distance: 0.00
+// Lineage length: 1.00

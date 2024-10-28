@@ -1,0 +1,83 @@
+(define "IsOlderPlayer" (is Mover P1))
+(define "NoOwnedHoleWithMoreThanOneSeedExceptHogon" 
+    (all Sites
+        (difference (sites #1) (mapEntry "Hogon" #1))
+        if:(>= 1 (count at:(site)))
+    )
+)
+
+(define "NoOwnedHoleWithMoreThanOneSeed" 
+    (all Sites
+        (sites #1)
+        if:(>= 1 (count at:(site)))
+    )
+)
+
+(game "Koro" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 6 store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (hand Each)
+        (map "Hogon" {(pair P1 5) (pair P2 6)})
+        (regions P1 (sites Bottom))     
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(sites Track)))
+        
+        (play 
+            (if (<= 14 (count at:(mapEntry "Hogon" Mover)))
+                (move Select
+                    (from
+                        (mapEntry "Hogon" Mover)
+                    )
+                    (then (sow))
+                )
+                (if ("NoOwnedHoleWithMoreThanOneSeedExceptHogon" Mover)
+                    (if ("IsOlderPlayer")
+                        (move Pass)
+                        (do
+                            (if ("NoOwnedHoleWithMoreThanOneSeedExceptHogon" Next)
+                                (forEach Site (difference (sites Next) (mapEntry "Hogon" Next))
+                                    (if (is Occupied (site))
+                                        (fromTo
+                                            (from (site))
+                                            (to (mapEntry "Hogon" Mover))
+                                        )
+                                    )
+                                )
+                            )
+                            next:(move Select
+                                (from
+                                    (mapEntry "Hogon" Mover)
+                                    if:(< 1 (count at:(from)))
+                                )
+                                (then (sow))
+                            )
+                        )
+                    )
+                    (move Select
+                        (from
+                            (difference (sites Mover) (mapEntry "Hogon" Mover))
+                            if:(< 1 (count at:(from)))
+                        )
+                        (then (sow))
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (forEach Player
+                if:("NoOwnedHoleWithMoreThanOneSeed" Player)
+                (result Player Loss)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,1 @@
+(game "Tugul Shodra" (players 2) (equipment {(board (remove (square 3) edges:{{0 1} {1 2}}) use:Vertex) (piece "Disc" Each (move Step (to if:(is Empty (to)))))}) (rules (start {(place "Disc1" {2 5 8}) (place "Disc2" {0 3 6})}) (play (forEach Piece)) (end (if (no Moves Next) (result Next Loss))))) 

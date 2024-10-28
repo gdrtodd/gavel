@@ -1,0 +1,22 @@
+(game "Tabu Y" 
+    (players 2) 
+    (equipment { 
+        (board (hex Triangle 11)) 
+        (piece "Disc")
+    }) 
+    (rules 
+        (play
+            (move Add 
+                (to (sites Empty) 
+                    if:(not (is In (to) (sites Around (last To))))
+                ) 
+            )
+        )
+        (end 
+            (if (is Connected 3 Sides) 
+                (result Mover Win) 
+            ) 
+        )
+    )
+)
+

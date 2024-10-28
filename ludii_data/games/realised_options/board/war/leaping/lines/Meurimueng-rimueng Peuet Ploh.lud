@@ -1,0 +1,29 @@
+(game "Meurimueng-rimueng Peuet Ploh" 
+    (players 2)
+    (equipment { 
+        ("AlquerqueBoard" 9 9)
+        (piece "Marker" Each 
+            (or 
+                ("HopSequenceCapture")
+                ("StepToEmpty")
+            )
+        )
+    }) 
+    
+    (rules 
+        ("BeforeAfterCentreSetup" "Marker1" "Marker2")
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopSequenceCaptureAgain")	
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        
+        (end ("ForEachPlayerNoPiecesLoss"))
+    )
+)
+

@@ -1,0 +1,50 @@
+(define "Connect"
+    (do
+        (move Add
+            (to 
+                (sites Around (sites Occupied by:Mover) Empty)
+                (apply
+                    (set Var "NumberOfFriendlyGroupsBeforePlacement"
+                        (count Groups Orthogonal
+                            if:(is Mover (who at:(to)))
+                        )
+                    )
+                )
+            )
+        )
+        ifAfterwards:(<
+            (count Groups Orthogonal
+                if:(is Mover (who at:(to)))
+            )
+            (var "NumberOfFriendlyGroupsBeforePlacement")
+        )
+    )
+)
+
+(game "Scaffold"
+    (players 2)
+    (equipment {
+        (board (square 12) use:Vertex)
+        (piece "Marker" Each)
+        (regions P1 {(sites Side N) (sites Side S) })
+        (regions P2 {(sites Side W) (sites Side E) })
+    })
+    (rules
+        (meta (swap))
+        (play
+            (if (< 0 (count MovesThisTurn))
+                ("Connect")
+                (move Add (to (sites Empty)))
+                (then
+                    (if 
+                        (can Move ("Connect"))
+                        (moveAgain)
+                    )
+                )
+                
+            )
+        )
+        (end (if (is Connected Orthogonal Mover) (result Mover Win)))
+    )
+)
+

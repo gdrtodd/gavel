@@ -1,0 +1,24 @@
+(define "NoCapture" (not (can Move ("EncloseCapture" Orthogonal))))
+
+(game "NoGo" 
+    (players 2) 
+    (equipment { 
+        (board (square 9) use:Vertex) 
+        (piece "Marker" Each)
+    }) 
+    
+    (rules 
+        (play 
+            (do
+                (move Add (to (sites Empty)))
+                ifAfterwards:(and 
+                    ("HasFreedom" Orthogonal)
+                    "NoCapture"
+                )
+            )
+        )
+        
+        (end ("NoMoves" Loss)) 
+    )
+)
+

@@ -1,0 +1,27 @@
+(define "SizeStart" 1)
+
+(game "Bajr" 
+    (players {(player NE) (player SW)}) 
+    (equipment { 
+        (board (square 6)) 
+        (piece "Counter" Each ("StepToEmpty" (directions {Forwards Leftward Rightward})))
+        
+        (regions "Home" P1 (expand (intersection (sites Bottom) (sites Left)) steps:"SizeStart" Orthogonal))
+        (regions "Home" P2 (expand (intersection (sites Top) (sites Right)) steps:"SizeStart" Orthogonal))
+        (map {(pair P1 P2) (pair P2 P1)})
+        
+    }) 
+    (rules 
+        (start { 
+            
+            (place "Counter1" (sites P1))
+            (place "Counter2" (sites P2))
+            
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("FillWin" (sites (player (mapEntry (mover)))))) 
+    )
+)
+

@@ -1,0 +1,253 @@
+(define "SomeSite"
+    (not
+        (all Sites #1 
+            if:(not #2)
+        )
+    )
+)
+
+(define "WeakPieSetup"
+    (phase "Opening"
+        (play 
+            (move Add 
+                (to 
+                    (sites Empty)
+                    if:(= 0
+                        (count Sites in:(sites Around (to) Own Orthogonal))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "StrongPieSetup"
+    (phase "Opening"
+        (play 
+            (move Select
+                (from
+                    (sites Empty)
+                )
+                (to 
+                    (sites Empty)
+                    if:(not (is In (from) (sites Around (to) includeSelf:True)))
+                )
+                (then 
+                    (and
+                        (add (to (last To)))
+                        (add (to (last From)))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "KomiPieSetup"
+    (phase "KomiPie"
+        (play 
+            (if 
+                (= 0 (count Moves))
+                (move Select
+                    (from (sites Distance from:(centrePoint) (exact 2)))
+                    (then 
+                        (fromTo 
+                            (from (last From))
+                            (to (handSite P2))
+                            count:(size Stack at:(from))
+                            (then
+                                (forEach Site
+                                    (sites Distance from:(centrePoint) (exact 2))
+                                    (remove (site) count:(size Stack at:(site)))
+                                )
+                            )
+                        )
+                    )
+                )
+                (if 
+                    (= 1 (count Moves))
+                    (or
+                        (move Pass)
+                        (move Add (piece 1) (to (sites Empty))
+                            (then (swap Players 1 2))
+                        )
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (= 2 (count Moves))
+            "Opening"
+        )
+    )
+    (phase "Opening"
+        (play 
+            (move Add 
+                (to 
+                    (sites Empty)
+                    if:(= 0
+                        (count Sites in:(sites Around (to) Own Orthogonal))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "Place"
+    (move Add
+        (to
+            (sites Empty)
+            if:(and
+                (not (no Pieces Mover in:(sites Board)))
+                (> 
+                    Infinity
+                    (count Steps Orthogonal
+                        (step 
+                            (to
+                                if:(or 
+                                    (is Empty (to)) 
+                                    (is Mover (who at:(to)))
+                                )
+                            )
+                        )
+                        (to)
+                        (sites Occupied by:Mover)
+                    )
+                )
+            )
+        )
+        #1
+    )
+)
+
+(define "ReachesPlayer"
+    (and
+        (< 0
+            (count Sites 
+                in:(difference
+                    (sites Occupied by:#2 component:"Disc")
+                    #1
+                )
+            )
+        )
+        ("SomeSite"
+            #1
+            (> Infinity
+                (count Steps Orthogonal
+                    (step 
+                        (to
+                            if:(or
+                                (is Empty (to)) 
+                                (is #2 (who at:(to)))
+                            )
+                        )
+                    )
+                    (site)
+                    (difference
+                        (sites Occupied by:#2)
+                        #1
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "Remove"
+    (forEach Group Orthogonal if:(is #1 (who at:(to)))
+        (if
+            (not ("ReachesPlayer" (sites) #1))
+            (remove (sites))
+            (pass)
+        )
+        #2
+    )
+)
+
+(define "SpendKomi"
+    (if
+        (and {
+            (< 0 (size Stack at:(handSite P2)))
+            (= (mover) (id P2))
+            (< 0 (count Pieces Mover in:(sites Board)))
+        })
+        (move Remove (handSite P2))
+    )
+)
+
+(define "KomiSelection"
+    (start {
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 N) count:1)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 NNE) count:2)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 ENE) count:3)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 E) count:4)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 ESE) count:5)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 SSE) count:6)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 S) count:7)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 SSW) count:8)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 WSW) count:9)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 W) count:10)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 WNW) count:11)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 NNW) count:12)
+    })
+)
+
+(game "Lifeline" 
+    (players 2) 
+    (equipment { 
+        (board (dual (tri Hexagon 7))) 
+        (piece "Disc" Each) 
+        (piece "Shi_Western" P2) 
+        (hand P2)
+    })
+    (rules 
+        (meta (swap))
+        
+        phases:{
+        ("StrongPieSetup")
+        (phase "Play"
+            (play 
+                (or
+                    ("SpendKomi")
+                    ("Place"
+                        (then 
+                            ("Remove" Enemy 
+                                (then ("Remove" Mover ~))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        (end 
+            (if
+                (and (no Moves Next) (< 2 (count Moves)))
+                (result Next Loss)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,7 @@
+(define "Windir_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (cornerProximity)
+    })
+    
+)

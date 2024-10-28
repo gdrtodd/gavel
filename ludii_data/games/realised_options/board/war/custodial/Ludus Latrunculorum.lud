@@ -1,0 +1,146 @@
+(define "NoRepetition" (meta (no Repeat)))
+
+(game "Ludus Latrunculorum" 
+    (players 2) 
+    
+    (define "Custodial"
+        (custodial
+            #1
+            Orthogonal
+            (between
+                (max 1)	
+                #2
+                #3
+            )
+            #4
+        )	
+    )
+    
+    (define "Flip" (flip (between)))
+    
+    (define "IsAlligatus" (= 1 (state at:#1)))
+    (define "IsVagi" (= 0 (state at:#1)))
+    
+    (define "Blocked" 
+        ("Custodial"
+            (from (last To))	
+            if:(and (= (what at:(between)) (next)) ("IsVagi" (between)))
+            (apply 
+                (and
+                    ("Flip")
+                    ("Rescue")
+                )
+            )
+            (to if:(and ("IsFriendAt" (to)) ("IsVagi" (to))))
+        )
+    )
+    
+    (define "Rescue" 
+        ("Custodial"
+            (from (between)) 
+            if:(and (= (what at:(between)) (mover)) ("IsAlligatus" (between)))
+            (apply ("Flip")) 
+            (to if:(and ("IsEnemyAt" (to)) ("IsVagi" (to))))
+        )
+    )
+    
+    (define "Released"
+        ("Custodial"
+            (from (last From)) 	
+            if:(and (= (what at:(between)) (next)) ("IsAlligatus" (between)))
+            (apply ("Flip")) 
+            (to if:(and ("IsFriendAt" (to)) ("IsVagi" (to))))
+        )
+    )
+    
+    (define "Hop"
+        (move
+            Hop
+            #1
+            Orthogonal 
+            (between if:(is Occupied (between)))
+            (to 
+                if:(and 
+                    (is Empty (to)) 
+                    (not (is Visited (to))) 
+                )
+            )
+            #2
+        )	
+    )
+    
+    (define "RemoveBlockedEnemyPiece"
+        (move
+            Remove 
+            (forEach (sites Occupied by:Next) if:("IsAlligatus" (site)))
+        )	
+    )
+    
+    (define "UlrichPieceMovement"
+        (if (= 0 (state at:(from)))
+            (or
+                ("StepOrthogonalToEmpty")
+                ("Hop" ~ (then (if (can Move ("Hop" (from (last To)))) (moveAgain))))
+                (then
+                    (and ("Released") ("Blocked"))
+                )
+            )
+        )	
+    )
+    
+    (equipment { 
+        (board (square 8)) 
+        (hand Each)
+        (piece "Vagi" Each (flips 0 1)
+            ("UlrichPieceMovement")
+        )
+    })
+    
+    (rules
+        ("NoRepetition")
+        
+        (start (place "Vagi" "Hand" count:16))
+        
+        phases:{
+        (phase "Placement" 
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement"
+            (play 
+                (if "SameTurn"
+                    (or
+                        ("Hop" 
+                            (from (last To)) 
+                            (then 
+                                (and {
+                                    (if (can Move ("Hop" (from (last To)))) (moveAgain))
+                                    ("Released")
+                                    ("Blocked")
+                                })
+                            )
+                        )
+                        (move Pass)
+                    )		
+                    (or
+                        (forEach Piece)
+                        ("RemoveBlockedEnemyPiece")
+                    )
+                )
+                
+            )
+        )
+        
+        }
+        
+        (end (if (= (count Pieces Next) 1) (result Mover Win))) 
+    )
+    
+)
+

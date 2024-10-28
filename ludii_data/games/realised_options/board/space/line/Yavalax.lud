@@ -1,0 +1,44 @@
+(define "MoreThan4InARow" (is Line 5))
+(define "FourInARow" (is Line 4 #1 exact:True))
+(define "NumSimultaneousFourInARow"
+    (+ { 
+        (if ("FourInARow" N) 1 0)
+        (if ("FourInARow" NE) 1 0)
+        (if ("FourInARow" E) 1 0)
+        (if ("FourInARow" SE) 1 0)
+    })
+)
+
+(game "Yavalax" 
+    (players 2) 
+    (equipment { 
+        (board (square 13)) 
+        (piece "Marker" Each) 
+    }) 
+    (rules 
+        phases:{
+        (phase "Opening"
+            (play (move Add (to (sites Empty))))
+            (nextPhase "General")
+        )
+        (phase "General"
+            (play 
+                (do
+                    (move Add 
+                        (to (sites Empty))
+                        (then
+                            (if ("NewTurn") (moveAgain))
+                        )
+                    )
+                    ifAfterwards:(and
+                        (not ("MoreThan4InARow"))
+                        (!= 1 ("NumSimultaneousFourInARow"))
+                    )
+                )
+            )
+        )
+        }
+        (end (if (<= 2 ("NumSimultaneousFourInARow")) (result Mover Win))) 
+    )
+)
+

@@ -1,0 +1,73 @@
+(game "GAME_NAME" 
+    (players {
+            (player N)
+            (player S)
+    })
+
+    (equipment {
+            (board 
+                (square 8)
+            )
+            (piece "Pawn" Each 
+                (or 
+                    (move Step Forward 
+                        (to if:(is Empty (to)))
+                    )
+                    (move Step 
+                        (directions {FR FL})
+                        (to if:(is Enemy (who at:
+                                    (to)
+                                )) (apply 
+                                (remove 
+                                    (to)
+                                )
+                        ))
+                    )
+                    (then (if (is In (last To) (sites Mover "Promotion")) (and 
+                                (promote 
+                                    (last To)
+                                    (piece "King")
+                                Mover)
+                                (fromTo (from (last To)) (to (last From)))
+                    )))
+                )
+            )
+            (regions P1 
+                (sites Top)
+            )
+            (regions P2 
+                (sites Bottom)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "Pawn1" 
+                    (expand 
+                        (sites Bottom)
+                    )
+                )
+                (place "Pawn2" 
+                    (expand 
+                        (sites Top)
+                    )
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (is In (last To) (sites Mover)) (result Mover Win) )
+        )
+    )
+)
+
+// Ancestor: Breakthrough
+// Selection metric: 0.94
+// Fitness: 0.94
+// Cell distance: 2.00
+// Edit Distance: 0.15
+// Global Edit Distance: 0.15
+// Lineage length: 2.00
+// Length ratio: 0.80

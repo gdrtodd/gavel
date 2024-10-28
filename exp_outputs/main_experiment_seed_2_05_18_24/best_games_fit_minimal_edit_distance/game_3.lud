@@ -1,0 +1,163 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 5)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (move Step Orthogonal 
+                    (to if:(is Empty (to)))
+                    (then (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (is Enemy (who at:
+                                        (between)
+                                ))
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                    ))
+                )
+            )
+            (hand Each)
+    })
+
+    (rules 
+        (start 
+            (place "PIECE_ALPHA" "Hand" count:12)
+        )
+        phases:{
+
+            (phase "Placement" 
+                (play 
+                    (move 
+                        (from (handSite Mover))
+                        (to (if (= 0 (count Pieces Mover in:(sites Board))) (forEach 
+                                    (sites Around 
+                                        (centrePoint)
+                                    Orthogonal)
+                                    if:
+                                    (is Empty (site))
+                                    ) (difference 
+                                    (sites Board)
+                                    (centrePoint)
+                        )) if:(is Empty (to)))
+                        (then (if (not 
+                                    (is Prev Mover)
+                        ) (moveAgain)))
+                    )
+                )
+                (nextPhase Mover 
+                    (is Empty (handSite Mover))
+                "Capture")
+            )
+
+            (phase "Capture" 
+                (play 
+                    (if (is Prev Mover) (or 
+                            (move Step 
+                                (from (last To))
+                                Orthogonal 
+                                (to if:(and 
+                                        (is Empty (to))
+                                        (or {
+                                                (and 
+                                                    (is Enemy (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            W)
+                                                    ))
+                                                    (is Friend (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            steps:2 W)
+                                                    ))
+                                                )
+                                                (and 
+                                                    (is Enemy (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            E)
+                                                    ))
+                                                    (is Friend (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            steps:2 E)
+                                                    ))
+                                                )
+                                                (and 
+                                                    (is Enemy (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            N)
+                                                    ))
+                                                    (is Friend (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            steps:2 N)
+                                                    ))
+                                                )
+                                                (and 
+                                                    (is Enemy (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            S)
+                                                    ))
+                                                    (is Friend (who at:
+                                                            (ahead 
+                                                                (to)
+                                                            steps:2 S)
+                                                    ))
+                                                )
+                                        })
+                                ))
+                                (then (custodial 
+                                        (from (last To))
+                                        Orthogonal 
+                                        (between 
+                                            (max 1)
+                                            if:
+                                            (is Enemy (who at:
+                                                    (between)
+                                            ))
+                                            (apply 
+                                                (remove 
+                                                    (between)
+                                                )
+                                            )
+                                        )
+                                        (to if:(is Friend (who at:
+                                                    (to)
+                                        )))
+                                ))
+                            )
+                            (move Pass)
+                    ) (forEach Piece))
+                )
+            )
+        } 
+
+        (end 
+            (if (no Moves Next) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Breakthrough
+// Selection metric: 0.37
+// Fitness: 0.60
+// Novelty: 0.52
+// Cell distance: 5.00
+// Edit Distance: 0.61
+// Global Edit Distance: 0.24
+// Lineage length: 10.00

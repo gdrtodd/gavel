@@ -1,0 +1,2 @@
+Each player has a pawn, that can move to any neighboring cell. After moving, the player places a block to the cell he came from. First player who cannot move loses. The game is played on a 7x7 board.
+(game "Snailtrail" (players 2) (equipment {(board (rectangle 7 7)) (piece "Pawn" Each (move Step (to if:(is Empty (to))) (then (moveAgain)))) (piece "Square" Neutral)}) (rules (start {(place "Pawn1" {"A1"}) (place "Pawn2" {"G7"})}) (play (if (is Even (count Moves)) (forEach Piece) (move Add (piece "Square0") (to (last From))))) (end (if (no Moves Next) (result Mover Win))))) 

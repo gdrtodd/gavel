@@ -1,0 +1,42 @@
+(game "Mylna"
+    (players 2)
+    (equipment {
+        ("NineMensMorrisBoard")
+        (piece "Marker" Each 
+            ("StepToEmpty" Orthogonal (then ("ReplayIfLine3" Orthogonal)))
+        )
+        (hand Each)
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:9))
+        phases:{
+        (phase "Placement"
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) 
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty))
+                        (then ("ReplayIfLine3" Orthogonal))
+                    ) 
+                )
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement"
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) 
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        (end {
+            ("HavingLessPiecesLoss" Next 2)
+            ("BlockWin")
+        })
+    )
+)
+

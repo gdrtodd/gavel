@@ -1,0 +1,41 @@
+(define "Nbors"
+    (count Sites 
+        in:(intersection 
+            (sites Around #1) 
+            (sites Occupied by:All) 
+        )
+    )
+)
+
+(define "Grow"
+    (forEach Site (sites Board) 
+        (if (and 
+                (is Empty (to)) 
+                (= 3 ("Nbors" (to)))
+            ) 
+            (add (piece "Disc") (to (to))) 
+            (if (and 
+                    (is Occupied (to)) 
+                    (or (< ("Nbors" (to)) 2) (> ("Nbors" (to)) 3))
+                ) 
+                (remove (to)) 
+            )
+        )
+    )
+)
+
+(game "Game of Life" 
+    (players 0) 
+    (equipment { 
+        (board (square 12)) 
+        (piece "Disc" Shared) 
+    }) 
+    (rules 
+        (start (place "Disc" (sites {"C3" "D3" "E3" "F3" "B4" "F4" "F5" "C6" "E6"}))) 
+        (play 
+            ("Grow")
+        )
+        (end (if (= (count Moves) 100) (result Mover Draw)))
+    )
+)
+

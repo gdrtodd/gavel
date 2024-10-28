@@ -1,0 +1,138 @@
+(define "NumRobots" 20)
+(define "NumSafeTeleportation" 5)
+
+(define "CloserToHuman" 
+    (> 
+        (count Steps Orthogonal (site) (where (id "Human"))) 
+        (count Steps Orthogonal (ahead (site) #1) (where (id "Human")))
+    )
+)
+
+(define "MoveRobot"
+    (if ("IsPieceAt" "Rubble" Neutral (ahead (site) #1))
+        (remove (site))
+        (fromTo
+            (from (site)) 
+            (to 
+                (ahead (site) #1)
+                (apply 
+                    (if ("IsPieceAt" "Human" P1 (to))
+                        (remove (to))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "GoCloser"
+    (if ("CloserToHuman" #1)
+        ("MoveRobot" #1)
+        #2
+    )
+)
+
+(define "RobotThreat"
+    (forEach Site 
+        (sites Occupied by:Shared)
+        ("GoCloser" NE 
+            ("GoCloser" NW 
+                ("GoCloser" SW 
+                    ("GoCloser" SE 
+                        ("GoCloser" E 
+                            ("GoCloser" W 
+                                ("GoCloser" N 
+                                    ("GoCloser" S)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "KillRobotsIfColliding"
+    (forEach Site 
+        (sites Occupied by:Shared)
+        (if (>= (count at:(site)) 2)
+            (and
+                (remove (site))
+                (add (piece "Rubble0") (to (site)))
+            )
+        )
+    )
+)
+
+(define "Teleportation"
+    (fromTo 
+        (from (where (id "Human"))) 
+        (to (sites Random)) 
+        (then ("RobotThreat"))
+    )
+)
+
+(define "SafeTeleportation"
+    (fromTo 
+        (from (where (id "Human"))) 
+        (to 
+            (sites Random 
+                (difference 
+                    (sites Empty) 
+                    (sites Around (sites Occupied by:Shared))
+                )
+            )
+        ) 
+        (then ("RobotThreat"))
+    )
+)
+
+(game "Chase" 
+    (players 1) 
+    (equipment { 
+        (board (rectangle 10 20)) 
+        (piece "Human" P1 
+            ("StepToEmpty" ~
+                (then
+                    ("RobotThreat")
+                )
+            )
+        )
+        (piece "Robot" Shared)
+        (piece "Rubble" Neutral)
+    }) 
+    (rules 
+        (start {
+            (place Random {"Human"})
+            (place Random {"Robot"} count:("NumRobots"))
+            (set Score P1 ("NumSafeTeleportation"))
+        })
+        (play
+            (or {
+                (forEach Piece)
+                (move Pass (then ("Teleportation")))
+                (if (< 0 (score P1))
+                    (move Select
+                        (from (where (id "Human")))
+                        (then
+                            (and
+                                (set Score Mover (- (score P1) 1))
+                                ("SafeTeleportation")
+                            )
+                        )
+                    )
+                )
+                }
+                (then
+                    ("KillRobotsIfColliding")
+                )
+            )
+        )
+        (end {
+            (if (no Pieces Mover) (result Mover Loss))
+            (if (no Pieces "Robot") (result Mover Win))
+        })
+    )
+)
+

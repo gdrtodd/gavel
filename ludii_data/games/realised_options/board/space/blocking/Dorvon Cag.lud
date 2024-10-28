@@ -1,0 +1,29 @@
+(game "Dorvon Cag"
+    (players 2)
+    (equipment {
+        (board 
+            (remove (concentric {1 4}) edges:{{1 0} {0 3}})
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Disc" Each "StepToEmpty")
+    })
+    (rules 
+        (start (place "Disc" "Hand" count:2))
+        phases:{
+        (phase "Placement" 
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        ) 
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        (end ("BlockWin"))
+    )
+)
+

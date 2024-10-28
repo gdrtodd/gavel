@@ -1,0 +1,92 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 7)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (or 
+                    (move 
+                        (from)
+                        (to (if (is Even (count Steps All (from) (sites Occupied by:Mover))) (difference 
+                                    (sites Empty)
+                                    (sites Direction from:
+                                        (from)
+                                        All distance:
+                                        (- (/ 
+                                                (count Steps All (from) (sites Occupied by:Mover))
+                                        2) 1)
+                                    )
+                        ) (sites Empty)))
+                    copy:True)
+                    (move 
+                        (from)
+                        (to (difference 
+                                (expand origin:
+                                    (from)
+                                steps:2)
+                                (expand origin:
+                                    (from)
+                                )
+                        ) if:(is Empty (to)))
+                    )
+                    (then (forEach Site 
+                            (intersection 
+                                (sites Around 
+                                    (last To)
+                                )
+                                (sites Occupied by:Next)
+                            )
+                            (and 
+                                (remove 
+                                    (site)
+                                )
+                                (add 
+                                    (piece 
+                                        (id "PIECE_ALPHA" Mover)
+                                    )
+                                    (to (site))
+                                )
+                            )
+                    ))
+                )
+            )
+    })
+
+    (rules 
+        (start {
+                (set Score Each 2)
+                (place "PIECE_ALPHA1" {"B4" "G4" "D4" "B7"})
+                (place "PIECE_ALPHA2" {"A7" "G1"})
+        })
+        (play 
+            (forEach Piece 
+                (then (and 
+                        (set Score P1 
+                            (count Sites in:(sites Occupied by:P1))
+                        )
+                        (set Score P2 
+                            (count Sites in:(sites Occupied by:P2))
+                        )
+                ))
+            )
+        )
+
+        (end 
+            (if (and 
+                    (is Full)
+                    (no Moves Next)
+            ) (byScore))
+        )
+    )
+)
+
+// Ancestor: Ataxx
+// Selection metric: 0.16
+// Fitness: 1.00
+// Novelty: 0.48
+// Cell distance: 0.00
+// Edit Distance: 0.16
+// Global Edit Distance: 0.16
+// Lineage length: 4.00

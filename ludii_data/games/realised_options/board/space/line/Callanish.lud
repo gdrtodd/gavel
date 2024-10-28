@@ -1,0 +1,127 @@
+(define "CondemnedState" 1)
+
+(define "CanPlaceKnight"
+    (or
+        (is Empty (to))
+        (and
+            ("IsEnemyAt" (to))
+            ("IsEmptyOrSingletonStack" (to))
+        )
+    )
+)
+
+(define "PossibleKnightSites"
+    (sites To
+        (move Leap
+            (from #1)
+            
+            { { F F R F } { F F L F } { F R F F } { F L F F } }
+            (to if:("CanPlaceKnight"))
+        )
+    )
+)
+
+(define "MoveCondemnPiece"
+    (move Select
+        (from
+            if:(and 
+                ("IsTopLevel" (from))
+                (<= 2 (count Sites in:("PossibleKnightSites" (from))))
+            )
+        )
+        (then
+            (do
+                (set Var "CondemnedSite" (last From))
+                next:(do
+                    (set State at:(var "CondemnedSite") ("CondemnedState"))
+                    next:(moveAgain)
+                )
+            )
+        )
+    )
+)
+
+(define "MoveFirstKnight"
+    (move Add (to ("PossibleKnightSites" (var "CondemnedSite"))) stack:True
+        (then 
+            (do
+                (set Pending)
+                next:(moveAgain)
+            )
+        )
+    )
+)
+
+(define "MoveSecondKnight"
+    (move Add (to ("PossibleKnightSites" (var "CondemnedSite"))) stack:True
+        (then 
+            (remove (var "CondemnedSite"))
+        )
+    )
+)
+
+(define "OpponentSites"
+    (intersection
+        (sites #1 #2)
+        (sites Occupied by:Next container:"Board")
+    )
+)
+
+(define "OpponentCount"
+    (count Sites in:("OpponentSites" #1 #2))
+)
+
+(game "Callanish" 
+    (players 2) 
+    (equipment { 
+        (board  (square 9) ) 
+        (piece "Disc" Each ("MoveCondemnPiece")) 
+    }) 
+    (rules 
+        phases: {
+        (phase "Opening"
+            (play (move Add (to (sites Empty))))
+            (nextPhase (>= (count Turns) 2) "Playing")
+        )
+        (phase "Playing"
+            (play 
+                (if "SameTurn"
+                    (if (is Pending)
+                        ("MoveSecondKnight")
+                        ("MoveFirstKnight")
+                    )
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        (end {
+            (if
+                (and 
+                    (= (% (- (count Moves) 2) 3) 0)
+                    (or {
+                        (<= 5 ("OpponentCount" Row 0))
+                        (<= 5 ("OpponentCount" Row 1))
+                        (<= 5 ("OpponentCount" Row 2))
+                        (<= 5 ("OpponentCount" Row 3))
+                        (<= 5 ("OpponentCount" Row 4))
+                        (<= 5 ("OpponentCount" Row 5))
+                        (<= 5 ("OpponentCount" Row 6))
+                        (<= 5 ("OpponentCount" Row 7)) (<= 5 ("OpponentCount" Row 8)) 
+                        (<= 5 ("OpponentCount" Column 0))
+                        (<= 5 ("OpponentCount" Column 1))
+                        (<= 5 ("OpponentCount" Column 2))
+                        (<= 5 ("OpponentCount" Column 3))
+                        (<= 5 ("OpponentCount" Column 4))
+                        (<= 5 ("OpponentCount" Column 5))
+                        (<= 5 ("OpponentCount" Column 6))
+                        (<= 5 ("OpponentCount" Column 7)) (<= 5 ("OpponentCount" Column 8)) 
+                    })
+                )
+                (result Mover Loss)
+            )
+            (if (no Moves Mover) (result Mover Loss))
+        })
+    )
+)
+

@@ -1,0 +1,23 @@
+(game "Windir" 
+    (players 2)
+    (equipment { 
+        (board 
+            (complete (subdivide (regular Star 8)))
+        use:Edge)
+        (piece "Marker" Neutral) 
+    }) 
+    
+    (rules  	
+        
+        (play
+            (move Add (piece "Marker0")
+                (to Edge (sites Empty Edge))	   
+            ) 
+        ) 
+        
+        (end 
+            (if (is RegularGraph Neutral) (result Mover Loss))
+        )
+    )
+)
+

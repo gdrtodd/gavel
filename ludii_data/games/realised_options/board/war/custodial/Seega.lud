@@ -1,0 +1,43 @@
+(game "Seega" 
+    (players 2) 
+    (equipment { 
+        (board (square 5)) 
+        (hand Each) 
+        
+        (piece "Marker" Each 
+            ("StepToEmpty" Orthogonal
+                (then
+                    ("CustodialCapture"
+                        Orthogonal
+                        (max 1)
+                    )
+                )
+            )
+        )
+    }) 
+    
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (difference (sites Empty) (centrePoint))) 
+                    (then 
+                        (if 
+                            ("NewTurn") 
+                            (moveAgain)
+                        )
+                    )
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

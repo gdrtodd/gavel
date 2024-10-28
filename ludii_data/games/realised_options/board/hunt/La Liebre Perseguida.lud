@@ -1,0 +1,37 @@
+(define "PieceHasMoved"
+    (if (= (state at:(last To)) 1) (set State at:(last To) 0))
+)
+
+(game "La Liebre Perseguida"
+    (players 2) 
+    (equipment { 
+        (board 
+            (rotate 90 ("ThreeMensMorrisGraphWithLeftAndRightTriangles"))
+            use:Vertex
+        )
+        (piece "Hare" P1 ("StepToEmpty" Orthogonal))
+        (piece "Rabbit" P2 N 
+            (or
+                (if (= (state at:(from)) 1)
+                    (move Step Backwards (to if:(and (is In (to) (sites Bottom)) (is Empty (to)))) (then "PieceHasMoved"))
+                )
+                ("StepToEmpty" Forwards (then "PieceHasMoved"))
+            )
+        )
+        (regions "Home" P2 (sites {"B1" "C2" "A2"}))
+        (regions "Home" P1 (sites {"B2"}))
+    }) 
+    
+    (rules 
+        (start {
+            (place "Hare1" (sites P1))
+            (place "Rabbit2" (sites P2) state:1)
+        })
+        (play (forEach Piece))
+        (end {
+            (if (no Moves P1) (result P2 Win))
+            (if (is In (where "Hare" P1) (sites P2)) (result P1 Win))
+        }) 
+    )
+)
+

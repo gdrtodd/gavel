@@ -1,0 +1,63 @@
+(game "Compart"  
+    (players 2) 
+    (equipment 
+        { 
+        (board (square 11) use:Vertex) 
+        (piece "Marker" Each)
+        }
+    )
+    (rules 
+        (meta (swap))
+        (play 
+            (move Add
+                (to
+                    (sites Empty)
+                    if:(not (is In (to) (sites (values Remembered))))
+                    (apply (addScore Mover 1))
+                )
+                (then
+                    (do
+                        (forEach Site
+                            (sites Group 
+                                at:(last To)
+                                if:(not (is Enemy (who at:(to))))
+                            )
+                            (remember Value (site))
+                        )
+                        next:(if
+                            (< 0 
+                                (count Sites
+                                    in:(difference
+                                        (sites Empty)
+                                        (sites (values Remembered))
+                                    )
+                                )
+                            )
+                            (moveAgain)
+                            (forget Value All)
+                        )
+                    )
+                )
+            )
+        )
+        (end
+            (if 
+                (is Full) 
+                {
+                (if
+                    (=
+                        (score P1)
+                        (score P2)
+                    )
+                    (result Mover Win)
+                )
+                (if 
+                    True
+                    (byScore misere:True)
+                )
+                }
+            )
+        )
+    )
+)
+

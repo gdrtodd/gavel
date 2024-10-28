@@ -1,0 +1,107 @@
+
+(define "IsSupplierAt"
+    (and
+        (not (is Empty #1)) 
+        (> 3 (count Pieces of:(who at:#1) in:(sites Around #1 Adjacent if:(not (is Empty (to))))))
+))
+
+(define "IsWarehouseAt"
+    (< 2 (count Pieces of:(who at:#1) in:(sites Around #1 Adjacent)))
+)
+
+(define "IsDeficitInChainAt" 
+    (< 
+        (size Array (array ("SuppliersAroundChainAt" #1)))
+        (size Array (array ("WarehousesinChainAt" #1)))
+))
+
+(define "ChainAt" (sites Group at:#1 Adjacent))
+
+(define "SuppliersAroundChainAt"
+    (sites Around ("ChainAt" #1) Adjacent if:("IsSupplierAt" (to)))
+)
+
+(define "WarehousesinChainAt"
+    (forEach 
+        ("ChainAt" #1) 
+        if:("IsWarehouseAt" (site))
+))
+
+(define "Place"
+    (do
+        (move Add
+            (to (sites Empty))
+        )
+        ifAfterwards:(not ("IsDeficitInChainAt" (last To)))
+))
+
+(define "DeficitWarehousesOf"
+    (forEach (sites Occupied by:#1)
+        if:(and
+            ("IsWarehouseAt" (site))
+            ("IsDeficitInChainAt" (site))
+)))
+
+(game "SupplyChains" 
+    (players 2)
+    (equipment
+        {
+        (board (hex 3 5) use:Cell)
+        (piece "Disc" Each) 
+        }
+    )
+    (rules
+        (play 
+            (priority
+                {
+                (move Remove ("DeficitWarehousesOf" Mover))
+                (or
+                    {
+                    ("Place")
+                    
+                    }
+                )
+                }
+                (then 
+                    (and
+                        {
+                        ("UpdateSurplusesToDisplayFor" Mover)
+                        ("UpdateSurplusesToDisplayFor"  Next)
+                        ("Score")
+                        (if 
+                            (can Move (move Remove ("DeficitWarehousesOf" Mover)))
+                            (moveAgain)  
+                            "DoubleTurnProtocol"
+                        )
+                        }
+        ))))
+        (end (if (or (all Passed) (no Moves Mover)) (byScore)))
+))
+
+(define "DoubleTurnProtocol"
+    (set Var "MoveInTurn" (% (+ 3 (var "MoveInTurn")) 2)
+        (then
+            (if
+                (= 1 (var "MoveInTurn"))
+                (moveAgain)
+))))
+
+(define "AllWarehousesOf" (forEach (sites Occupied by:#1) if:("IsWarehouseAt" (site))))
+
+(define "Score" (and ("ScoreFor" P1) ("ScoreFor" P2)))
+(define "ScoreFor" (set Score #1 (size Array (array ("AllWarehousesOf" #1)))))
+
+(define "SurplusGoodsChainAt"
+    (-
+        (size Array (array ("SuppliersAroundChainAt" #1)))
+        (size Array (array ("WarehousesinChainAt" #1)))
+))
+
+(define "UpdateSurplusesToDisplayFor"
+    (forEach Group Adjacent 
+        if:(is In (to) (sites Occupied by:#1)) 
+        (forEach Value
+            (array (sites))
+            (set Value at:(value) ("SurplusGoodsChainAt" (value)))
+)))
+

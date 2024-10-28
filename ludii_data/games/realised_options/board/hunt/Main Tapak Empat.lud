@@ -1,0 +1,31 @@
+(game "Main Tapak Empat"
+    (players 2)
+    (equipment {
+        ("AlquerqueBoard" 5 5)
+        (piece "Goat" P1 "StepToEmpty")
+        (piece "Tiger" P2 (or "HopCapture" "StepToEmpty"))
+        (hand P1)
+    })
+    (rules 
+        (start {
+            (place Stack "Tiger2" (centrePoint))
+            (place Stack "Goat1" (handSite P1) count:24)
+        })
+        
+        phases:{ 
+        (phase "Placement" P1 
+            (play 
+                (move 
+                    (from (handSite P1)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase ("HandEmpty" P1))
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

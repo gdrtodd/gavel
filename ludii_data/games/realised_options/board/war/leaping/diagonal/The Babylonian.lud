@@ -1,0 +1,64 @@
+(define "OrthogonalHopCaptureCounter"
+    (do
+        (move Hop 
+            #1
+            Orthogonal
+            (between 
+                before:2
+                after:2
+                if:(and (= 2 (count Steps (from) (between))) ("IsEnemyAt" (between)))
+                (apply (remove (between)))
+            ) 
+            (to if:(is Empty (to))) 
+        )
+        ifAfterwards:(is In (last To) (sites Phase 1))
+        #2
+    )
+)
+
+(define "MoveAgainIfCanCaptureAgain" 
+    (then 
+        ("ReplayIfCanMove" 
+            (or 
+                ("HopCapture" (from (last To)) Diagonal)
+                ("OrthogonalHopCaptureCounter" (from (last To)))
+            )
+        )
+    )
+)
+
+(define "CounterMove"
+    (or {
+        ("StepToEmpty" Diagonal) 
+        (move Slide Orthogonal (between (exact 2))) 
+        ("HopCapture" (from) Diagonal ("MoveAgainIfCanCaptureAgain"))
+        ("OrthogonalHopCaptureCounter" (from) ("MoveAgainIfCanCaptureAgain"))
+    })
+)
+
+(game "The Babylonian" 
+    (players 2) 
+    (equipment { 
+        (board (square 10)) 
+        (piece "Counter" Each "CounterMove")
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    (rules 
+        ("WhiteCellsSetup" 4)
+        
+        (play 
+            (if ("SameTurn")
+                (or {
+                    ("HopCapture" (from (last To)) Diagonal ("MoveAgainIfCanCaptureAgain"))
+                    ("OrthogonalHopCaptureCounter" (from (last To)) ("MoveAgainIfCanCaptureAgain"))
+                    (move Pass)
+                })
+                (forEach Piece)
+            )
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

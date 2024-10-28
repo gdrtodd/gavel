@@ -1,0 +1,128 @@
+(define "OneRowEmpty"
+    (or
+        (all Sites (sites P1 "Home") if:(= 0 (count at:(site))))
+        (all Sites (sites P2 "Home") if:(= 0 (count at:(site))))
+    )
+)
+
+(define "PiecesOwnedBy" (count Cell at:(handSite #1)))
+
+(game "Wa'ache Waledat"
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 6 store:None
+            {
+            (track "TrackCCW" "0,E,N,W" loop:True)
+            (track "TrackCW" "5,W,N,E" loop:True)
+            }
+        )
+        (piece "Seed" Shared)
+        (regions "Home" P1 (sites Bottom))      
+        (regions "Home" P2 (sites Top))      
+        (regions "RightHome" P1 (intersection (expand (sites Right) steps:2) (sites Bottom))) 
+        (regions "RightHome" P2 (intersection (expand (sites Right) steps:2) (sites Top)))  
+        (regions "LeftHome" P1 (intersection (expand (sites Left) steps:2) (sites Bottom))) 
+        (regions "LeftHome" P2 (intersection (expand (sites Left) steps:2) (sites Top)))  
+        (hand Each)
+    }) 
+    (rules 
+        (start (set Count 3 to:(sites Track)))
+        
+        (play 
+            (or
+                (if (or (>= 0 (var "Direction")) (= 1 (var "Direction")))
+                    (move Select
+                        (from
+                            (if (and ("SameTurn") (= 1 (var "ContinueSowing")))
+                                "LastHoleSowed" 
+                                (sites Mover "RightHome")
+                            )
+                            if:(> (count at:(from)) 0)
+                        )
+                        (then
+                            (sow
+                                "TrackCCW"
+                                apply:(if (< 1 (count at:(to)))
+                                    (and {
+                                        (moveAgain)
+                                        (set Var "Direction" 1)
+                                        (set Var "ContinueSowing" 1)
+                                        (if (and (= 4 (count at:(to))) (< 2 (count Turns)))
+                                            (and
+                                                (fromTo
+                                                    (from (to))
+                                                    (to (handSite Mover))
+                                                    count:4
+                                                )
+                                                (set Var "ContinueSowing" 0)
+                                            )
+                                        )
+                                    })
+                                    (set Var "Direction" 0)
+                                )	
+                            )
+                        )
+                    )
+                )
+                (if (or (>= 0 (var "Direction")) (= 2 (var "Direction")))
+                    (move Select
+                        (from
+                            (if (and ("SameTurn") (= 1 (var "ContinueSowing")))
+                                "LastHoleSowed" 
+                                (sites Mover "LeftHome")
+                            )
+                            if:(> (count at:(from)) 0)
+                        )
+                        (then
+                            (sow
+                                "TrackCW"
+                                apply:(if (< 1 (count at:(to)))
+                                    (and {
+                                        (moveAgain)
+                                        (set Var "Direction" 2)
+                                        (set Var "ContinueSowing" 1)
+                                        (if (and (= 4 (count at:(to))) (< 2 (count Turns)))
+                                            (and
+                                                (fromTo
+                                                    (from (to))
+                                                    (to (handSite Mover))
+                                                    count:4
+                                                )
+                                                (set Var "ContinueSowing" 0)
+                                            )
+                                        )
+                                    })
+                                    (set Var "Direction" 0)
+                                )	
+                            )
+                        )
+                    )
+                )
+                (then
+                    (if ("OneRowEmpty")
+                        (and 
+                            (forEach Site (sites P1 "Home")
+                                (fromTo
+                                    (from (site))
+                                    (to (handSite P1))
+                                    count:(count at:(site))
+                                )
+                            )
+                            (forEach Site (sites P2 "Home")
+                                (fromTo
+                                    (from (site))
+                                    (to (handSite P2))
+                                    count:(count at:(site))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" ("NoPieceOnBoard")))
+    )
+)
+

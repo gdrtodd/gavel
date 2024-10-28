@@ -1,0 +1,106 @@
+(define "Size" 7)
+
+(define "NonAdjacent"
+    (not (is Within (id "Disc" P2) in:(sites Around (to))))
+)
+
+(define "WhiteVC" (is Full))
+
+(define "BlackVC" (is Loop))
+
+(define "HexCorners"
+    (start 
+        {
+        (place "Disc2" 
+            { 0 
+            (- (/ (- (* {3 #1 #1}) #1) 2) 1) 
+            (+ 1 (- (* {3 #1 #1}) (* 4 #1))) 
+            }
+        )
+        (place "Disc2" 
+            {(- #1 1) 
+            (+ 1 (/ (- (* {3 #1 #1}) (* 5 #1)) 2)) 
+            (- (* {3 #1 #1}) (* 3 #1)) 
+            }
+        )
+        }
+))
+
+(define "Skip"
+    (move Set NextPlayer (player (next)))
+)
+
+(define "LimpCorners"
+    (start 
+        {
+        (place "Disc2" 
+            { 0 
+            (- (/ (+ (* {3 #1 #1}) #1) 2) 1) 
+            (- (* 3 (* #1 #1)) #1) 
+            }
+        )
+        (place "Disc2" 
+            { #1
+            (/ (- (* {3 #1 #1}) (* 3 #1)) 2)
+            (- (* 3 (* #1 #1)) 1) 
+            }
+        )
+        }
+))
+
+(define "IsPlayingPhase" (= 1 (var)))
+
+(game "Coil" 
+    (players 2) 
+    (equipment { 
+        (board (hex Hexagon 7)) 
+        (piece "Disc" Each) 
+    }) 
+    (rules 
+        ("HexCorners" "Size")
+        phases: {
+        (phase "Opening"
+            (play
+                (or
+                    (or
+                        (move Add 
+                            (piece (id "Disc" P2)) 
+                            (to (sites Empty) if:"NonAdjacent")
+                            (then (if (< (count MovesThisTurn) 2) (moveAgain)))
+                        )
+                        "Skip"
+                    )
+                    (if (= (count MovesThisTurn) 0)
+                        (move Pass
+                            (then
+                                (if (is Mover P1)
+                                    (swap Players P1 P2
+                                        (then
+                                            (note "Player 1 is now Black. Player 2 is now White." to:All)
+                                        )
+                                    )
+                                    (note "Player 1 remains White. Player 2 remains Black." to:All)
+                                    (then
+                                        (do
+                                            (set NextPlayer (player 1))
+                                            next:(set Var 1) 
+                                        )
+                                    )
+                                )
+                            )
+                    ))
+                )
+            )
+            (nextPhase ("IsPlayingPhase") "Playing")
+        )
+        (phase "Playing" (play (move Add (to (sites Empty)))))
+        }
+        (end 
+            (forEach Player
+                if:(and {("IsPlayingPhase") (= (id Player) (mover)) ("BlackVC")})
+                (result Player Win)
+            )
+        )
+    )
+)
+

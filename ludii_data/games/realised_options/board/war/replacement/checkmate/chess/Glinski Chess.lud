@@ -1,0 +1,182 @@
+
+(define "CaptureToPieceAndResetCounter"
+    (apply
+        (if ("IsEnemyAt" (to))
+            (remove (to)
+                (then (set Counter))
+            )
+        )
+    )
+)
+
+(define "Directions"
+    ("P12" (directions #1) (directions #2))
+)
+
+(define "IsToEmpty"
+    (is In (to) (sites Empty))
+)
+
+(define "IsToEmptyOrEnemy"
+    (or "IsToEmpty"
+        ("IsEnemyAt" (to))
+    )
+)
+
+(define "P12"
+    (if (is Mover P1) #1 #2)
+)
+
+(define "SlideCaptureMove"
+    (move Slide
+        #1
+        (to if:("IsEnemyAt" (to))
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "KingCaptureStep"
+    (move Step
+        #1
+        (to if:"IsToEmptyOrEnemy"
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "IsFromInStartCell"
+    (is In (from) (sites Start (piece (what at:(from)))))
+)
+
+(define "PawnHop"
+    (move Hop
+        #1
+        (between if:(is In (between) (sites Empty)))
+        (to if:"IsToEmpty")
+        (then (and {
+                (set Pending (ahead (last To) #2))
+                (set Var (last To))
+            })
+        )
+    )
+)
+
+(define "PawnCapture_Ortho"
+    ("PawnStep_To" ("Directions" {WNW ENE} {WSW ESE}))
+)
+
+(define "PawnStep_Double" ("PawnHop" Forward Backward))
+
+(define "PawnStep_To" ("StepToEnemy" #1))
+
+(define "EnPassant_Base"
+    (move Step
+        #1
+        (to if:"IsEnPassantCapture")
+        (then (remove (var)))
+    )
+)
+
+(define "EnPassant_Ortho"
+    ("EnPassant_Base" ("Directions" {WNW ENE} {WSW ESE}))
+)
+
+(define "IsEnPassantCapture"
+    (and
+        (is Pending)
+        (= (to) (value Pending))
+    )
+)
+
+(define "PromoteTo"
+    (move Promote (last To) #1 Mover)
+)
+
+(game "Glinski Chess"
+    ("TwoPlayersNorthSouth")
+    (equipment {
+        (board (rotate 90 (hex 6)))
+        
+        (piece "King" Each ("KingCaptureStep" All ~))
+        (piece "Queen" Each ("SlideCaptureMove" All ~))
+        (piece "Rook" Each ("SlideCaptureMove" Orthogonal ~))
+        (piece "Bishop" Each ("SlideCaptureMove" Diagonal ~))
+        (piece "Knight" Each (move Leap
+                "KnightWalk"
+                (to if:"IsToEmptyOrEnemy"
+                    "CaptureToPieceAndResetCounter"
+                )
+            )
+        )
+        
+        (piece "Pawn" Each
+            (or {
+                "StepForwardToEmpty"
+                (if "IsFromInStartCell" "PawnStep_Double")
+                "PawnCapture_Ortho"
+                "EnPassant_Ortho"
+                }
+                (then
+                    (and
+                        (if (is In (last To) (sites Mover "PromotionZone"))
+                            (moveAgain)
+                        )
+                        (set Counter)
+                    )
+                )
+            )
+        )
+        
+        (regions "PromotionZone" P1 (union (sites Side NW) (sites Side NE)))
+        (regions "PromotionZone" P2 (union (sites Side SW) (sites Side SE)))
+        
+        (regions "Region-Dark" (sites Phase 0))
+        (regions "Region-Light" (sites Phase 2))
+        (regions "Region-Medium" (sites Phase 1))
+    })
+    
+    (rules
+        (start {
+            (place "King1" coord:"B1")
+            (place "Queen1" coord:"A2")
+            (place "Rook1" {"A4" "D1"})
+            (place "Bishop1" {"A1" "B2" "C3"})
+            (place "Knight1" {"A3" "C1"})
+            
+            (place "King2" coord:"K10")
+            (place "Queen2" coord:"J11")
+            (place "Rook2" {"H11" "K8"})
+            (place "Bishop2" {"K11" "J10" "I9"})
+            (place "Knight2" {"I11" "K9"})
+            
+            (place "Pawn1"  {"A5" "B5" "C5" "D5" "E5" "E4" "E3" "E2" "E1"} )
+            (place "Pawn2"  {"G11" "G10" "G9" "G8" "G7" "H7" "I7" "J7" "K7"} )
+        })
+        
+        phases:{
+        (phase "Movement"
+            (play
+                (if ("SameTurn")
+                    ("PromoteTo" (piece {"Queen" "Rook" "Bishop" "Knight"}))
+                    (do (forEach Piece)
+                        ifAfterwards:(not ("IsInCheck" "King" Mover))
+                    )
+                )
+            )
+            (end {
+                ("Checkmate" "King")
+                (if (or
+                        (no Moves Mover)
+                        (= (counter) 100)
+                    )
+                    (result Mover Draw)
+                )
+            })
+        )
+        }
+    )
+)
+

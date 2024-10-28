@@ -1,0 +1,100 @@
+
+(define "GridDirection" Orthogonal)
+
+(define "ScoreMover"
+    (do
+        (and {
+            (remember Value 0)
+            (remember Value 0)
+            (forEach Group "GridDirection" 
+                
+                (remember Value (count Sites in:(sites)))
+            )
+        })
+        next:(set Var "TopValue" (max (values Remembered))
+            (then
+                (forget Value (max (values Remembered)) 
+                    (then
+                        (set Score Mover (* (var "TopValue") (max (values Remembered)))
+                            (then
+                                (forget Value All)  
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "PlacementSites"
+    (and
+        (no Pieces Mover in:(sites Around (to) "GridDirection"))
+        (not (no Pieces Next in:(sites Around (to) "GridDirection")))
+    )
+)
+
+(game "Hexifact"
+    (players 2)
+    (equipment {
+        (board (tri Limping 3) use:Vertex)
+        (piece "Disc" Each)
+    })
+    (rules
+        (play
+            (or {
+                (move Add
+                    (piece (id "Disc" Mover))
+                    (to (sites Empty)
+                        if:(or
+                            ("PlacementSites")
+                            (= -1 (counter))
+                    ))
+                    (then
+                        (forEach Site
+                            (sites Occupied by:Mover)
+                            (set State at:(site) 0)
+                        )
+                    )
+                )
+                (if
+                    (no Pieces Mover in:(sites State 1))
+                    (do
+                        (forEach Piece
+                            (move Hop
+                                (from if:(= 0 (state at:(from))))
+                                "GridDirection"
+                                (between (range 1 Infinity) if:(is In (between) (sites Occupied by:Next)))
+                                (to if:(is In (to) (sites Empty)))
+                                (then (set State at:(last To) 1))
+                            )
+                            Mover
+                        )
+                        ifAfterwards:(all Sites
+                            (sites Occupied by:Mover) 
+                            if:(> 4 (count Pieces Mover in:(sites Around (site) "GridDirection")))
+                        )
+                    )
+                )
+                (move Pass) 
+                }
+                (then ("ScoreMover"))
+            )
+        )
+        (end 
+            (if
+                (all Passed)
+                {
+                (if
+                    (>= (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                }
+                (result Next Win)
+            )
+        )
+    )
+)
+
+(define "GridDirection" Orthogonal)
+

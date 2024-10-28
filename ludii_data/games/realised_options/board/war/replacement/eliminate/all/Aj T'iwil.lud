@@ -1,0 +1,114 @@
+(define "ThrowValue" (count Pips))
+
+(define "NoPieceOnBoard" (< (count Pieces Mover in:(sites Board)) 1))
+
+(define "CaptureMove" 
+    (forEach Level (to) FromTop
+        (if ("IsEnemyAt" (to) level:(level))
+            (remove (to) level:(level))
+        )
+    ) 
+)
+
+(game "Aj T'iwil"
+    (players 6)
+    (equipment {
+        (board
+            (rectangle 1 20)
+            
+            {
+            (track "Track1" {19 0..18} P1 directed:True)
+            (track "Track2" {20 0..18} P2 directed:True)
+            (track "Track3" {21 0..18} P3 directed:True)
+            (track "Track4" {22 18..0} P4 directed:True)
+            (track "Track5" {23 18..0} P5 directed:True)
+            (track "Track6" {24 18..0} P6 directed:True)
+            } 
+            
+            use:Edge
+        )
+        (regions "AllSites" (sites Board Vertex))
+        (piece "Stick" Each
+            (forEach Value (values Remembered "Throws")
+                (if ("IsOffBoard" ("NextSiteOnTrack" (value) from:(from) "Track"))
+                    (move 
+                        (from (from) level:(level))
+                        (to 
+                            (handSite Mover)
+                            (apply (forget Value "Throws" (value)))		
+                        )
+                    )
+                    (move 
+                        (from (from) level:(level)
+                            if:(if (is In (from) (sites Hand Mover))
+                                ("NoPieceOnBoard")
+                                True
+                            )
+                        )
+                        (to 
+                            ("NextSiteOnTrack" (value) from:(from) "Track")
+                            (apply (and ("CaptureMove") (forget Value "Throws" (value))))
+                        )
+                    )
+                )
+            )		
+        )
+        ("StickDice" 4)
+        (hand Each)
+    })
+    (rules 
+        (start {
+            
+            (set Team 1 {P1 P2 P3})
+            (set Team 2 {P4 P5 P6})
+            (place Stack "Stick1" (handSite P1) count:5)
+            (place Stack "Stick2" (handSite P2) count:5)
+            (place Stack "Stick3" (handSite P3) count:5)
+            (place Stack "Stick4" (handSite P4) count:5)
+            (place Stack "Stick5" (handSite P5) count:5)
+            (place Stack "Stick6" (handSite P6) count:5)
+            
+        })
+        
+        phases:{
+        (phase "ThrowPhase" 
+            (play 
+                ("RollMove"
+                    (move Pass
+                        (then
+                            (if (not (no Pieces Mover))
+                                (and {
+                                    (if (!= 0 ("ThrowValue"))
+                                        (do
+                                            (remember Value "Throws" ("ThrowValue"))
+                                            ifAfterwards:(can Move (or (forEach Piece container:(mover)) (forEach Piece)))
+                                        )
+                                    )
+                                    (moveAgain)
+                                    (if ("SameTurn") (set Pending))
+                                })
+                            )
+                        )
+                    )
+                )	
+            )
+            (nextPhase (is Pending) "MovePhase")
+        )
+        (phase "MovePhase" 
+            (play 
+                (or (forEach Piece) (forEach Piece container:(mover))
+                    (then
+                        (if (< 0 (size Array (values Remembered "Throws")))
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+            (nextPhase (= 0 (size Array (values Remembered "Throws"))) "ThrowPhase")
+        )
+        }
+        
+        (end ("CaptureAllTeam"))
+    )
+)
+

@@ -1,0 +1,59 @@
+(game "TacTix" 
+    (players 2) 
+    (equipment { 
+        (board (square 4))
+        (piece "Ball" Shared) 
+    }) 
+    
+    (rules 
+        (start (place "Ball" (sites Board)))
+        
+        (play 
+            (if ("SameTurn")
+                (or
+                    (if (= 1 (count MovesThisTurn))
+                        (move Select
+                            (from (last To))
+                            (to (intersection (sites Around (last To) Orthogonal) (sites Occupied by:Shared)))
+                            (then
+                                (and
+                                    (remove (last To))
+                                    (if 
+                                        (and
+                                            (is Occupied (ahead (last To) ("LastDirection" Cell)))
+                                            (!= (last To) (ahead (last To) ("LastDirection" Cell)))
+                                        )
+                                        (moveAgain)
+                                    )
+                                )
+                            )
+                        )
+                        (move Select
+                            (from (last To))
+                            (to (ahead (last To) ("LastDirection" Cell)))
+                            (then 
+                                (and
+                                    (remove (last To))
+                                    (if (and
+                                            (is Occupied (ahead (last To) ("LastDirection" Cell)))
+                                            (!= (last To) (ahead (last To) ("LastDirection" Cell)))
+                                        )
+                                        (moveAgain)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (move Pass)
+                )
+                (move Remove
+                    (sites Board)
+                    (then (if (not (all Sites (sites Around (last To) Orthogonal) if:(is Empty (site)))) (moveAgain)))
+                )
+            )
+        )
+        
+        (end ("NoMoves" Win))
+    )
+)
+

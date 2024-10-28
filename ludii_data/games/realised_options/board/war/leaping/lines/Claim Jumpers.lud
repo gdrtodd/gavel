@@ -1,0 +1,107 @@
+
+(define "SameTurn" (is Prev Mover))
+
+(define "IsAJumpableSite"
+    (is 
+        In 
+        (between)
+        (difference 
+            (sites Occupied by:Next)
+            (sites (values Remembered))
+)))
+
+(define "CanHop"
+    (can Move
+        (forEach Piece
+            (move Hop
+                #1
+                Orthogonal 
+                (between if:("IsAJumpableSite"))
+                (to if:(is Empty (to))) 
+))))
+
+(define "OpponentHop"
+    (forEach Piece
+        (move Hop
+            #1
+            Orthogonal 
+            (between if:("IsAJumpableSite") (apply (set Pending (between))))
+            (to if:(is Empty (to)))
+            (then
+                (and
+                    {
+                    (remember Value (value Pending))
+                    (remove (value Pending))
+                    (add (piece (id "Disc" Mover)) (to (value Pending)))
+                    }
+                    (then
+                        (and
+                            {
+                            (set Pending)
+                            (if ("CanHop" (from (last To))) (moveAgain))
+                            }
+)))))))
+
+(define "ForcedHop"
+    (if (= 0 (size Array (values Remembered)))
+        ("OpponentHop" (from if:(!= (from) (last To))))
+        ("OpponentHop" (from if:(= (from) (last To)))) 
+))
+
+(define "Placement"
+    (do
+        (forget Value All)
+        next:(move Add 
+            (piece (id "Disc" Mover))
+            (to (sites Empty))
+            (then 
+                (if (can Move  ("OpponentHop" (from if:(!= (from) (last To))))) (moveAgain))
+))))
+
+(game "Claim Jumpers"
+    (players 2)
+    (equipment
+        {
+        (board (tri {3 5 3 5 3}) use:Vertex)
+        (piece "Disc" Each)
+        }
+    )
+    (rules 
+        (start (set Score Each 0)) 
+        (play
+            (if
+                ("SameTurn")
+                ("ForcedHop")
+                ("Placement")
+                (then
+                    (and
+                        (set Score Mover (count Pieces Mover))
+                        (set Score Next (count Pieces Next))
+        )))) 
+        (end 
+            {
+            (if
+                (and
+                    "EndCondition"
+                    (= (score Mover) (score Next))
+                )
+                (result Mover Win)
+            )
+            
+            (if
+                (and
+                    "EndCondition"
+                    (!= (score Mover) (score Next))
+                )
+                (byScore)
+            )
+            }  
+)))
+
+(define "EndCondition" (or {(no Moves Next) (all Passed)} ) ) 
+
+(define "Tri46Bug"  (tri {4 6 4 7 4}))
+(define "Tri56Bug"  (tri {5 6 5 7 5}))
+(define "Tri57Bug"  (tri {5 7 5 8 5}))
+(define "Tri78Bug"  (tri {7 8 7 10 6}))
+

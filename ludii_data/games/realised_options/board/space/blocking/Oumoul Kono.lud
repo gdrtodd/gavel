@@ -1,0 +1,33 @@
+(game "Oumoul Kono" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (square 2 diagonals:Solid)
+            use:Vertex
+        )
+        (piece "Disc" Each
+            (move Step 
+                (to 
+                    if:(and {
+                        (or {
+                            (and (!= (from) (coord "A3")) (!= (from) (coord "C3")))
+                            (and (= (from) (coord "C3")) (!= (to) (coord "A3")))
+                            (and (= (from) (coord "A3")) (!= (to) (coord "C3")))
+                        }) 
+                        (is Empty (to))
+                    })
+                )
+            )
+        )
+    }) 
+    
+    (rules 
+        (start {
+            (place "Disc1" (sites Bottom)) 
+            (place "Disc2" (sites Top))
+        })
+        (play (forEach Piece))
+        (end ("NoMoves" Loss)) 
+    )
+)
+

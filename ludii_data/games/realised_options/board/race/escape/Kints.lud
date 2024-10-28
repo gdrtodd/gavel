@@ -1,0 +1,66 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" ("ThrowValue")))
+
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "CaptureEnemyPiece" ("HittingCapture" (handSite Next)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "Movement" 
+    (if ("IsEndTrack" ("SiteToMoveOnTrack"))
+        "RemoveAPiece"
+        (if ("IsNotOffBoard" ("SiteToMoveOnTrack")) 	 			
+            (if (not ("IsFriendAt" ("SiteToMoveOnTrack")))
+                (move 
+                    (from)
+                    (to 
+                        ("SiteToMoveOnTrack") 
+                        "CaptureEnemyPiece"
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "PieceAlreadyEntered" (!= (from) (handSite Mover)))
+(define "PieceCanEnterOnlyIfNoPieceOnArc" 
+    (and 
+        (= (from) (handSite Mover)) 
+        (all Sites (sites Occupied by:Mover) if:(not (is In (site) (sites Mover "Arc"))))
+    )
+)
+
+(game "Kints"
+    (players 2)
+    (equipment {
+        ("KintsBoard"
+            {
+            (track "Track1" "46,5,SSE,N,E,S,W,NNW2,End" P1 directed:True)
+            (track "Track2" "47,41,NNW,W,S,E,N,SSE2,End" P2 directed:True)
+            }
+        )
+        (regions "AllSites" (sites Board))
+        (regions "Arc" P1 (sites {1..5}))
+        (regions "Arc" P2 (sites {41..45}))
+        (dice d:2 facesByDie:{{0 4} {0 6} {0 14} {0 15}} num:4)
+        (piece "Marker" Each
+            (if (or ("PieceAlreadyEntered")
+                    ("PieceCanEnterOnlyIfNoPieceOnArc")
+                )
+                ("Movement")
+            )
+        )
+        (hand Each)
+        (map "Throw" {
+            (pair 0 10) (pair 39 5) (pair 24 3) (pair 25 3) (pair 35 3) (pair 33 3)
+            (pair 10 2) (pair 18 2) (pair 19 2) (pair 20 2) (pair 21 2) (pair 29 2)
+        })
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:2))
+        (play ("RollMove" (or (forEach Piece) (forEach Piece container:(mover)))))
+        (end ("EscapeWin"))
+    )
+)
+

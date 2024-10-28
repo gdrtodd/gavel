@@ -1,0 +1,46 @@
+(define "Custodial" 
+    (custodial 
+        (from (last To)) 
+        All
+        (between 
+            if:(is Next (who at:(between)))
+            (apply (remove (between)))
+        )
+        (to if:(and (= 3 (count Steps Vertex All (last To) (to))) (is Mover (who at:(to)))))
+        (then (addScore Mover 1))
+    )
+)
+
+(game "Pente" 
+    (players 2) 
+    (equipment { 
+        (board (square 19) use:Vertex) 
+        (piece "Ball" Each) 
+    }) 
+    (rules 
+        (start (set Score Each 0))
+        
+        phases:{
+        (phase "Opening"
+            (play (move Add (to (sites "J10"))))
+            (nextPhase "General")
+        )
+        (phase "General"
+            (play 
+                (move Add (to (sites Empty))
+                    (then "Custodial")
+                )
+            )
+        )
+        }
+        
+        (end 
+            {
+            (if (is Line 5 All) (result Mover Win))
+            (if (> (score Mover) 9) (result Mover Win))
+            
+            }
+        ) 
+    )
+)
+

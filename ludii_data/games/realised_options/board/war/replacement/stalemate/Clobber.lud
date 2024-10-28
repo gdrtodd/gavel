@@ -1,0 +1,18 @@
+(game "Clobber" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 10 10)) 
+        (piece "Marker" Each 
+            ("StepToEnemy" Orthogonal)
+        )
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (sites Phase 1))
+            (place "Marker2" (sites Phase 0))
+        })
+        (play (forEach Piece))
+        (end ("NoMoves" Loss))
+    )
+)
+

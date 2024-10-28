@@ -1,0 +1,76 @@
+(define "SlideToCapture" 
+    (move Slide
+        "AllTracks" 
+        (between 
+            if:(or 
+                (= (between) (from)) 
+                (is Empty (between))
+            )
+        ) 
+        
+        (to 
+            if:("IsEnemyAt" (to)) 
+            (apply if:False (remove (to)))
+        )
+        
+        (then (set Counter))
+    )
+)
+
+(define "NoCaptureProposal" 101)
+
+(define "NPiecesOnTrack" 
+    (end 
+        (forEach Track
+            if:(> #1 (count Pieces Mover in:(sites Track))) 
+            (result Mover Loss)
+        )
+    )
+)
+
+(game "Surakarta" 
+    (players 2) 
+    (equipment { 
+        (surakartaBoard (square 6)) 
+        
+        (piece "Marker" Each 
+            (or {
+                (move Step
+                    All
+                    (to if:(is Empty (to)))
+                )
+                ("SlideToCapture")						
+            })
+        )
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (expand (sites Bottom)))
+            (place "Marker2" (expand (sites Top)))
+            
+        })
+        (play
+            (if (is Proposed "End") 
+                (or (move Vote "End") (move Vote "No" (then (set Counter)))) 
+                (or 
+                    (if (>= (counter) "NoCaptureProposal") 
+                        (move Propose "End" (then (vote "End")))
+                    )
+                    (forEach Piece)
+                )
+            )
+        ) 
+        
+        (end {
+            (if (is Decided "End")
+                (byScore {
+                    (score P1 (count Pieces P1)) 
+                    (score P2 (count Pieces P2))
+                })
+            )
+            ("CaptureAll" Next)
+        })
+        
+    )
+)
+

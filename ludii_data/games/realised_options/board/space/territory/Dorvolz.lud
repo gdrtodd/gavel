@@ -1,0 +1,58 @@
+
+(game "Dorvolz"
+    (players 2)
+    (equipment {
+        (board (square 17) use:Vertex)
+        (hand Each size:2)
+        (piece "Bull" Each)
+        (piece "Marker" Each)
+        (regions "BullSites" P1 (sites {"C3" "K3" "O7" "C11" "G15" "O15"}))
+        (regions "BullSites" P2 (sites {"G3" "O3" "C7" "O11" "C15" "K15"}))
+    })
+    (rules
+        (start {
+            (place "Bull1" (handSite P1) count:6)
+            (place "Bull2" (handSite P2) count:6)
+            (place "Marker1" (handSite P1 1) count:144)
+            (place "Marker2" (handSite P2 1) count:144)
+        })
+        
+        phases:{
+        (phase "BullPlacement"
+            (play 
+                (move 
+                    (from (handSite Mover))
+                    (to (intersection (sites Empty) (sites Mover)))
+                )
+            )
+            (nextPhase Mover (= 6 (count Sites in:(intersection (sites Board) (sites Occupied by:Mover)))) "MarkerPlacementAroundBull")
+        )
+        (phase "MarkerPlacementAroundBull"
+            (play 
+                (move 
+                    (from (handSite Mover 1))
+                    (to (intersection (sites Empty) (sites Around (sites Mover) All)))
+                )	
+            )
+            (nextPhase Mover (= 54 (count Sites in:(intersection (sites Board) (sites Occupied by:Mover)))) "Playing")
+        )
+        (phase "Playing" 
+            (play
+                (move 
+                    (from (handSite Mover 1))
+                    (to (sites Empty))
+                )
+            )
+            (end
+                (if (and ("HandEmpty" P1) ("HandEmpty" P2))
+                    (byScore {
+                        (score P1 (size Territory P1 All))
+                        (score P2 (size Territory P2 All))
+                    })
+                )
+            )
+        )
+        }
+    )
+)
+

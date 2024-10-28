@@ -1,0 +1,100 @@
+(define "Custodial" 
+    (custodial 
+        (from (last To)) 
+        Orthogonal
+        (between 
+            (max 1) 
+            if:(and (!= (between) ("Throne")) ("IsEnemyAt" (between)))
+            (apply (remove (between)))
+        )
+        (to if:("IsFriendAt" (to))) 
+    )
+)
+
+(define "PiecesSurroundingAreNotAdjacent"
+    (all Sites
+        (sites Around (between) Own)
+        if:(all Sites (sites Around (site) Own) 
+            if:(not (is In (to) (sites Around (between) Own)))
+        )
+    )
+)
+
+(define "SurroundCorners"
+    (surround 
+        (from (last To))
+        Orthogonal
+        (between 
+            if:(and {
+                (is In (between) (sites "Fortresses")) 
+                ("IsEnemyAt" (between))
+                ("PiecesSurroundingAreNotAdjacent")
+            })
+            (apply (remove (between)))
+        )
+        (to if:("IsFriendAt" (to)))
+        except:1
+    )
+)
+
+(define "SurroundThrone"
+    (surround 
+        (from (last To))
+        Orthogonal
+        (between 
+            if:(and {
+                (= (between) ("Throne")) 
+                ("IsPieceAt" "Jarl" P1 (between))
+                ("PiecesSurroundingAreNotAdjacent")
+            })
+            (apply (remove (between)))
+        )
+        (to if:("IsFriendAt" (to)))
+        except:3
+    )
+)
+
+(define "JarlWasCaptured" ("IsOffBoard" (where "Jarl" P1)))
+
+(define "Throne" (centrePoint))
+
+(game "HeXentafl" 
+    (players 2)
+    (equipment {
+        (board (rotate 90 (hex 4)))
+        (piece "Thrall" P1 
+            (move Slide 
+                (between if:(and (!= (between) ("Throne")) (is Empty (between))))
+                (then (and ("SurroundCorners") ("Custodial")))
+            )
+        )
+        (piece "Thrall" P2 
+            (move Slide 
+                (between if:(and (!= (between) ("Throne")) (is Empty (between))))
+                (then (and {("SurroundThrone") ("SurroundCorners") ("Custodial") }))
+            )
+        )
+        (piece "Jarl" P1 
+            (move 
+                Step (to if:(is Empty (to))) 
+                (then (and ("SurroundCorners") ("Custodial")))
+            )
+        )
+        (regions "Fortresses" (sites Corners))
+    })
+    (rules 
+        (start {
+            (place "Jarl1" ("Throne"))
+            
+            (place "Thrall2" (sites "Fortresses"))
+            (place "Thrall1" {"D3" "C4" "E5"})
+            
+        })
+        (play (forEach Piece))
+        (end {
+            ("PieceTypeReachWin" "Jarl1" (sites "Fortresses") P1)
+            (if "JarlWasCaptured" (result P2 Win))
+        })
+    )
+)
+

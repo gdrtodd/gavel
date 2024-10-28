@@ -1,0 +1,50 @@
+(game "Gala"
+    (players 2)
+    (equipment {
+        (board (square 5))
+        (hand Each)
+        (regions P1 (expand (sites Bottom) steps:2))
+        (regions P2 (expand (sites Top) steps:2))
+        (regions "MarkedCells" 
+            (union {
+                (sites Centre) 
+                (sites Corners)
+                (intersection (sites Outer) (sites Row (row of:(centrePoint))))
+                (intersection (sites Outer) (sites Column (column of:(centrePoint))))
+            })
+        )
+        (piece "Marker" Each ("StepOrthogonalToEmpty"))
+    })
+    (rules 
+        (start {
+            (place "Marker1" (handSite P1) count:10)
+            (place "Marker2" (handSite P2) count:12)
+            (place "Marker2" (centrePoint))
+        })
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (intersection (sites Empty) (sites Mover))) 
+                ) 
+            ) 
+            (nextPhase (and ("HandEmpty" P1) ("HandEmpty" P2)) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (forEach Piece
+                    (then ("CustodialCapture"))
+                )
+            )
+            
+            (end {
+                (if (no Moves P1) (result P2 Win))
+                (if (< (count Pieces P2) 2) (result P1 Win))
+            })
+        )
+        }
+    )
+)
+

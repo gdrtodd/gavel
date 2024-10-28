@@ -1,0 +1,60 @@
+(define "Sow" 
+    (move Select 
+        (from 
+            #1 
+            if:(> (count at:(from)) 1)
+        )
+        (then 
+            (sow
+                #2
+                if:(and 
+                    (= (count at:(to)) 2) 
+                    (is In (to) (sites Next))
+                )
+                apply:(fromTo 
+                    (from (to)) 
+                    (to (handSite Mover)) 
+                    count:(count at:(to))
+                ) 
+                backtracking:True
+            )
+        )
+    )
+)
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1))))
+
+(game "Um el Tuweisat" 
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 3 store:None
+            {
+            (track "TrackCCW" "0,E,N,W" loop:True)
+            (track "TrackCW" "2,W,N,E" loop:True)
+            }
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map "RightHole" {(pair P1 2) (pair P2 3)})
+        (map "CenterHole" {(pair P1 1) (pair P2 4)})
+        (map "LeftHole" {(pair P1 0) (pair P2 5)})
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start (set Count 3 to:(sites Track)))
+        
+        (play 
+            (or {
+                ("Sow" (mapEntry "RightHole" (mover)) "TrackCCW")
+                ("Sow" (mapEntry "LeftHole" (mover)) "TrackCW")
+                ("Sow" (mapEntry "CenterHole" (mover)) "TrackCCW")
+                ("Sow" (mapEntry "CenterHole" (mover)) "TrackCW")
+            })
+        )
+        
+        (end ("MancalaByScoreWhen" (and (no Moves P1) (no Moves P2))))
+    )
+)
+

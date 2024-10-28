@@ -1,0 +1,46 @@
+(define "IsEmpty" (is Empty (to)))
+
+(define "Centre" (= (to) (centrePoint)))
+
+(define "MoveOnlyIfAdjacentToEnemyOrCentre"
+    (move
+        Step 
+        (to if:(and
+                ("IsEmpty")
+                (or
+                    (not "Centre")
+                    (is Related Adjacent (from) (sites Occupied by:Next))
+                )
+            ) 
+        )
+    )	
+)
+
+(define "MoveOnlyIfAdjacentToEnemy"
+    (move
+        Step 
+        (to if:(and
+                ("IsEmpty")
+                (is Related Adjacent (from) (sites Occupied by:Next))
+            ) 
+        )
+    )	
+)
+
+(game "Mu Torere"
+    (players 2) 
+    (equipment { 
+        (board (concentric {1 8}) use:Vertex)
+        
+        (piece "Marker" Each ("MoveOnlyIfAdjacentToEnemyOrCentre")) 
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" {1..3 8})
+            (place "Marker2" {4..7})
+        })
+        (play (forEach Piece))
+        (end ("NoMoves" Loss))
+    )
+)
+

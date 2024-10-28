@@ -1,0 +1,42 @@
+(game "Xonin Shatar (Simple)"
+    (players 2)
+    
+    (equipment { 
+        (board (concentric Square rings:3 joinCorners:True) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ (then ("ReplayIfLine3")))
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3"))
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

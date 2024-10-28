@@ -1,0 +1,119 @@
+(define "PiecesOwnedBy" (+ (count at:(mapEntry #1)) (count in:(sites #1))))
+
+(define "LastHoleSowed" (sites {(var "To")}))
+
+(game "Duene"
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 6
+            (track "Track" "1,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map {(pair P1 FirstSite) (pair P2 LastSite)}) 
+        (piece "Seed" Shared)
+    }) 
+    
+    (rules 
+        (start (set Count 4 to:(sites Track)))
+        phases:{
+        (phase "Playing"
+            (play 
+                (move Select 
+                    (from 
+                        (if ("SameTurn") 
+                            ("LastHoleSowed") 
+                            (sites Mover) 
+                        ) 
+                        if:(< 0 (count at:(from)))
+                    )
+                    (then 
+                        (do
+                            (and
+                                (set Var "From" (last From))
+                                (sow 
+                                    apply:(and
+                                        (set Var "To" (to))
+                                        (if (= (count at:(to)) 4)
+                                            (fromTo 
+                                                (from (to)) 
+                                                (to (mapEntry (mover))) 
+                                                count:(count at:(to))
+                                            )
+                                            (if (> (count at:(to)) 1)
+                                                (moveAgain)
+                                            )
+                                        )
+                                    )
+                                    
+                                    backtracking:(= (count at:(to)) 4)
+                                )
+                            )
+                            next:(and {
+                                (pass)
+                                (forEach Site
+                                    (forEach (sites Track from:(var "From") to:(var "To"))
+                                        if:(and (is In (site) (sites P1)) (= 4 (count at:(site))))
+                                    )
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P1)) 
+                                        count:(count at:(site))
+                                    )
+                                )
+                                (forEach Site
+                                    (forEach (sites Track from:(var "From") to:(var "To"))
+                                        if:(and (is In (site) (sites P2)) (= 4 (count at:(site))))
+                                    )
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P2)) 
+                                        count:(count at:(site))
+                                    )
+                                )
+                            })
+                        )
+                    )
+                )
+            )
+            (nextPhase (<= (count in:(sites Track)) 8) "EndGame")
+        )
+        (phase "EndGame"
+            (play 
+                (move Select 
+                    (from 
+                        (if ("SameTurn") 
+                            ("LastHoleSowed") 
+                            (sites Mover) 
+                        ) 
+                        if:(< 0 (count at:(from)))
+                    )
+                    (then 
+                        (sow 
+                            apply:(if (= (count at:(to)) 4)
+                                (forEach Site 
+                                    (sites Track)
+                                    (if (< 0 (count at:(site)))
+                                        (fromTo 
+                                            (from (site)) 
+                                            (to (mapEntry (mover))) 
+                                            count:(count at:(site))
+                                        )
+                                    )
+                                )
+                                (if (> (count at:(to)) 1)
+                                    (moveAgain)
+                                )
+                            )
+                            
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end ("MancalaByScoreWhen" (all Sites (sites Track) if:(= 0 (count at:(site))))))
+    )	
+)
+

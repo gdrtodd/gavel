@@ -1,0 +1,25 @@
+(game "La Yagua" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (add
+                (rotate 180 ("AlquerqueGraphWithBottomTriangle"))
+                edges:{{27 29} {29 25}}
+            )
+            use:Vertex
+        ) 
+        (piece "Jaguar" P1 (or "HopCapture" "StepToEmpty"))
+        (piece "Dog" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start { 
+            (place "Dog2" (union (expand (sites Bottom) steps:1) (sites {"A3" "E3"})))
+            (place "Jaguar1" coord:"C7")
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P2 6))
+    )
+)
+

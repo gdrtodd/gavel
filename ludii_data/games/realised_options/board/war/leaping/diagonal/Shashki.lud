@@ -1,0 +1,71 @@
+(define "HopCounter" 
+    (move Hop 
+        (from #1) 
+        Diagonal 
+        (between 
+            if:(and (not (is In (between) (sites ToClear))) ("IsEnemyAt" (between)))
+            (apply (remove (between)))
+        ) 
+        (to if:(is Empty (to))) 
+        #2
+    ) 
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(define "JumpToPromotionZone" (is In (last To) (sites Next)))
+
+(game "Shashki" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8)) 
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    ("HopCounter" (last To)
+                        (then 
+                            (if "JumpToPromotionZone" 
+                                (and 
+                                    (promote (last To) (piece "DoubleCounter") Mover)
+                                    ("ReplayIfCanMove" ("HopDiagonalSequenceCaptureAgain" before:(count Rows) after:(count Rows)))
+                                )
+                                ("ReplayIfCanMove" ("HopCounter" (last To))) 
+                            )
+                        ) 
+                    )
+                    ("HopDiagonalSequenceCaptureAgain" before:(count Rows) after:(count Rows))
+                )
+                (priority {
+                    (or 
+                        (forEach Piece "Counter"
+                            ("HopCounter" (from) 
+                                (then 
+                                    (if "JumpToPromotionZone" 
+                                        (and 
+                                            (promote (last To) (piece "DoubleCounter") Mover)
+                                            ("ReplayIfCanMove" ("HopDiagonalSequenceCaptureAgain" before:(count Rows) after:(count Rows)))
+                                        )
+                                        ("ReplayIfCanMove" ("HopCounter" (last To))) 
+                                    )
+                                ) 
+                            ) 
+                        )
+                        (forEach Piece "DoubleCounter" ("HopDiagonalSequenceCapture" before:(count Rows) after:(count Rows)))
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal))
+                    )
+                })
+            )
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

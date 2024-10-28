@@ -1,0 +1,17 @@
+(game "A Simple Game"
+    (players 2)
+    (equipment {
+        (board (square 4) use:Vertex)
+        (piece "Ball" Each ("StepToEmpty" Orthogonal))
+        (hand Each)
+    })
+    (rules
+        (start {
+            (place "Ball1" (intersection (sites Phase 0) (union (sites Top) (sites Bottom))))
+            (place "Ball2" (intersection (sites Phase 1) (union (sites Top) (sites Bottom))))
+        })
+        (play (forEach Piece))
+        (end ("Line3Win" All))
+    )
+)
+

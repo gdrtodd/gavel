@@ -1,0 +1,72 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 8)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (move Slide Orthogonal 
+                    (then (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (is Enemy (who at:
+                                        (between)
+                                ))
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                    ))
+                )
+            )
+            (regions P1 
+                (sites Top)
+            )
+            (regions P2 
+                (sites Bottom)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (expand 
+                        (sites Bottom)
+                    )
+                )
+                (place "PIECE_ALPHA2" 
+                    (expand 
+                        (sites Top)
+                    )
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (or 
+                    (is In (last To) (sites Mover))
+                    (no Pieces Next)
+            )  (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Knightthrough
+// Selection metric: 0.92
+// Fitness: 0.92
+// Cell distance: 2.00
+// Edit Distance: 0.20
+// Global Edit Distance: 0.20
+// Lineage length: 5.00
+// Length ratio: 0.86

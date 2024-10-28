@@ -1,0 +1,50 @@
+(game "Jeu de Renard (Two Foxes)" 
+    (players 2) 
+    (equipment { 
+        (board (square 8)) 
+        (piece "Fox" P1
+            (if (= (state at:(from)) 1)
+                (or
+                    "StepDiagonalToEmpty"
+                    "HopDiagonalCapture"
+                )
+                (then 
+                    (and
+                        (forEach Site
+                            (sites Occupied by:Mover)
+                            (if (= (state at:(site)) 0) (set State at:(site) 1))
+                        )
+                        (set State at:(last To) 0)
+                    )
+                )
+            )
+        )
+        (piece "Hen" P2 N ("StepToEmpty" (directions {FR FL})))
+    }) 
+    (rules 
+        (start { 
+            (place "Fox1" (intersection (sites Top) (union (sites Left) (difference (expand (sites Right)) (sites Right)))) state:1)
+            (place "Hen2" (difference (expand (sites Bottom) steps:2) (sites Phase 0)))
+        })
+        
+        phases:{
+        (phase "Opening" P1
+            (play 
+                (forEach Piece 
+                    (or
+                        "StepDiagonalToEmpty"
+                        "HopDiagonalCapture"
+                        (then (set State at:(last To) 0))
+                    )
+                )
+            )
+            (nextPhase "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("NoMovesP1NoPiecesP2")) 
+    )
+)
+

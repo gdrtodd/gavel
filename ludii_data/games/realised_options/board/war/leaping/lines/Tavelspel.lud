@@ -1,0 +1,34 @@
+(game "Tavelspel" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (square 13) 
+            use:Vertex
+        )
+        (piece "Marker" Each)
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (expand (sites Bottom)))
+            (place "Marker2" (expand (sites Top)))
+        })
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopSequenceCaptureAgain")
+                    (move Pass)
+                )
+                (forEach Piece "Marker" 
+                    (or
+                        ("HopSequenceCapture")
+                        ("StepToEmpty")
+                    )
+                )
+            )
+        )
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

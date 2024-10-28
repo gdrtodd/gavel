@@ -1,0 +1,139 @@
+(define "SiteToEnter" ("NextSiteOnTrack" (pips) from:(mapEntry "StartTrack" Mover)))
+(define "SiteToEnterCapturePiece" ("NextSiteOnTrack" (pips) from:("BarSite" Mover)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "SiteToMoveOnTrack" (trackSite Move steps:(pips)))
+
+(define "BarEmpty" (is Empty ("BarSite" #1)))
+
+(define "BarSite" (mapEntry "Bar" #1))
+
+(define "EmptySiteIfOneSpecialRegion" 
+    (and 
+        (is Empty (to)) 
+        (is In (to) (sites Mover "OnePieceMax"))
+    )
+)
+
+(define "CaptureEnemyPiece" 
+    (if ("IsEnemyAt" (to)) 
+        (move (from (to)) (to ("BarSite" Next)))
+    )
+)
+
+(define "OneEnemyPiece" 
+    (and
+        ("IsSingletonStack" (to))
+        ("IsEnemyAt" (to))
+    )	
+)
+
+(define "EmptyOrFriednIfNotSpecialRegion"
+    (and
+        (not (is In (to) (sites Mover "OnePieceMax")))
+        (or
+            ("IsFriendAt" (to))
+            (is Empty (to)) 
+        )
+    )	
+)
+
+(game "Tawula"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard" "BackgammonTracksSameDirectionOppositeCornersWithBars2")
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (if (or 
+                    (!= (from) (mapEntry "StartTrack" Mover))
+                    (and 
+                        (= (from) (mapEntry "StartTrack" Mover))
+                        ("HandEmpty" Mover)
+                    )
+                )
+                (forEach Die 
+                    if:("DieNotUsed")
+                    (if ("IsOffBoard" "SiteToMoveOnTrack")
+                        "RemoveAPiece"
+                        (move 
+                            (from) 
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                if:(or 
+                                    (or
+                                        ("EmptySiteIfOneSpecialRegion")
+                                        ("EmptyOrFriednIfNotSpecialRegion")
+                                    )
+                                    ("OneEnemyPiece")
+                                )
+                                (apply ("CaptureEnemyPiece"))
+                            )
+                        )
+                    )
+                )	
+            )
+        )
+        (hand Each)
+        (map "Bar" {(pair P1 6) (pair P2 19)})
+        (map "StartTrack" {(pair P1 25) (pair P2 0)})
+        (regions "OnePieceMax" P1 (sites {14..18 20..24}))
+        (regions "OnePieceMax" P2 (sites {1..5 7..11}))
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 25 count:2) 
+            (place Stack "Disc2" 0 count:2)
+            (place Stack "Disc1" (handSite P1) count:13)
+            (place Stack "Disc2" (handSite P2) count:13)
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (or 
+                    (if ("BarEmpty" Mover)
+                        
+                        (forEach Piece top:True) 
+                        
+                        (forEach Die 
+                            if:("DieNotUsed")
+                            (move 
+                                (from ("BarSite" Mover)) 
+                                (to 
+                                    ("SiteToEnterCapturePiece")
+                                    if:(or 
+                                        (or
+                                            ("EmptySiteIfOneSpecialRegion")
+                                            ("EmptyOrFriednIfNotSpecialRegion")
+                                        )
+                                        ("OneEnemyPiece")
+                                    )
+                                    (apply ("CaptureEnemyPiece"))
+                                )
+                            )
+                        )
+                    )
+                    
+                    (if ("HandOccupied" Mover)
+                        (forEach Die 
+                            if:("DieNotUsed")
+                            (move 
+                                (from (handSite Mover))
+                                (to
+                                    ("SiteToEnter")
+                                    if:(or 
+                                        (is Empty (to))
+                                        ("OneEnemyPiece")
+                                    )
+                                    (apply ("CaptureEnemyPiece"))
+                                )
+                            )
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

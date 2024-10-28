@@ -1,0 +1,71 @@
+(game "Shataranja"
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 10)) 
+        ("ChessPawn" "Pawn" ~
+            (then
+                (if (is In (last To) (sites Mover "Promotion")) 
+                    (and
+                        (promote (last To) (piece "Bishop_noCross") Mover)	
+                        (fromTo (from (last To)) (to (last From)))
+                    )
+                )
+            )
+        )
+        ("ChessRook" "Rook")
+        ("ChessKing" "King_noCross")
+        ("ChessRook" "Elephant")
+        ("ChessKnight" "Knight")
+        ("ChessKing" "Queen")
+        (piece "Ferz_noCross" Each 
+            (or
+                ("SlideCapture")
+                ("LeapCapture" "KnightWalk")
+            )
+        )
+        ("ChessQueen" "Bishop_noCross")
+        (piece "Commoner" Each 
+            (or
+                ("SlideCapture" Diagonal)
+                ("LeapCapture" "KnightWalk")
+            )		
+        ) 
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+    })
+    (rules 
+        (start { 
+            (place "Pawn1" (difference (sites Row 1) (sites {"E2" "F2"})))
+            (place "Pawn2" (difference (sites Row 8) (sites {"E2" "F2"})))
+            (place "Queen1" {"E2" "F2"})
+            (place "Queen2" {"E9" "F9"})
+            (place "Rook1" {"A1" "J1"}) (place "Knight1" {"B1" "I1" "E3" "F3"}) (place "Elephant1" {"C1" "H1"}) (place "Ferz_noCross1" coord:"E1") (place "Commoner1" coord:"G1") (place "Bishop_noCross1" coord:"D1") (place "King_noCross1" coord:"F1") 
+            (place "Rook2" {"A10" "J10"}) (place "Knight2" {"B10" "I10" "E8" "F8"}) (place "Elephant2" {"C10" "H10"}) (place "Ferz_noCross2" coord:"F10") (place "Commoner2" coord:"D10") (place "Bishop_noCross2" coord:"G10") (place "King_noCross2" coord:"E10") 
+        })
+        
+        (play 
+            (if (no Moves Mover)
+                (move Remove
+                    (difference (sites Occupied by:Next) (where "King_noCross" Next))
+                )
+                (do (forEach Piece) ifAfterwards:(not ("IsInCheck" "King_noCross" Mover)))
+            )
+        )
+        
+        (end {
+            ("Checkmate" "King_noCross")
+            (if (and {
+                    (no Pieces Next "Ferz_noCross")
+                    (no Pieces Next "Queen")
+                    (no Pieces Next "Knight")
+                    (no Pieces Next "Bishop_noCross")
+                    (no Pieces Next "Elephant")
+                    (no Pieces Next "Rook")
+                    (no Pieces Next "Commoner")
+                })
+                (result Mover Win) 
+            ) 
+        })
+    )
+)
+

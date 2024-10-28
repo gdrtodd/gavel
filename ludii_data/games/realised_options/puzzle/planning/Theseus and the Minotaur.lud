@@ -1,0 +1,137 @@
+(define "EdgeInCommon" 
+    (intersection (sites Incident Edge of:Cell at:#1) 
+        (sites Incident Edge of:Cell at:#2)
+    ) 
+)
+
+(define "NoEdgeBetweenCells"
+    ("NoSites" (intersection (sites Occupied by:Shared on:Edge) ("EdgeInCommon" #1 #2)))
+)
+
+(define "OriginalCloserToTheseus"
+    (> (count Steps Orthogonal (where (id "Minotaur0")) (where (id "Theseus"))) 
+        (count Steps Orthogonal (ahead (where (id "Minotaur0")) #1) (where (id "Theseus"))) 
+    )
+)
+
+(define "SmartCloserToTheseus"
+    (> (count Steps 
+            (step
+                (from (where (id "Minotaur0")))
+                Orthogonal
+                (to 
+                    if:("NoEdgeBetweenCells" (from) (to))
+                )
+            )
+            (where (id "Minotaur0"))
+            (where (id "Theseus"))
+        ) 
+        (count Steps 
+            (step
+                (from (ahead (where (id "Minotaur0")) #1))
+                Orthogonal
+                (to 
+                    if:("NoEdgeBetweenCells" (from) (to))
+                )
+            )
+            (ahead (where (id "Minotaur0")) #1)
+            (where (id "Theseus"))
+        )
+    )
+)
+
+(define "MoveMinotaur"
+    (fromTo 
+        (from (where (id "Minotaur0"))) 
+        (to (ahead (from) #1)
+            (apply 
+                (if (= (id "Theseus") (what at:(to)))
+                    (remove 
+                        (to) 
+                    )
+                )
+            ) 
+        )
+    )
+)
+
+(define "GoCloserToTheseus" 
+    (if (and ("NoEdgeBetweenCells" (where (id "Minotaur0")) (ahead (where (id "Minotaur0")) #1))
+            ("OriginalCloserToTheseus" #1)
+        )
+        ("MoveMinotaur" #1)
+        #2
+        #3
+    )
+)
+
+(define "MinotaurThreatAgain"
+    ("GoCloserToTheseus" E 
+        ("GoCloserToTheseus" W 
+            ("GoCloserToTheseus" N 
+                ("GoCloserToTheseus" S)
+            )
+        )
+    )
+)
+
+(define "MinotaurThreat"
+    ("GoCloserToTheseus" E 
+        ("GoCloserToTheseus" W 
+            ("GoCloserToTheseus" N 
+                ("GoCloserToTheseus" S)
+            )
+        ) 
+        (then 
+            ("MinotaurThreatAgain")
+        )
+    )
+)
+
+(game "Theseus and the Minotaur" 
+    (players 1) 
+    (equipment { 
+        (board (square 6)) 
+        (piece "Theseus" P1 
+            (move Step 
+                Orthogonal 
+                (to 
+                    if:(and (is Empty (to)) ("NoEdgeBetweenCells" (from) (to)))
+                )
+            )
+        )
+        (piece "Minotaur" Neutral)
+        (piece "Marker" Shared)
+        (regions "Exit" {34})
+    }) 
+    (rules 
+        (start {
+            (place "Theseus" coord:"E4")
+            (place "Minotaur0" coord:"A6")
+            (set 
+                Shared 
+                Edge 
+                (union 
+                    (sites Outer Edge) 
+                    (sites {65 60 53 47 46 33 41 63 76 48 28 21 36 43 56 62 20})
+                )
+            )
+        })
+        (play
+            (or
+                (forEach Piece)
+                (move Pass)
+                (then
+                    (if (not (is In (where (id "Theseus")) (sites "Exit")))
+                        ("MinotaurThreat")
+                    )
+                )
+            )
+        )
+        (end {
+            (if (no Pieces Mover) (result Mover Loss))
+            (if (is In (where (id "Theseus")) (sites "Exit")) (result Mover Win))
+        })
+    )
+)
+

@@ -1,0 +1,96 @@
+(define "EdgeInCommon" 
+    (intersection (sites Incident Edge of:Cell at:#1) 
+        (sites Incident Edge of:Cell at:#2)
+    ) 
+)
+
+(define "NoEdgeBetweenCells"
+    (all Sites (sites Occupied by:Shared on:Edge) if:(not (is In (site) ("EdgeInCommon" #1 #2))))
+)
+
+(define "ReachedTarget" (and (is LastTo Cell) (is In (last To) (sites Mover))))
+
+(define "SizePath" 
+    (count Steps
+        (step
+            Orthogonal
+            (to 
+                if:(and 
+                    (is Empty (to)) 
+                    ("NoEdgeBetweenCells" (from) (to))
+                )
+            )
+        )
+        (where "Pawn" #1)
+        (sites #1)
+    )	
+)
+
+(define "NumPlayers" 2)
+
+(game "Quoridor" 
+    (players "NumPlayers")
+    (equipment {
+        (board (square 9))
+        (piece "Pawn" Each
+            (or
+                (move Step
+                    Orthogonal
+                    (to 
+                        if:(and 
+                            (is Empty (to)) 
+                            ("NoEdgeBetweenCells" (from) (to))
+                        )
+                    )
+                )
+                (move Hop
+                    Orthogonal
+                    (between if:("IsEnemyAt" (between)))
+                    (to if:(and {
+                            (is Empty (to))
+                            ("NoEdgeBetweenCells" (from) (between))
+                            ("NoEdgeBetweenCells" (between) (to))
+                        })
+                    )
+                )
+            )
+        )
+        (piece "Rectangle" Shared)
+        (hand Each)
+        
+        (regions P1 (sites Top))
+        (regions P2 (sites Bottom))
+        
+    })
+    (rules 
+        
+        (start {
+            (place "Rectangle" (handSite P1) count:10)
+            (place "Rectangle" (handSite P2) count:10)
+            (place "Pawn1" (intersection (sites Bottom) (sites Column (column of:(centrePoint)))))
+            (place "Pawn2" (intersection (sites Top) (sites Column (column of:(centrePoint)))))
+        })
+        
+        (play 
+            (or
+                (do
+                    (if (is Occupied (handSite Mover))
+                        (move 
+                            (from (handSite Mover)) 
+                            (to Edge (difference (sites Empty Edge) (sites Outer Edge)))
+                        )
+                    )
+                    ifAfterwards:
+                    (and {
+                        (!= Infinity ("SizePath" P1))
+                        (!= Infinity ("SizePath" P2))
+                    })
+                    
+                )
+                (forEach Piece)
+            )
+        )
+        (end (if "ReachedTarget" (result Mover Win))) 
+    )
+)
+

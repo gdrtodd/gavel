@@ -1,0 +1,165 @@
+
+(define "EmptyCellsAroundPiecesPlaced"
+    (intersection (sites Around (sites (values Remembered)) Orthogonal) (sites Empty))
+)
+
+(define "TouchingPlacements"
+    (or {
+        (move Add
+            (piece (id "Square" Mover)) 
+            (to Cell "EmptyCellsAroundPiecesPlaced")
+        )
+        (move Select
+            (from Edge
+                (forEach
+                    of:"EmptyCellsAroundPiecesPlaced"
+                    (sites Incident Edge of:Cell at:(site))
+                )
+                if:(no Pieces All in:(sites Incident Cell of:Edge at:(from)))
+            )
+            (then
+                (add (piece (id "Square" Mover)) (to Cell (sites Incident Cell of:Edge at:(last From))))
+            )
+        )
+    })
+)
+
+(define "Placements"
+    (or {
+        (move Add
+            (piece (id "Square" Mover)) 
+            (to (sites Empty))
+            (then
+                (if
+                    ("NewTurn") 
+                    (remember Value (last To))
+                )
+            )
+        )
+        (move Select
+            (from Edge
+                (sites Board Edge) 
+                if:(no Pieces All in:(sites Incident Cell of:Edge at:(from)))
+            )
+            (then
+                (forEach Site 
+                    (sites Incident Cell of:Edge at:(last From))
+                    (and
+                        (add
+                            (piece (id "Square" Mover)) 
+                            (to (site))
+                        )
+                        (if
+                            ("NewTurn")
+                            (remember Value (site))
+                        )
+                    )
+                )
+            )
+        )
+        (if
+            ("SameTurn")
+            (move Pass) 
+        )
+    })
+)
+
+(define "NoCrosscuts" (= (size Array (sizes Group Orthogonal Mover)) (size Array (sizes Group All Mover))))
+
+(define "GamePlay"
+    (if
+        ("NewTurn")
+        (do
+            ("Placements") 
+            ifAfterwards:(or {
+                "NoCrosscuts"
+                (can Move
+                    (do ("TouchingPlacements")
+                        ifAfterwards:("NoCrosscuts")
+                ))
+            })
+            (then (moveAgain))
+        )
+        (do
+            ("TouchingPlacements")
+            ifAfterwards:("NoCrosscuts")
+            (then (forget Value All))
+        )
+    )
+)
+
+(define "Goal"
+    (or
+        (is Connected 
+            at:(regionSite (sites Column Cell 0) index:0)
+            Orthogonal
+            {
+            (sites Column (+ "Order" 1))
+            (sites Column 0)
+            }
+        )
+        (is Connected 
+            at:(regionSite (sites Row Cell 0) index:0)
+            Orthogonal
+            {
+            (sites Row (+ "Order" 1))
+            (sites Row 0) 
+            }
+        )
+    )
+)
+
+(define "Order" 7)
+
+(game "Allemande"
+    (players 2)
+    (equipment {
+        (board
+            (remove
+                (square (+ 2 "Order")) 
+                cells:{0 (+ "Order" 1) (* (+ "Order" 2) (+ "Order" 1)) (- (^ (+ "Order" 2) 2) 1)} 
+            ) 
+            use:Cell
+        )
+        (regions "EW"
+            P1
+            (union
+                (sites Column (+ "Order" 1))
+                (sites Column 0)
+        ))
+        (regions "NS"
+            P2
+            (union 
+                (sites Row (+ "Order" 1))
+                (sites Row 0)
+        ))
+        (piece "Square" Each) 
+        (hand Each size:4)
+    })
+    (rules
+        (start {
+            (place "Square1"
+                (union
+                    (sites Column (+ "Order" 1))
+                    (sites Column 0) 
+            ))
+            
+            (place "Square2" 
+                (union
+                    (sites Row (+ "Order" 1))
+                    (sites Row 0) 
+                )
+            )
+        })
+        (play
+            "GamePlay"
+        )
+        (end
+            (if
+                "Goal"
+                (result Mover Win)
+            )
+        )
+    )
+)
+

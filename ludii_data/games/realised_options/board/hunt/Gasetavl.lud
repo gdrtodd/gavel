@@ -1,0 +1,22 @@
+(game "Gasetavl"
+    (players 2)
+    (equipment {
+        ("CrossBoard" 3 7 use:Vertex diagonals:Solid)
+        (piece "Fox" P1 (or ("HopCapture") ("StepToEmpty")))
+        (piece "Geese" P2 N ("StepToEmpty" (directions {Rightward Forwards Leftward})))
+    })
+    (rules 
+        (start {
+            (place "Fox1" (sites {"G9" "I7"}))
+            (place "Geese2" 
+                (sites {"A3" "B2" "C1" "B4" "C3" "D2" "A7" "B6" "C5" "D4" 
+                    "E3" "F2" "G1" "B8" "C7" "D6" "E5" "F4" "G3" "H2"
+                    }
+                )
+            )
+        })
+        (play (forEach Piece))
+        (end ("NoMovesP1NoPiecesP2")) 
+    )
+)
+

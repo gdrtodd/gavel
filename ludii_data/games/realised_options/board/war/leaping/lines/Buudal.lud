@@ -1,0 +1,38 @@
+(game "Buudal"
+    (players 2) 
+    (equipment {
+        (board 
+            (square 3 diagonals:Solid)
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Marker" Each 
+            (move Hop 
+                (between 
+                    if:True
+                    (apply (if ("IsEnemyAt" (between)) (remove (between))))
+                )
+                (to if:(is Empty (to)))
+            )
+        )
+    })
+    (rules
+        (start (place "Marker" "Hand" count:6))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,22 @@
+(game "Oriath" 
+    (players 1)
+    (equipment { 
+        (board 
+            (complete (regular Star 7))
+        use:Edge) 
+    }) 
+    
+    (rules  	 
+        (play    
+            (move Add 
+                (to Edge (sites Empty Edge))	   
+            )    
+        )
+        (end {   
+            
+            (if (is RegularGraph Mover) (result Mover Win))
+            
+        })
+    )
+)
+

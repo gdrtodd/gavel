@@ -1,0 +1,1 @@
+(game "Paintbucket" (players 2) (equipment {(board (square 8)) (tile "Square" Each)}) (rules (start {(place "Square1" (sites Phase 0)) (place "Square2" (sites Phase 1))}) (play (move Select (from (sites Occupied by:Next)) (then (add (to (sites Group at:(last From) Orthogonal) (apply (remove (to)))))))) (end (if (no Pieces Next) (result Next Loss))))) 

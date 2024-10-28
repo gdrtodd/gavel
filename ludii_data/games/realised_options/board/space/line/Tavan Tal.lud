@@ -1,0 +1,84 @@
+(game "Tavan Tal"
+    (players 2)
+    
+    (equipment { 
+        (board
+            (add
+                (merge {
+                    (shift 2 2
+                        (merge {
+                            (rectangle 1 3)
+                            (shift -1.31 0.95 (rotate 108 (rectangle 1 3)))
+                            (shift -0.81 2.49 (rotate 216 (rectangle 1 3)))
+                            (shift 1.31 0.95 (rotate -108 (rectangle 1 3)))
+                            (shift 0.81 2.49 (rotate -216 (rectangle 1 3)))
+                        })
+                    )
+                    
+                    (shift 1 1
+                        (scale 2
+                            (merge {
+                                (rectangle 1 3)
+                                (shift -1.31 0.95 (rotate 108 (rectangle 1 3)))
+                                (shift -0.81 2.49 (rotate 216 (rectangle 1 3)))
+                                (shift 1.31 0.95 (rotate -108 (rectangle 1 3)))
+                                (shift 0.81 2.49 (rotate -216 (rectangle 1 3)))
+                            })
+                        )
+                    )
+                    
+                    (scale 3
+                        (merge {
+                            (rectangle 1 3)
+                            (shift -1.31 0.95 (rotate 108 (rectangle 1 3)))
+                            (shift -0.81 2.49 (rotate 216 (rectangle 1 3)))
+                            (shift 1.31 0.95 (rotate -108 (rectangle 1 3)))
+                            (shift 0.81 2.49 (rotate -216 (rectangle 1 3)))
+                        })
+                    )
+                    
+                })
+                edges:{
+                {26 16} {16 6} {5 15} {15 25} {29 19} {19 9} {7 17} {17 27} {28 18} {18 8} {22 12} {12 2}
+                {1 11} {11 21} {20 10} {10 0} {3 13} {13 23} {24 14} {14 4}
+                }
+            )
+            use:Vertex
+        ) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ (then ("ReplayIfLine3")))
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:14))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3")) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

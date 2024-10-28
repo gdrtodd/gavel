@@ -1,0 +1,44 @@
+(game "Aqrad"
+    (players 2)
+    
+    (equipment { 
+        (board (rectangle 7 6)) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" Orthogonal 
+                (then ("ReplayIfLine3" Orthogonal exact:True))
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:18))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "RemoveAnyEnemyPiece"
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3" Orthogonal exact:True)) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveAnyEnemyPiece"
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

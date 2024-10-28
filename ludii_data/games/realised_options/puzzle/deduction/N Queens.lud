@@ -1,0 +1,18 @@
+(game "N Queens"
+    (players 1) 
+    (equipment { 
+        (board (square 8) (values Cell (range 0 1)))
+        (regions {AllDirections})
+    })
+    
+    (rules
+        (play
+            (satisfy {
+                (is Count (sites Board) of:1 8)
+                (all Different except:0)
+            })
+        )
+        (end (if (is Solved) (result P1 Win)))
+    )
+)
+

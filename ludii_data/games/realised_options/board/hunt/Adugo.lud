@@ -1,0 +1,19 @@
+(game "Adugo" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithBottomTriangle") 
+        (piece "Jaguar" P1 (or "HopCapture" "StepToEmpty"))
+        (piece "Dog" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start { 
+            (place "Dog2" (difference (expand (sites Top) steps:2) (sites {"C5"})))
+            (place "Jaguar1" coord:"C5")
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P2 0))
+    )
+)
+

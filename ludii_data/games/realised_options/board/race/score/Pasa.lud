@@ -1,0 +1,37 @@
+(define "Row" 
+    (- (/ (score Mover) 10) 1)
+)
+
+(define "Column" (- (mover) 1))
+
+(game "Pasa" 
+    (players 2)
+    (equipment {
+        (board (rectangle 10 2))
+        (piece "Disc" Each)
+        (dice d:7 from:0 num:1)
+        (map {(pair 0 -10) (pair 1 1) (pair 2 2) (pair 3 3) (pair 4 4) (pair 5 5) (pair 6 6) (pair 7 10)})
+    })
+    (rules
+        (play 
+            (do 
+                (roll (then (addScore Mover (mapEntry (count Pips))))) 
+                next:(move Pass
+                    (then 
+                        (and
+                            (remove (sites Column "Column"))
+                            (if (>= (score Mover) 10) 
+                                (add 
+                                    (piece (id "Disc" Mover)) 
+                                    (to (intersection (sites Column "Column") (sites Row "Row")))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end (if (>= (score Mover) 100) (result Mover Win)))
+    )
+)
+

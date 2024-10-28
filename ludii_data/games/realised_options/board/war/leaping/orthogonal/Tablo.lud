@@ -1,0 +1,53 @@
+(game "Tablo" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board 
+            (square 7)
+            use:Vertex
+        )
+        (piece "Marker" Each
+            (or {
+                ("StepToEmpty" (directions {Forward Rightward Leftward}))
+                ("HopCapture" ~ (directions {Forward Rightward Leftward}) 
+                    (then 
+                        ("ReplayIfCanMove" 
+                            ("HopCapture" 
+                                (from (last To)) 
+                                (directions {Forward Rightward Leftward})
+                            )
+                        ) 
+                    )
+                )
+            })
+        ) 
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (expand (sites Bottom) steps:2))
+            (place "Marker2" (expand (sites Top) steps:2))
+        })
+        (play 
+            (if ("SameTurn")
+                (and
+                    ("HopCapture"
+                        (from (last To)) 
+                        (directions {Forward Rightward Leftward})
+                        (then 
+                            ("ReplayIfCanMove"
+                                (("HopCapture" 
+                                        (from (last To)) 
+                                        (directions {Forward Rightward Leftward})
+                                    )
+                                ) 
+                            )
+                        )
+                    )	
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        (end ("BlockWin"))
+    )
+)
+

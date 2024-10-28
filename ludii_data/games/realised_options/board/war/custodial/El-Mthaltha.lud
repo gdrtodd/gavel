@@ -1,0 +1,16 @@
+(game "El-Mthaltha" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 3 3)
+        (piece "Marker" Each ("StepToEmpty" ~ (then ("CustodialCapture" Orthogonal (max 1)))))
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (sites Bottom))
+            (place "Marker2" (sites Top))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

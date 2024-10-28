@@ -1,0 +1,63 @@
+
+(define "Connection" Orthogonal)
+(define "BoardUsed" "HexLimp")
+
+(define "SquareGrid" (board (square 4) use:Vertex))
+(define "HexLimp" (board (tri Limping (- 4 1)) use:Vertex))
+(define "HexLimpCell" (board (hex Limping (- 4 1)) use:Cell))
+(define "TriSquare" (board (tiling T33434 (- 4 2)) use:Vertex))
+(define "HexHex" (board (tri Hexagon 4) use:Vertex))
+(define "HexCell" (board (hex Hexagon 4) use:Cell))
+(define "Icosahedron" (board (add (remove (tri Limping 4) vertices:{0 1 3 4 5 6 7 8 9 10 11 13 15 17 18 19 20 23 24 25 26 27 31 32 34 35 36 37 39 40 42 43 44 45 46 47}) edges:{ {0 1} {0 2} {0 3} {0 9} {0 10} {1 2} {1 4} {1 6} {6 11} {7 11} {8 11} {1 9} {2 3} {3 5} {3 8} {3 10} {6 9} {8 10} {9 10} {9 11} {10 11} }) use:Vertex))
+
+(game "Claustro"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Ball" P1)
+        (piece "Ball" P2)
+    })
+    (rules
+        (start (set Score Each 0))
+        (play
+            (move Add 
+                (piece (mover))
+                (to (sites Empty) 
+                    if:(<= 0
+                        (- 
+                            (count Pieces Next in:(sites Around (to) Orthogonal))
+                            (count Pieces Mover in:(sites Around (to) Orthogonal))
+                )))
+                (then 
+                    (if 
+                        (not
+                            (all Sites 
+                                (sites Occupied by:Mover) 
+                                if:(can Move (step (from (site)) Orthogonal (to if:(is Empty (to)))))
+                        ))
+                        (trigger "End" Mover)
+                        (if 
+                            (not
+                                (all Sites 
+                                    (sites Occupied by:Next) 
+                                    if:(can Move (step (from (site)) Orthogonal (to if:(is Empty (to)))))
+                            ))
+                            (trigger "End" Next)
+                        )
+                    )
+                )
+            )
+        )
+        (end 
+            (if 
+                (or (is Triggered "End" Mover) (is Triggered "End" Next))
+                (if 
+                    (is Triggered "End" Mover)
+                    (result Mover Loss)
+                )
+                (result Mover Win)
+            )
+        )
+    )
+)
+

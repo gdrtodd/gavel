@@ -1,0 +1,51 @@
+(define "Surrounded" 
+    (or
+        (if (and (!= (ahead (from) N) (from)) (!= (ahead (from) S) (from)))
+            (and
+                (= (next) (who at:(ahead (from) N))) 
+                (= (next) (who at:(ahead (from) S)))
+            )
+        )
+        (if (and (!= (ahead (from) E) (from)) (!= (ahead (from) W) (from)))
+            (and
+                (= (next) (who at:(ahead (from) E))) 
+                (= (next) (who at:(ahead (from) W)))
+            )
+        )
+    )
+)
+
+(game "Triodi (Chios)"
+    (players 2)
+    
+    (equipment { 
+        (board (square 3) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            (if 
+                (not ("Surrounded"))
+                ("StepToEmpty")
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:3))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("Line3Win"))
+    )
+)
+

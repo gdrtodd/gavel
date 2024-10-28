@@ -1,0 +1,58 @@
+(define "Columns" 6)
+
+(define "PiecesOwnedBy" (+ (count at:(mapEntry #1)) (count in:(sites #1))))
+
+(game "Kalah" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            (track "Track" "0,ESE,E,ENE,WNW,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map {(pair P1 LastSite) (pair P2 FirstSite)}) 
+        (piece "Seed" Shared)
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(union (sites P1) (sites P2))))
+        
+        (play (move Select 
+                (from 
+                    (sites Mover) 
+                    if:(> (count at:(from)) 0)
+                ) 
+                (then 
+                    (sow
+                        apply:(if (= (to) (mapEntry (mover)))
+                            (moveAgain)
+                            (if (and { 
+                                    (is In (to) (sites Mover)) 
+                                    (= (count at:(to)) 1) 
+                                    (> (count at:("OppositePit" (to))) 0)
+                                })
+                                (and 
+                                    (fromTo 
+                                        (from (to)) 
+                                        (to (mapEntry (mover))) 
+                                        count:(count at:(to))
+                                    ) 
+                                    (fromTo 
+                                        (from ("OppositePit" (to))) 
+                                        (to (mapEntry (mover))) 
+                                        count:(count at:("OppositePit" (to)))
+                                    ) 
+                                ) 
+                            )
+                        )
+                        skipIf:(= (to) (mapEntry (next)))
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" (no Moves Mover)))
+    )
+)
+

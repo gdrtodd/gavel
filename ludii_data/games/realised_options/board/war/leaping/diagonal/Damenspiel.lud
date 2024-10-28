@@ -1,0 +1,59 @@
+(define "HopDiagonalCounter" 
+    ("HopCapture" (from) Diagonal
+        (then 
+            ("PromoteIfReach" (sites Next) "DoubleCounter"
+                ("ReplayIfCanMove" ("HopCapture" (from (last To)) Diagonal))
+            )
+        )
+    )
+)
+
+(define "HopDiagonalDoubleCounter" 
+    ("HopCaptureDistance" (from) Diagonal (range 1 (count Rows))
+        (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows)))))
+    )
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Damenspiel" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 8)) 
+    (rules 
+        ("WhiteCellsSetup" 3)
+        
+        (play 
+            (if	("SameTurn")
+                (if ("IsUnpromoted")
+                    ("HopCapture" (from (last To))  Diagonal
+                        (then 
+                            ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                ("ReplayIfCanMove" ("HopCapture" (from (last To)) Diagonal))
+                            )
+                        )
+                    )
+                    ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows))
+                        (then ("ReplayIfCanMove" ("HopCaptureDistance" (from (last To)) Diagonal (range 1 (count Rows)))))
+                    )
+                )
+                (priority {
+                    (or
+                        (forEach Piece "Counter" "HopDiagonalCounter")
+                        (forEach Piece "DoubleCounter" "HopDiagonalDoubleCounter")
+                    )
+                    (or
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL})
+                                (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+                            )
+                        )
+                        (forEach Piece "DoubleCounter" (move Slide Diagonal))
+                    )
+                })
+            )
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

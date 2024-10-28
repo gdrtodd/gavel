@@ -1,0 +1,41 @@
+(define "CaptureSurroundedPiece"
+    (enclose 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            if:("IsEnemyAt" (between)) 
+            (apply   
+                (and
+                    (trigger "CaptureMade" Next)
+                    (remove (between)) 
+                )
+            ) 
+        )
+    )
+)
+
+(define "HasMadeACapture"
+    (is Triggered "CaptureMade" Next)
+)
+
+(game "Atari Go" 
+    (players 2) 
+    (equipment { 
+        (board (square 19) use:Vertex) 
+        (piece "Marker" Each)
+    })
+    
+    (rules 
+        (play 
+            (do
+                (move Add
+                    (to (sites Empty))
+                    (then ("CaptureSurroundedPiece"))
+                )
+                ifAfterwards:("HasFreedom" Orthogonal)
+            )
+        )
+        (end (if "HasMadeACapture" (result Mover Win)))
+    )
+)
+

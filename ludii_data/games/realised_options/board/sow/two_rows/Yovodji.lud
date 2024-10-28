@@ -1,0 +1,71 @@
+(define "Columns" 6)
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1))))
+(define "CaptureAsInOware" 
+    (and 
+        (is In #1 (sites Next)) 
+        (or (= (count at:#1) 2) (= (count at:#1) 3))
+    )
+)
+
+(game "Yovodji" 
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    
+    (rules 
+        (start (set Count 4 to:(sites Track)))		 
+        (play 
+            (if (is Proposed "End")
+                (or (move Vote "End") (move Vote "No"))
+                (or
+                    (if (is Cycle) (move Propose "End")) 
+                    (move Select 
+                        (from 
+                            (if 
+                                ("SameTurn") 
+                                "LastHoleSowed" 
+                                (sites Mover)
+                            ) 
+                            if:(< 0 (count at:(from)))
+                        )
+                        (then 
+                            (sow 
+                                apply:(if ("CaptureAsInOware" (to))
+                                    (fromTo 
+                                        (from (to)) 
+                                        (to (handSite Mover)) 
+                                        count:(count at:(to))
+                                    )
+                                    (if (< 1 (count at:(to))) 
+                                        (moveAgain)
+                                        (if (and 
+                                                (is In (to) (sites Mover)) 
+                                                (< 1 (count at:("OppositePit" (to))))
+                                            )
+                                            (fromTo 
+                                                (from ("OppositePit" (to)))
+                                                (to (handSite Mover)) 
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                        )
+                                    )
+                                )
+                                includeSelf:False
+                                backtracking:("CaptureAsInOware" (from)) 
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end ("MancalaByScoreWhen" (or (no Moves Mover) (is Decided "End"))))
+    )
+)
+

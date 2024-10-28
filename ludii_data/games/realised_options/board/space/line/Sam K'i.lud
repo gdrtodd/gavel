@@ -1,0 +1,79 @@
+(define "PlaceOnTop" 
+    (move
+        (from (handSite Mover))
+        (to
+            (forEach 
+                (sites Occupied by:Next container:"Board")
+                if:(= (size Stack at:(site)) 1)
+            )
+        )
+    )
+)
+
+(define "RemoveDeadPieces" 
+    (forEach Site
+        (forEach 
+            (sites Occupied by:#1 container:"Board")
+            if:(= (size Stack at:(site)) 2)
+        )
+        (and {(remove (site)) (remove (site)) (add (piece (id "Marker" #1)) (to (site)))})
+    )
+)
+
+(game "Sam K'i"
+    (players 2)
+    
+    (equipment { 
+        (board (concentric Square rings:3 joinCorners:True) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ (then ("ReplayIfLine3" if:("IsSingletonStack" (to)))))
+        ) 
+    }) 
+    (rules 
+        (start {
+            (place Stack "Marker1" (handSite P1) count:12)
+            (place Stack "Marker2" (handSite P2) count:12)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "PlaceOnTop"
+                    (if ("HandOccupied" Mover)
+                        (move 
+                            (from (handSite Mover)) 
+                            (to (sites Empty)) 
+                            (then ("ReplayIfLine3" if:("IsSingletonStack" (to)))) 
+                        ) 
+                    )
+                    (then 
+                        (if (and (not (is Next Mover)) (and ("HandEmpty" P1) ("HandEmpty" P2)))
+                            (and ("RemoveDeadPieces" P1) ("RemoveDeadPieces" P2))
+                        )
+                    )
+                )
+            ) 
+            (nextPhase (and (not (is Next Mover)) (and ("HandEmpty" P1) ("HandEmpty" P2))) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveAnyEnemyPiece"
+                    (if (> (count Pieces Mover) 3)
+                        (forEach Piece)
+                        (move 
+                            (from (sites Occupied by:Mover))
+                            (to (sites Empty))
+                        )
+                    )
+                )
+            )
+            (end ("BlockWin"))
+        )
+        }
+    )
+)
+

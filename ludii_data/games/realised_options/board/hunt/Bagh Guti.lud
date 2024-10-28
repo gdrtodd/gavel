@@ -1,0 +1,50 @@
+(game "Bagh Guti" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (makeFaces
+                (remove 
+                    (square 5 diagonals:Alternating)
+                    edges:{
+                    { {0 0} {1 1} }
+                    { {1 1} {2 2} }
+                    { {2 2} {3 3} }
+                    { {3 3} {4 4} }
+                    { {4 0} {3 1} }
+                    { {3 1} {2 2} }
+                    { {2 2} {1 3} }
+                    { {1 3} {0 4} }
+                    }
+                )
+            ) 
+            use:Vertex
+        )
+        (piece "Goat" P1 "StepToEmpty")
+        (piece "Tiger" P2 
+            (or
+                ("StepToEmpty")
+                ("HopSequenceCapture")
+            )
+        )
+    }) 
+    
+    (rules 
+        (start { 
+            (place Stack "Goat1" (sites {"B2" "D2" "B4" "D4"}) counts:{5 5 5 5})
+            (place "Tiger2" (sites {"C1" "C5"}))
+        })
+        
+        (play 
+            (if ("SameTurn")
+                (or
+                    (move Pass)
+                    ("HopSequenceCaptureAgain")
+                )
+                (forEach Piece top:True)
+            )
+        )
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

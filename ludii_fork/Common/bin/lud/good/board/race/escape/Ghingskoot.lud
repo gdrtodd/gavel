@@ -1,0 +1,199 @@
+(define "SiteToMoveOnSelectedTrack" 
+    (if (= (state at:(from)) 2)
+        ("NextSiteOnTrack" ("ThrowValue") "TrackCCW")
+        ("NextSiteOnTrack" ("ThrowValue")"TrackCW")
+    )
+)
+
+(define "SiteToMoveOnTrackCW" ("NextSiteOnTrack" ("ThrowValue") "TrackCW"))
+(define "SiteToMoveOnTrackCCW" ("NextSiteOnTrack" ("ThrowValue")"TrackCCW"))
+
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:("IsEnemyAt" (to))
+        (and (set State at:(to) 0) (fromTo (from (to)) (to (handSite Next))))
+    ) 
+)
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "MoveOn" 
+    (if ("IsEndTrack" #1)
+        "RemoveAPiece"
+        (if ("IsNotOffBoard" #1) 	 			
+            (if (not ("IsFriendAt" #1))
+                (move 
+                    (from)
+                    (to 
+                        #1 
+                        "CaptureEnemyPiece"
+                    )
+                )
+            )
+        )
+        #2
+    )
+)
+
+(define "RememberSelectedTrack"
+    (then 
+        (if 
+            (and 
+                (= (state at:(last To)) 0) 
+                (is In (last To) (sites "AllSitesDifferentThanArc"))
+            ) 
+            (set State at:(last To) #1)
+        )
+    )
+)
+
+(define "PieceAlreadyEntered" (!= (from) (handSite Mover)))
+(define "PieceCanEnterOnlyIfNoPieceOnArc" 
+    (and 
+        (= (from) (handSite Mover)) 
+        (all Sites (sites Mover "Arc") if:(!= (who at:(site)) Mover))
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(game "Ghingskoot"
+    (players <Players:num>)
+    (equipment {
+        ("KintsBoard"
+            {
+            (track "TrackCW1" "46,5,SSE,N,E,S,W,NNW,End" P1 directed:True)
+            (track "TrackCCW1" "46,5,SSE,E,N,W,S,NNW,End" P1 directed:True)
+            (track "TrackCW2" "47,41,NNW,S,W,N,E,SSE,End" P2 directed:True)
+            (track "TrackCCW2" "47,41,NNW,W,S,E,N,SSE,End" P2 directed:True)
+            <Players:track3>
+            <Players:track4>
+            }
+        )
+        (regions "AllSites" (sites Board))
+        (regions "Arc" P1 (sites {1..5}))
+        (regions "Arc" P2 (sites {41..45}))
+        <Players:arc3>
+        <Players:arc4>
+        (regions "AllSitesDifferentThanArc" 
+            (difference 
+                (sites Board) 
+                (union {(sites P1 "Arc") (sites P2 "Arc") (sites {0 32})})
+            )
+        )
+        (dice d:2 facesByDie:{{0 4} {0 6} {0 14} {0 15}} num:4)
+        (piece "Marker" Each
+            (if (= (state at:(from)) 0)
+                (if (or ("PieceAlreadyEntered")
+                        ("PieceCanEnterOnlyIfNoPieceOnArc")
+                    )
+                    (or
+                        ("MoveOn" "SiteToMoveOnTrackCW" ("RememberSelectedTrack" 1))
+                        ("MoveOn" "SiteToMoveOnTrackCCW" ("RememberSelectedTrack" 2))
+                    )
+                )
+                ("MoveOn" "SiteToMoveOnSelectedTrack")
+            )
+        )
+        (hand Each)
+        (map "Throw" {
+            (pair 0 10) (pair 39 5) (pair 24 3) (pair 25 3) (pair 35 3) (pair 33 3)
+            (pair 10 2) (pair 18 2) (pair 19 2) (pair 20 2) (pair 21 2) (pair 29 2)
+        })
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:<Num:piece>))
+        (play ("RollMove" (or (forEach Piece) (forEach Piece container:(mover)))))
+        (end ("EscapeWin"))
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(option "Players" <Players> args:{ <num> <arc3> <arc4> <track3> <track4> }
+    {
+    (item "2" <2>
+        <>
+        <>
+        <>
+        <>
+    "2 players.")** 
+    (item "3" <3>
+        <(regions "Arc" P3 (sites {1..5}))>
+        <>
+        <
+        (track "TrackCW3" "48,5,SSE,N,E,S,W,NNW,End" P3 directed:True)
+        (track "TrackCCW3" "48,5,SSE,E,N,W,S,NNW,End" P3 directed:True)
+        >
+        <>
+    "3 players.") 
+    (item "4" <4> 
+        <(regions "Arc" P3 (sites {1..5}))>
+        <(regions "Arc" P4 (sites {41..45}))>
+        <
+        (track "TrackCW3" "48,5,SSE,N,E,S,W,NNW,End" P3 directed:True)
+        (track "TrackCCW3" "48,5,SSE,E,N,W,S,NNW,End" P3 directed:True)
+        >
+        <
+        (track "TrackCW4" "49,41,NNW,S,W,N,E,SSE,End" P4 directed:True)
+        (track "TrackCCW4" "49,41,NNW,W,S,E,N,SSE,End" P4 directed:True)
+        >
+    "4 players.") 
+    }
+)
+
+(option "Start Rules" <Num> args:{ <piece> }
+    {
+    (item "1" <1> "Each player has 1 piece.") 
+    (item "2" <2> "Each player has 2 pieces.")** 
+    }
+)
+
+//------------------------------------------------------------------------------
+
+(rulesets { 
+    
+    (ruleset "Ruleset/Quince (Described)" {
+        "Players/2" "Start Rules/2"
+        }
+        variations:{"Players/3" "Players/4" "Start Rules/1"}
+    )*
+    
+})
+
+//------------------------------------------------------------------------------
+
+(metadata 
+    
+    (info
+        {
+        (description "Ghingskoot is a game played by the Tohono O'odham people of Arizona. It is a race game similar to others known throughout the southwest United States and Mexico as Quince, and may be related to Mesoamerican Patolli.")
+        (rules "Played on a board with 36 holes arranged in a square, with a gap in the center of each side. There are arcs of five holes branching from opposite corners. Can be played with two to four players, who can also play on teams. One or two pieces per player.
+            Four stick dice are used, with one marked side. Each die is marked differently for a different value: 4, 6, 14, 15. The throws are as follows: All marked sides up = 5; three marked sides up = 3; two marked sides up = 2, one marked side up = the value of the marked side; zero marked sides up = 10. 
+            Players’ pieces enter on the branching arcs. The second piece cannot enter before the first one leaves the arc.
+            Each player can choose which direction they wish to move around the board, but they must continue in this direction for the rest of the game. If a player lands on the same spot as the opponent, the opponent’s piece is removed from the board and must re-enter.
+        Player must make an exact throw to get a piece off the board after reentering the arc from the spot where the player entered the board. The player to get both of their pieces off the board first wins.")
+        (source "Culin 1907: 146-148.")
+        (id "204")
+        (version "1.3.10")
+        (classification "board/race/escape")
+        (credit "Eric Piette")
+        }
+    )
+    
+    (graphics {
+        (show Edges Hidden)
+        (show Symbol "disc" "AllSites" Vertex fillColour:(colour Grey) edgeColour:(colour Black) scale:0.5)
+        (piece Rename piece:"Die1" "KintsDice1")
+        (piece Rename piece:"Die2" "KintsDice2")
+        (piece Rename piece:"Die3" "KintsDice3")
+        (piece Rename piece:"Die4" "KintsDice4")
+        (piece Style "Die" NativeAmericanDice)
+    })
+    
+    (ai
+        "Ghingskoot_ai"
+    )
+)

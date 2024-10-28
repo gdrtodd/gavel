@@ -1,0 +1,104 @@
+(define "Columns" 8)
+(define "PlayableSites" (sites (values Remembered "Playable")))
+(define "NoPieceOnBoard" (no Pieces All in:(union (sites Top) (sites Bottom))))
+(define "Stores" (sites {(mapEntry P1) (mapEntry P2)}))
+
+(game "Ovalhu" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            {
+            (track "Track1" "1,E,17,16,W" loop:True P1)
+            (track "Track2" "1,E,N,W,0" loop:True P2)
+            }
+        )
+        (piece "Seed" Shared)
+        (map {(pair P1 LastSite) (pair P2 FirstSite)}) 
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start {
+            (set RememberValue "Playable" (union (sites Top) (sites Bottom)))
+            (set Count 8 to:(union (sites Bottom) (sites Top))) 
+        })
+        
+        phases:{
+        (phase "Sowing"
+            (play
+                (or {
+                    (move Select
+                        (from 
+                            (if (and (is Pending) ("SameTurn"))
+                                (sites {(var "Replay")})
+                                (sites Mover) 
+                            )
+                            if:(and (is Occupied (from)) (is In (from) ("PlayableSites")))
+                        )
+                        (then
+                            (sow
+                                "Track"
+                                owner:(mover)
+                                apply:(if (or (is In (to) ("Stores")) (< 1 (count at:(to))))
+                                    (and
+                                        (moveAgain)
+                                        (if (not (is In (to) ("Stores")))
+                                            (and
+                                                (set Pending)
+                                                (set Var "Replay" (to))
+                                            )
+                                        )
+                                    )
+                                    (if (is Occupied ("OppositePitTwoRows" (to)))
+                                        (fromTo
+                                            (from ("OppositePitTwoRows" (to)))
+                                            (to (mapEntry Mover))
+                                            count:(count at:("OppositePitTwoRows" (to)))
+                                        )
+                                    )
+                                )
+                                skipIf:(and (not (is In (to) ("Stores"))) (not (is In (to) ("PlayableSites"))))
+                            )
+                        )
+                    )
+                    }
+                    (then
+                        (if ("NoPieceOnBoard")
+                            (forget Value "Playable" All)
+                        )
+                    )
+                )
+            )
+            
+            (end (if ("NoPieceOnBoard")
+                    {
+                    (if (> 8 (count at:(mapEntry P1))) (result P2 Win))
+                    (if (> 8 (count at:(mapEntry P2))) (result P1 Win))
+                    }
+                )
+            )
+            
+            (nextPhase ("NoPieceOnBoard") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (not (all Sites (sites Mover) if:(is Occupied (site))))
+                    (if (<= 8 (count at:(mapEntry Mover)))
+                        (move
+                            (from (mapEntry Mover))
+                            (to (sites Mover) if:(is Empty (to)))
+                            count:8
+                            (then (remember Value "Playable" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (all Passed) "Sowing")
+        )
+        }
+    )
+)
+

@@ -1,0 +1,105 @@
+(define "Columns" 10)
+(define "OnlyHoleWithSingleCounters" (all Sites (sites Mover "Home") if:(>= 1 (count at:(site)))))
+
+(game "Makonn" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "20,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))          
+        (regions "Home" P2 (sites Track "Track2"))          
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+    }) 
+    (rules 
+        
+        (start (set Count 1 to:(union (sites P1 "Home") (sites P2 "Home"))))
+        
+        phases:{
+        
+        (phase "Rearrangement"
+            (play 
+                (or
+                    (move
+                        (from (sites Mover "Home") if:(is Occupied (from)))
+                        (to (sites Mover "Home") if:(!= (from) (to)))
+                        (then
+                            (and
+                                (if 
+                                    (and {
+                                        (!= 1 (value Player Mover))
+                                        (is In (last To) (sites Mover "Inner"))
+                                        (= 1 (count at:(last To)))
+                                    })
+                                    (if (is Occupied ("OppositePit" (last To)))
+                                        (and {
+                                            (set Value Mover 1)
+                                            (remove ("OppositePit" (last To)))
+                                            (if (is Occupied ("OppositeOuterPit" (last To))) 
+                                                (remove ("OppositeOuterPit" (last To)))
+                                            )
+                                        })
+                                    )
+                                )
+                                (moveAgain)
+                            )
+                        )
+                    )
+                    (move Pass)
+                )
+            )
+            (nextPhase Mover (was Pass) "Sowing")
+        )
+        
+        (phase "Sowing" 
+            (play
+                (move Select
+                    (from 
+                        (if ("SameTurn")
+                            (sites {(var "Replay")})
+                            (sites Mover "Home") 
+                        )
+                        if:(if ("SameTurn")
+                            True
+                            (if ("OnlyHoleWithSingleCounters")
+                                (is Occupied (from))
+                                (< 1 (count at:(from)))
+                            )
+                        )
+                    )
+                    (then
+                        (sow
+                            "Track"
+                            owner:(mover)
+                            apply:(if (< 1 (count at:(to)))
+                                (and
+                                    (set Var "Replay" (to))
+                                    (moveAgain)
+                                )
+                                (if (is Occupied ("OppositePit" (to)))
+                                    (and 
+                                        (remove ("OppositePit" (to)))
+                                        (if (is Occupied ("OppositeOuterPit" (to))) 
+                                            (remove ("OppositeOuterPit" (to)))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        }
+        
+        (end (if (all Sites (sites Next "Home") if:(= 0 (count at:(site)))) (result Next Loss)))
+    )
+)
+

@@ -1,0 +1,156 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "StartPos" ("NextSiteOnTrack" 1 from:("Bar" (mover))))
+
+(define "NextSiteFromDistDoubleDice" ("NextSiteOnTrack" (/ (count Pips) 2) from:#1))
+
+(define "RemoveAPiece" (move Remove (site)))
+
+(define "AllPieceEscaped" (no Pieces Mover))
+
+(define "CanEscape" ("IsOffBoard" #1))
+
+(define "PieceInOpponentQuadrantOrNoPieceInTheBoard" 
+    (or {
+        (all Sites
+            (difference 
+                (sites Board) 
+                "StartPos"
+            )
+            if:(!= (who at:(site)) (mover))
+        )
+        (is Occupied ("Bar" (mover)))
+        (< (size Stack at:("StartPos")) 14)
+        (not (all Sites (sites Mover "OppositeQuadrant") if:(!= (who at:(site)) (mover))))
+    })
+)
+
+(define "NumSitesInFirstQuadrantWithMoreThan2Pieces" 
+    (count Sites 
+        in:(forEach 
+            (intersection (sites Occupied by:Mover) (sites Mover "Home")) 
+            if:(>= (size Stack at:(site)) 2) 
+        )
+    )
+)
+
+(define "AllPieceInOpponentSide" ("AllOwnedPiecesIn" (sites Mover "OppositeQuadrant")))
+
+(define "Bar" (mapEntry #1))
+
+(define "NumPiece" (size Stack in:(sites Occupied by:#1)))
+
+(define "SetScoreOf" 
+    (score 
+        #1 
+        (if (is Mover #1) 
+            (if 
+                (= ("NumPiece" #2) 15) 
+                2 
+                1
+            ) 
+            0
+        )
+    )
+)
+
+(define "UpdateCounterDoublePlay" 
+    (if (< (value Player Mover) (- (/ (count Pips) 2) 1))
+        (and 
+            (moveAgain) 
+            (if (< (value Player Mover) 0)
+                (set Value Mover 1)
+                (set Value Mover (+ 1 (value Player Mover)))
+            )
+        )
+        (set Value Mover 0)
+    )
+)
+
+(game "Jacquet de Versailles" 
+    (players 2) 
+    (equipment { 
+        ("BackgammonBoard" "BackgammonTracksSameDirectionOppositeCornersWithBars") 
+        (dice num:2)
+        (piece "Disc" Each) 
+        (map {(pair 1 6) (pair 2 19)}) 
+        (regions "Home" P1 { 13..18 }) 
+        (regions "Home" P2 { 12..7 }) 
+        (regions "OppositeQuadrant" P1 { 0..5 }) 
+        (regions "OppositeQuadrant" P2 { 20..25 }) 
+    })
+    
+    (rules
+        (start { 
+            (place Stack "Disc1" 13 count:15)
+            (place Stack "Disc2" 12 count:15)
+        })
+        
+        (play 
+            (do
+                ("RollEachNewTurnMove"
+                    (if (all DiceEqual)
+                        (forEach Site
+                            (sites Occupied by:Mover)
+                            (if (and ("CanEscape" ("NextSiteFromDistDoubleDice" (site))) ("AllPieceInOpponentSide"))
+                                ("RemoveAPiece")
+                                (if (or 
+                                        (!= (site) "StartPos")
+                                        (and 
+                                            (= (site) "StartPos")
+                                            ("PieceInOpponentQuadrantOrNoPieceInTheBoard")
+                                        )
+                                    )
+                                    (move 
+                                        (from (site))
+                                        (to ("NextSiteFromDistDoubleDice" (site))
+                                            if:("NoEnemyOrOnlyOne" (to))
+                                            ("HittingCapture" ("Bar" (next))) 
+                                        )
+                                    )
+                                )
+                            )
+                            (then ("UpdateCounterDoublePlay"))
+                        )
+                        (forEach Die
+                            if:("DieNotUsed")
+                            (forEach Site
+                                (sites Occupied by:Mover)
+                                (if (and ("CanEscape" ("NextSiteFrom" (site))) ("AllPieceInOpponentSide"))
+                                    ("RemoveAPiece")
+                                    (if (or 
+                                            (!= (site) "StartPos")
+                                            (and 
+                                                (= (site) "StartPos")
+                                                ("PieceInOpponentQuadrantOrNoPieceInTheBoard")
+                                            )
+                                        )
+                                        (move 
+                                            (from (site))
+                                            (to ("NextSiteFrom" (site))
+                                                if:("NoEnemyOrOnlyOne" (to))
+                                                ("HittingCapture" ("Bar" (next))) 
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            (then ("ReplayNotAllDiceUsed"))
+                        )
+                    )
+                )
+                ifAfterwards:(<= ("NumSitesInFirstQuadrantWithMoreThan2Pieces") 2)
+            )
+        )
+        
+        (end {
+            (if ("AllPieceEscaped")
+                (byScore { 
+                    ("SetScoreOf" P1 P2)
+                    ("SetScoreOf" P2 P1)
+                })
+            )
+        })
+    )
+)
+

@@ -1,0 +1,154 @@
+(define "PiecesOwnedBy" (+ (count at:(mapEntry #1)) (count in:(sites #1))))
+(define "PlayableSites" (sites (values Remembered "Playable")))
+(define "WestHole" (ahead (to) W))
+(define "WestHoleExist" (!= (to) ("WestHole")))
+(define "EastHole" (ahead (to) E))
+(define "EastHoleExist" (!= (to) ("EastHole")))
+(define "NoPieceOnBoard" (all Sites (union (sites Top) (sites Bottom)) if:(= 0 (count at:(site)))))
+(define "OneRowIsEmpty"
+    (or
+        (all Sites (sites Bottom) if:(= 0 (count at:(site))))
+        (all Sites (sites Top) if:(= 0 (count at:(site))))
+    )
+)
+(define "LeftMostEmpty" 
+    (trackSite FirstSite 
+        from:(mapEntry "LeftMost" Mover)
+        if:(is Empty (to))
+    )
+)
+
+(game "Erherhe" 
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 6
+            (track "Track" "1,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map {(pair P1 FirstSite) (pair P2 LastSite)}) 
+        (map "LeftMost" {(pair P1 1) (pair P2 12)})
+        (piece "Seed" Shared)
+    }) 
+    
+    (rules 
+        (start {
+            (set Count 4 to:(sites Track))
+            (set RememberValue "Playable" (union (sites Top) (sites Bottom)))
+        })		
+        
+        phases:{
+        (phase "Sowing"
+            (play
+                (or {
+                    (move Select
+                        (from
+                            (sites Mover)
+                            if:(and (is Occupied (from)) (is In (from) ("PlayableSites")))
+                        )
+                        (then
+                            (sow
+                                apply:(if
+                                    (and (is In (to) (sites Next))
+                                        (or
+                                            (= 2 (count at:(to)))
+                                            (= 4 (count at:(to)))
+                                        )
+                                    )
+                                    (and {
+                                        (fromTo
+                                            (from (to))
+                                            (to (mapEntry Mover))
+                                            count:(count at:(to))
+                                        )
+                                        (if ("WestHoleExist")
+                                            (if 
+                                                (or
+                                                    (= 2 (count at:("WestHole")))
+                                                    (= 4 (count at:("WestHole")))
+                                                )
+                                                (fromTo
+                                                    (from ("WestHole"))
+                                                    (to (mapEntry Mover))
+                                                    count:(count at:("WestHole"))
+                                                )
+                                            )
+                                        )
+                                        (if ("EastHoleExist")
+                                            (if 
+                                                (or
+                                                    (= 2 (count at:("EastHole")))
+                                                    (= 4 (count at:("EastHole")))
+                                                )
+                                                (fromTo
+                                                    (from ("EastHole"))
+                                                    (to (mapEntry Mover))
+                                                    count:(count at:("EastHole"))
+                                                )
+                                            )
+                                        )
+                                    })
+                                )
+                                skipIf:(not (is In (to) ("PlayableSites")))
+                            )
+                        )
+                    )
+                    }
+                    (then
+                        (if ("OneRowIsEmpty")
+                            (and { 
+                                (forEach Site (sites P1)
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P1))
+                                        count:(count at:(site))
+                                    )
+                                )
+                                (forEach Site (sites P2)
+                                    (fromTo
+                                        (from (site))
+                                        (to (mapEntry P2))
+                                        count:(count at:(site))
+                                    )
+                                )
+                                (forget Value "Playable" All)
+                            })
+                        )
+                    )
+                )
+            )
+            (end (if ("NoPieceOnBoard") {
+                    (if (= 0 (count at:(mapEntry P1))) (result P2 Win))
+                    (if (= 0 (count at:(mapEntry P2))) (result P1 Win))
+                })
+            )
+            
+            (nextPhase ("NoPieceOnBoard") "BetweenRounds")
+        )
+        
+        (phase "BetweenRounds"
+            (play
+                (if (not (all Sites (sites Mover) if:(is Occupied (site))))
+                    (if (<= 4 (count at:(mapEntry Mover)))
+                        (move
+                            (from (mapEntry Mover))
+                            (to "LeftMostEmpty")
+                            count:4
+                            (then (remember Value "Playable" (last To)))
+                        )
+                        (move
+                            (from (mapEntry Mover))
+                            (to "LeftMostEmpty")
+                            count:(count at:(mapEntry Mover))
+                            (then (remember Value "Playable" (last To)))
+                        )
+                    )
+                )
+            )
+            (nextPhase (all Passed) "Sowing")
+        )
+        
+        }
+    )
+)
+

@@ -1,0 +1,24 @@
+(game "Sumi Naga Game (War)" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Marker" Each
+            (or
+                ("StepToEmpty")
+                ("HopSequenceCapture")
+            )
+        )
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Marker1" (union (expand (sites Bottom)) (sites {"A3"})))
+            (place "Marker2" (union (expand (sites Top)) (sites {"E3"})))
+        })
+        
+        (play (forEach Piece))
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

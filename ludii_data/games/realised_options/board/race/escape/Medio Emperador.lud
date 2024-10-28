@@ -1,0 +1,50 @@
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Medio Emperador"
+    (players 2)
+    (equipment {
+        ("TableBoard" "TableTracksOppositeWithHands")
+        (dice d:6 num:2)
+        (hand Each)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsOffBoard" "SiteToMoveOnTrack")
+                    "RemoveAPiece"
+                    (if ("NoEnemyOrOnlyOne" "SiteToMoveOnTrack")
+                        (move 
+                            (from) 
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                ("HittingCapture" (handSite Next))
+                            )
+                        )
+                    )
+                )	
+            )
+        )
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 0 count:15)
+            (place Stack "Disc2" 12 count:15)
+        })
+        (play
+            ("RollEachNewTurnMove"
+                (or 
+                    (forEach Piece top:True) 
+                    (forEach Piece container:(mover) top:True)
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        (end {
+            ("EscapeWin")
+            (if (and (no Moves P1) (no Moves P2)) (result Mover Draw))
+        })
+    )
+)
+

@@ -1,0 +1,35 @@
+(define "CaptureToPieceAndCheckVictory"
+    (apply
+        (if ("IsEnemyAt" (to))
+            (remove (to))
+        )
+    ) 
+)
+
+(game "Jeson Mor" 
+    (players 2) 
+    (equipment { 
+        (board (square 9)) 
+        (piece "Knight" Each 
+            (move Leap 
+                "KnightWalk"
+                (to 
+                    if:(not ("IsFriendAt" (to))) 
+                    "CaptureToPieceAndCheckVictory"
+                ) 
+            )
+        )
+    }) 
+    (rules 
+        (start {
+            (place "Knight1" (sites Bottom))
+            (place "Knight2" (sites Top))
+        })
+        (play (forEach Piece))
+        (end {
+            (if (no Pieces Next) (result Mover Win))
+            (if (is In (last To) (sites Centre)) (result Mover Win))
+        })
+    )
+)
+

@@ -1,0 +1,41 @@
+(define "EatBottomRight"
+    (forEach Site
+        (sites Occupied by:Shared)
+        (if (and 
+                (>= (row of:(last To)) (row of:(site)))
+                (<= (column of:(last To)) (column of:(site)))
+            )
+            (remove (site))
+        )
+    )
+)
+
+(define "EatChocolate" 
+    (move Remove
+        (sites Occupied by:Shared)
+        (then ("EatBottomRight"))
+    )
+)
+
+(define "EatTopLeftCorner" 
+    (is In (last To) (intersection (sites Top) (sites Left)))
+)
+
+(game "Chomp" 
+    (players 2)
+    (equipment { 
+        (board (rectangle 4 5)) 
+        (piece "Chocolate" Shared)
+    }) 
+    (rules 
+        (start (place "Chocolate" (sites Board)))
+        (play ("EatChocolate")) 
+        (end 
+            (if 
+                ("EatTopLeftCorner") 
+                (result Mover Loss)
+            )
+        ) 
+    )
+)
+

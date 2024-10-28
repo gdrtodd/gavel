@@ -1,0 +1,95 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (concentric {1 6 6 6})
+            use:Vertex)
+            (piece "PIECE_ALPHA" Each 
+                (or 
+                    (move Hop 
+                        (between if:
+                            (is Enemy (who at:
+                                    (between)
+                            ))
+                            (apply 
+                                (remove 
+                                    (between)
+                                )
+                            )
+                        )
+                        (to if:(is Empty (to)))
+                    )
+                    (move Step Rotational 
+                        (to if:(is Empty (to)))
+                    )
+                )
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (sites {2 3 4 8 9 10 14 15 16})
+                )
+                (place "PIECE_ALPHA2" 
+                    (sites {1 6 5 7 12 11 13 18 17})
+                )
+        })
+        (play 
+            (if (is Prev Mover) (or 
+                    (move Hop 
+                        (from (last To))
+                        Rotational 
+                        (between if:
+                            (and 
+                                (not 
+                                    (is In (between) (sites ToClear))
+                                )
+                                (is Enemy (who at:
+                                        (between)
+                                ))
+                            )
+                            (apply 
+                                (remove 
+                                    (between)
+                                )
+                            )
+                        )
+                        (to if:(is Empty (to)))
+                        (then (if (can Move 
+                                    (hop 
+                                        (from (last To))
+                                        Rotational 
+                                        (between if:
+                                            (and 
+                                                (not 
+                                                    (is In (between) (sites ToClear))
+                                                )
+                                                (is Enemy (who at:
+                                                        (between)
+                                                ))
+                                            )
+                                        )
+                                        (to if:(is Empty (to)))
+                                    )
+                        ) (moveAgain)))
+                    )
+                    (move Pass)
+            ) (forEach Piece))
+        )
+
+        (end 
+            (if (no Pieces Next) (result Next Loss))
+        )
+    )
+)
+
+// Ancestor: Pretwa
+// Selection metric: 0.05
+// Fitness: 0.51
+// Novelty: 0.49
+// Cell distance: 1.00
+// Edit Distance: 0.10
+// Global Edit Distance: 0.10
+// Lineage length: 2.00

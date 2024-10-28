@@ -1,0 +1,71 @@
+(define "WhiteVC" 
+    (is Connected All {(sites Side N) (sites Side S) (sites Side E) (sites Side W)})
+)
+
+(define "BlackVC"
+    (or
+        (is Connected Orthogonal {(sites Side N) (sites Side S)})
+        (is Connected Orthogonal {(sites Side E) (sites Side W)})
+    )
+)
+
+(define "IsPlayingPhase" (= 1 (var)))
+
+(define "Skip"
+    (move Set NextPlayer (player (next)))
+)
+
+(game "Pippinzip" 
+    (players 2) 
+    (equipment { 
+        (board (square 13) use:Vertex) 
+        (piece "Disc" Each) 
+    }) 
+    (rules 
+        phases:{
+        (phase "Opening"
+            (play
+                (or
+                    (or
+                        (move Add 
+                            (piece (id "Disc" P2)) 
+                            (to (sites Empty))
+                            (then (if (< (count MovesThisTurn) 2) (moveAgain)))
+                        )
+                        "Skip"
+                    )
+                    (if (= (count MovesThisTurn) 0)
+                        (move Pass
+                            (then
+                                (if
+                                    (is Mover P1)
+                                    (swap Players P1 P2
+                                        (then
+                                            (note "Player 1 is now Black. Player 2 is now White." to:All)
+                                        )
+                                    )
+                                    (note "Player 1 remains White. Player 2 remains Black." to:All)
+                                    (then
+                                        (do (set NextPlayer (player 1))
+                                            next:(set Var 1) 
+                                        )
+                                    )
+                                )
+                            )
+                    ))
+                )
+            )
+            (nextPhase ("IsPlayingPhase") "Playing")
+        )
+        (phase "Playing"
+            (play (move Add (to (sites Empty))))
+        )
+        }
+        (end {
+            (if (and (not ("IsPlayingPhase")) ("BlackVC")) (result Mover Win))
+            (if (and {(= (id P2) (mover)) ("BlackVC")}) (result P2 Win))
+            (if (and {(= (id P1) (mover)) ("WhiteVC")}) (result P1 Win))
+        })
+    )
+)
+

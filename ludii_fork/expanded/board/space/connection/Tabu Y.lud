@@ -1,0 +1,2 @@
+Players take turns placing one piece of their colour on empty cells; the piece they place may not be adjacent to the last piece placed by their opponent. A player wins by connecting all three board sides with a connected group of their pieces. Played on a size 11 board. The first player to connect all three sides wins.
+(game "Tabu Y" (players 2) (equipment {(board (hex Triangle 11)) (piece "Disc")}) (rules (play (move Add (to (sites Empty) if:(not (is In (to) (sites Around (last To))))))) (end (if (is Connected 3 Sides) (result Mover Win))))) 

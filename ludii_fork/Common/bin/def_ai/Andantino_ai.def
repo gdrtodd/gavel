@@ -1,0 +1,7 @@
+(define "Andantino_ai"
+    (bestAgent "MC-GRAVE")
+    trainedHeuristics:(heuristics {
+        (lineCompletionHeuristic)
+    })
+    
+)

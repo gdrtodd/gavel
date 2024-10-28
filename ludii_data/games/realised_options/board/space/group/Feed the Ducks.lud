@@ -1,0 +1,40 @@
+(game "Feed the Ducks" 
+    (players 2) 
+    (equipment { 
+        (board (hex 5)) 
+        (piece "Marker" Each)
+        (piece "Disc" Neutral)
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" {"A5" "C7" "D8" "F9" "H9" "I9" "I7" "I5" "F2" "C1" "A1" "A2"}) 
+            (place "Marker2" {"A4" "A3" "B1" "D1" "E1" "G3" "H4" "I6" "I8" "G9" "E9" "B6" })
+        })
+        phases:{
+        (phase "Throw Bread" 
+            (play 
+                (move Add 
+                    (piece "Disc0")
+                    (to (sites Empty)) 
+                    (then (attract (from (last To))))
+                )
+            ) 
+            (nextPhase "Move Bread")
+        )
+        (phase "Move Bread" 
+            (play 
+                (move 
+                    (from (sites Occupied by:Neutral)) 
+                    (to (difference (sites Empty) (sites Direction from:(last To))))
+                    (then (attract (from (last To))))
+                )
+            )
+        )
+        }
+        (end {
+            ("SingleGroupWin" P1)
+            ("SingleGroupWin" P2)
+        }) 
+    )
+)
+

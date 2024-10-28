@@ -1,0 +1,60 @@
+(define "Columns" 7)
+
+(define "PiecesOwnedBy" (count Cell at:(handSite #1)))
+
+(define "NumPiecesOnBoard" (count in:(sites Track)))
+
+(define "NextHole" ("NextSiteOnTrack" 1 from:#1))
+
+(define "LastHolePlayed" (last To afterConsequence:True))
+
+(game "Kanji Guti" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (hand Each)
+        (regions "Home" P1 (expand (sites Left) steps:2)) 
+        (regions "Home" P2 (expand (sites Right) steps:2)) 
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 1 at:(coord "D1")) 
+            (set Count 12 to:(difference (sites Track) (sites Centre))) 
+        })
+        
+        (play 
+            (move Select 
+                (from 
+                    (if 
+                        ("SameTurn") 
+                        (sites {("NextHole" "LastHolePlayed")})
+                        (sites Mover) 
+                    ) 
+                    if:(< 0 (count at:(from)))
+                )
+                (then 
+                    (sow 
+                        apply:(if (> (count at:("NextHole" (to))) 0)
+                            (moveAgain)
+                            (if (> (count at:("OppositePitTwoRows" ("NextHole" (to)))) 0)
+                                (fromTo 
+                                    (from ("OppositePitTwoRows" ("NextHole" (to)))) 
+                                    (to (handSite Mover)) 
+                                    count:(count at:("OppositePitTwoRows" ("NextHole" (to))))
+                                )
+                            )
+                        )
+                    )
+                )
+            )		
+        )
+        
+        (end ("MancalaByScoreWhen" (= 0 ("NumPiecesOnBoard"))))
+    )
+)
+

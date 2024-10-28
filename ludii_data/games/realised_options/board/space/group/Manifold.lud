@@ -1,0 +1,209 @@
+
+(define "IfThisRotationDo" 
+    (if
+        (= 0
+            (size Array
+                (difference
+                    (results
+                        from:(sites Group at:#4)
+                        to:(from)
+                        (+
+                            (+ (* 32 #1) (#2)) 
+                            (+
+                                (max
+                                    (results
+                                        from:(sites Group at:#4)
+                                        to:(from)
+                                        (- (* 32 #1))
+                                    )
+                                )
+                                (max
+                                    (results
+                                        from:(sites Group at:#4)
+                                        to:(from)
+                                        (- (#2))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (results
+                        from:(sites)
+                        to:(from)
+                        (value Piece at:(from))
+                    )
+                )
+            )
+        )
+        #3
+    )
+)
+
+(define "DRow" (/ (value Piece at:(from)) 32))
+(define "DCol" (% (value Piece at:(from)) 32))
+
+(define "IsSameSizeAsShapeAtValue"
+    (= (size Array (array (sites))) (size Array (array (sites Group at:#1))))
+)
+
+(define "IfShapessMatchDo"
+    (if
+        ("IsSameSizeAsShapeAtValue" #2) 
+        (priority 
+            {
+            ("IfThisRotationDo" ("DRow")  ("DCol") #1 #2) 
+            ("IfThisRotationDo" ("DRow")  (- "DRow" "DCol") #1 #2) 
+            ("IfThisRotationDo" (- "DRow" "DCol") ("DRow") #1 #2) 
+            ("IfThisRotationDo" ("DCol")  ("DRow") #1 #2) 
+            ("IfThisRotationDo" (- "DCol")  (- "DRow" "DCol") #1 #2) 
+            ("IfThisRotationDo" (- "DCol" "DRow") ("DCol") #1 #2) 
+            
+            ("IfThisRotationDo" (- "DRow")  (- "DCol") #1 #2) 
+            ("IfThisRotationDo" (- "DRow")  (- "DCol" "DRow") #1 #2) 
+            ("IfThisRotationDo" (- "DCol" "DRow") (- "DRow") #1 #2) 
+            ("IfThisRotationDo" (- "DCol")  (- "DRow") #1 #2) 
+            ("IfThisRotationDo" ("DCol")  (- "DCol" "DRow") #1 #2) 
+            ("IfThisRotationDo" (- "DRow" "DCol") (- "DCol") #1 #2) 
+            }
+        )
+    )
+)
+
+(define "RecordShapeVectorsAsValues" 
+    (set Var "LastRow" (row of:(max (array (sites Group at:(last To)))))
+        (then 
+            (set Var "LastCol" (max (results from:(sites Group at:(last To)) to:(from) (column of:(from))))
+                (then
+                    (forEach Site
+                        (sites Group at:(last To))
+                        (set Value at:(site) 
+                            (+
+                                (* 32 (- (var "LastRow") (row of:(site))))
+                                (- (var "LastCol") (column of:(site)))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "GroupSize" 
+    (size Group at:(var "KeySite"))
+)
+
+(define "BroodSize"
+    (count Value (var "KeySite") in:(values Remembered "ShapeCount"))
+)
+
+(define "ManifoldBroodSize"
+    (+
+        (count Value (var "KeySite") in:(values Remembered "ShapeCount"))
+        (count Value (+ 1000 (var "KeySite")) in:(values Remembered "ShapeCount"))
+    )
+)
+
+(define "RecordMultiplier" 
+    (if
+        (= 0 "BroodSize")
+        (set State at:(var "KeySite") (* (% "ManifoldBroodSize" 2) (- 2 (% "GroupSize" 2))))
+        (set State at:(var "KeySite") 0)
+    )
+)
+
+(define "CountShapesOf"
+    (forEach Value
+        (values Remembered)
+        (and
+            {
+            (set Var "KeySite" (value)
+                (then
+                    (forEach Group
+                        if:(= #1 (who at:(to)))
+                        ("IfShapessMatchDo"
+                            (remember Value "ShapeCount"
+                                (+ 
+                                    (if (> (var "KeySite") (regionSite (sites) index:0)) 0 1000)
+                                    (var "KeySite")
+                                ) 
+                            )
+                            (var "KeySite") 
+                        )
+                    )
+                )
+            )
+            }
+            (then ("RecordMultiplier"))
+        )
+        (then (forget Value All))
+    )
+)
+
+(define "ScorePlayer"
+    (forEach Group
+        if:(= #1 (who at:(to)))
+        (remember Value (regionSite (sites) index:0) unique:True)
+        (then
+            (and
+                {
+                ("CountShapesOf" #1)
+                (set Score Mover 0
+                    (then
+                        (forEach Piece (addScore Mover (state at:(from))))
+                    )
+                )  
+                }
+            )
+        )
+    )
+)
+
+(define "PlaceHex"
+    (do 
+        (forEach Site 
+            (sites Occupied by:Mover)
+            (set State at:(site) 0)
+        )
+        next:(move Add (piece (id "Hex" Mover)) (to (sites Empty))
+            (then ("RecordShapeVectorsAsValues"))
+        )
+        (then ("ScorePlayer" (mover)))
+    )
+)
+
+(game "Manifold"
+    (players 2)
+    (equipment {
+        (board (hex Hexagon 5) use:Cell)
+        (piece "Hex" Each maxState:7 maxValue:1023) 
+        (piece "Disc" Neutral)
+    })
+    (rules
+        (play
+            (if 
+                (or
+                    (= 0 (count Moves))
+                    (!= 0 (count MovesThisTurn))
+                )
+                ("PlaceHex")
+                (or
+                    (move Pass)
+                    (and
+                        {
+                        ("PlaceHex")
+                        } 
+                        (then (moveAgain))
+                    )
+                )
+                (then (forget Value All))
+            )
+        )
+        (end
+            (if (all Passed)
+                (byScore)
+            )
+        )
+    )
+) 
+

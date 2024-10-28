@@ -1,0 +1,43 @@
+(define "Krta" (= 0 (% (count at:#1) 4)))
+(define "Kali" (= 1 (% (count at:#1) 4)))
+(define "Dvapara" (= 2 (% (count at:#1) 4)))
+(define "Treta" (= 3 (% (count at:#1) 4)))
+
+(game "Aksadyuta"
+    (players 2)
+    (equipment {
+        (board
+            (square 1)
+        )
+        (piece "Bean" Shared)
+        (hand Each)
+    })
+    (rules 
+        (start (place "Bean" 0 count:55))
+        (play 
+            (move 
+                (from (sites Board))
+                (to (handSite Mover))
+                count:(value Random (range 1 (count at:0)))
+            )
+        )
+        (end {
+            (if (is Mover P2) {
+                (if (and ("Krta" (handSite P1)) (not ("Krta" (handSite P2)))) (result P1 Win))
+                (if (and ("Krta" (handSite P2)) (not ("Krta" (handSite P1)))) (result P2 Win))
+                
+                (if (and ("Kali" (handSite P1)) (not ("Kali" (handSite P2)))) (result P1 Loss))
+                (if (and ("Kali" (handSite P2)) (not ("Kali" (handSite P1)))) (result P2 Loss))
+                
+                (if (and ("Treta" (handSite P1)) ("Dvapara" (handSite P2))) (result P1 Win))
+                (if (and ("Treta" (handSite P2)) ("Dvapara" (handSite P1))) (result P2 Win))
+                
+                (if (and ("Krta" (handSite P1)) ("Krta" (handSite P2))) (result Mover Draw))
+                (if (and ("Kali" (handSite P1)) ("Kali" (handSite P2))) (result Mover Draw))
+                (if (and ("Dvapara" (handSite P1)) ("Dvapara" (handSite P2))) (result Mover Draw))
+                (if (and ("Treta" (handSite P1)) ("Treta" (handSite P2))) (result Mover Draw))
+            })
+        })
+    )
+)
+

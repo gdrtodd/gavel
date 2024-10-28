@@ -1,0 +1,40 @@
+(game "Gopher"
+    (players 2)
+    (equipment {
+        (board (hex 6))
+        (piece "Disc" Each)
+    })
+    (rules
+        (play
+            (if 
+                (= 0 (count Moves))
+                (move Add (to (sites Empty)))
+                (move Add
+                    (to
+                        (sites Empty)
+                        if:(and 
+                            (= 0
+                                (count Sites
+                                    in:(sites Around
+                                        (to)
+                                        Own
+                                    )
+                                )
+                            )
+                            (= 1
+                                (count Sites
+                                    in:(sites Around
+                                        (to)
+                                        Enemy
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end ("NoMoves" Loss))
+    )
+)
+

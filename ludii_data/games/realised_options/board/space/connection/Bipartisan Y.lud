@@ -1,0 +1,56 @@
+
+(define "Side1" (union (sites Side NE) (sites Side N)))
+(define "Side2" (union (sites Side SE) (sites Side S)))
+(define "Side3" (union (sites Side NW) (sites Side SW)))
+
+(define "AddPieceOf"
+    (move Add (piece #1)
+        (to (sites Empty))
+        #2
+))
+
+(game "Bipartisan Y" 
+    (players 2)
+    (equipment
+        {
+        (board (tri Limping 4) use:Vertex)
+        (piece "Disc" Each )
+        (piece "Counter" Neutral maxState:2)
+        }
+    )
+    (rules
+        (play
+            (if
+                ("SameTurn")
+                ("AddPieceOf" (next) ~)    
+                ("AddPieceOf" (mover) (then (moveAgain)))    
+        ))
+        (end 
+            {
+            (if
+                (and
+                    (= 1 (who at:(last To)))
+                    (is Connected 3 {"Side1" "Side2" "Side3"})
+                )
+                (result P1 Win)
+            )
+            (if
+                (and
+                    (= 2 (who at:(last To)))
+                    (is Connected 3 {"Side1" "Side2" "Side3"})
+                )
+                (result P2 Win)
+            )
+            }
+)))
+
+(define "P1Colour" (colour DarkGreen))
+(define "P2Colour" (colour White))
+(define "BoardColour" (colour 215 203 170))
+(define "EdgesOfSide"
+    (intersection
+        (sites Outer Edge) 
+        (forEach of:(difference #1 (sites Corners Vertex))
+            (sites Incident Edge of:Vertex at:(site))
+)))
+

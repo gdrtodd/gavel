@@ -1,0 +1,82 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (count Pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Pancha Keliya" 
+    (players 2)
+    (equipment {
+        (board 
+            (rotate 90
+                (merge {
+                    (shift 2.79 10.44 (rotate 135 (rectangle 5 1)))
+                    (shift 6.32 11.15 (rotate 45 (rectangle 5 1)))
+                    (shift 9 11
+                        (graph
+                            vertices:{ { 0 0 } { -0.75 0.55 } { -0.04 1.24 }{ 1 0 } } 
+                            edges:{ {0 1} {1 2} {2 3} {3 0}} 
+                        )
+                    )
+                    (shift 9 5 (rectangle 6 1))
+                    (shift 5 5 (rectangle 1 5))
+                    (rectangle 1 9)
+                    (shift 4 0 (rectangle 6 1))
+                })
+            )
+            {
+            (track "Track1" "23,N4,W,N,W,11,7,SW,SE,End" P1 directed:True)
+            (track "Track2" "31,S4,W,N,W,11,7,SW,SE,End" P2 directed:True)
+            }
+        )
+        (piece "Marker" Each
+            (if ("IsEndTrack" "SiteToMoveOnTrack")
+                "RemoveAPiece"
+                (if ("IsNotOffBoard" "SiteToMoveOnTrack") 	 			
+                    (if (or
+                            (is Empty "SiteToMoveOnTrack")
+                            (and 
+                                (not ("IsFriendAt" "SiteToMoveOnTrack")) 
+                                (not (is In "SiteToMoveOnTrack" (sites "Protect")))
+                            )
+                        )
+                        (move 
+                            (from)
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                ("HittingCapture" (mapEntry "Entry" Next))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ("StickDice" 6)
+        (hand Each)
+        (regions "Protect" (sites {27 19 12 10 1}))
+        (regions "SpecialDiceValues" (sites {1 5 6})) 
+        (map "Entry" {(pair P1 23) (pair P2 31)})
+    })
+    (rules
+        (start (place "Marker" "Hand" count:3))
+        (play 
+            ("RollMove"
+                (if 
+                    (and (is In (count Pips) (sites "SpecialDiceValues")) ("HandOccupied" Mover))
+                    (or
+                        (move 
+                            (from (handSite Mover)) 
+                            (to 
+                                (mapEntry "Entry" Mover) 
+                                if:(not ("IsEnemyAt" (to)))
+                            )
+                        )
+                        (forEach Piece)
+                        (then (moveAgain))
+                    )
+                    (forEach Piece)
+                )
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

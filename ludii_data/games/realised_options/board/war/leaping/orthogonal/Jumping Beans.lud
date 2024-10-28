@@ -1,0 +1,42 @@
+(game "Jumping Beans"
+    (players 2)
+    (equipment {
+        (board (square 7))
+        (piece "Bean" Each ("StepToEmpty"))
+    })
+    (rules
+        ("BeforeAfterCentreSetup" "Bean1" "Bean2")
+        
+        (play 
+            (if ("SameTurn")
+                (max Moves
+                    ("HopCapture"
+                        (from (last To))
+                        ~
+                        (then ("ReplayIfCanMove" ("HopCapture" (from (last To)))))
+                    )
+                )
+                (priority {
+                    (max Moves
+                        (forEach Piece
+                            ("HopCapture" ~ ~ (then ("ReplayIfCanMove" ("HopCapture" (from (last To))))))
+                        )
+                    )
+                    (forEach Piece)
+                })
+            )
+        )
+        
+        (end (if (or
+                    (no Pieces Next) 
+                    (and
+                        (= 1 (count Pieces Mover))
+                        (= (centrePoint) (where "Bean" Mover))
+                    )
+                )
+                (result Mover Win)
+            )
+        )
+    )
+)
+

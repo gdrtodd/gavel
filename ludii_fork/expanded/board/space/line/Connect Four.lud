@@ -1,0 +1,2 @@
+Connect 4 is played on a vertically placed grid of 7x6, where colored disks are dropped from the top of the grid. Players alternate dropping discs, which fall to the bottom of the column in which they are dropped. The first player to create a row of four disks in their color wins. 
+(game "Connect Four" (players 2) (equipment {(board (rectangle 1 7)) (piece "Disc" Each)}) (rules (play (move Add (to (forEach (sites Board) if:(lt (size Stack at:(site)) 6))) stack:True)) (end (if (is Line 4 byLevel:True) (result Mover Win))))) 

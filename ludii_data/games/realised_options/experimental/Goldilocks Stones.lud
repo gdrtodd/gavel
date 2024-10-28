@@ -1,0 +1,91 @@
+
+(define "Score3"
+    (forEach Piece
+        (if 
+            (= 3 
+                (count Pieces Mover in:(sites Around (from) Orthogonal)) 
+            )
+            (set State at:(from) 1)
+            (set State at:(from) 0)
+        )
+        (then
+            (set Score Mover (count Sites in:(intersection (sites Occupied by:Mover) (sites State 1)))) 
+        )
+    )
+)
+
+(define "ScoreHalf"
+    (forEach Piece
+        (if 
+            (=
+                (* 2 
+                    (count Pieces Mover in:(sites Around (from) Orthogonal))
+                )
+                (count Sites in:(sites Around (from) Orthogonal))
+            )
+            (set State at:(from) 1)
+            (set State at:(from) 0)
+        )
+        (then
+            (set Score Mover (count Sites in:(intersection (sites Occupied by:Mover) (sites State 1)))) 
+        )
+    )
+)
+
+(define "Connection" Orthogonal)
+(define "BoardUsed" "Hex2Limp")
+
+(define "HexLimp" (board (hex Limping (- 4 1)) use:Cell))
+(define "Hex2Limp" (board (hex (- 4 1) (+ 4 1)) use:Cell))
+(define "HexCell" (board (hex Hexagon 4) use:Cell))
+
+(define "DoubleMove"
+    (then 
+        (if 
+            (and 
+                (is Prev Next) 
+                (not (was Pass))
+            )
+            (moveAgain)
+        )
+    ) 
+)
+
+(game "Goldilocks Stones"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Ball" P1)
+        (piece "Ball" P2)
+    })
+    (rules
+        (start (set Score Each 0))
+        (play
+            (or
+                (move Pass)
+                (move Add 
+                    (piece (mover))
+                    (to (sites Empty))
+                    (then 
+                        "ScoreHalf"
+                ))
+                
+        ))
+        (end 
+            (if 
+                (all Passed)
+                {
+                (if 
+                    (= (score Mover) (score Next))
+                    (result Mover Loss)
+                )
+                (if 
+                    (!= (score Mover) (score Next))
+                    (byScore)
+                )
+                }
+            )
+        )
+    )
+)
+

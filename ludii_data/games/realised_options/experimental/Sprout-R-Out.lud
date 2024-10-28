@@ -1,0 +1,277 @@
+
+(define "EyesOf" 
+    (sites (values Remembered #1))
+)
+
+(define "ScoreOf"
+    (size Array
+        (array
+            (union
+                ("EyesOf" #1)
+                (sites Group
+                    from:(sites Around ("EyesOf" #1) Orthogonal)
+                    Orthogonal
+)))))
+
+(define "ValueOf"
+    (- 
+        (* 2 ("ScoreOf" #1))
+        (count Sites in:(sites Board)) 
+))
+
+(define "AppendThisSingletonEyeSite" 
+    (if
+        (= 0
+            (size Array
+                (array
+                    (difference
+                        (sites Around #2 Orthogonal)
+                        (sites Group
+                            at:(regionSite
+                                (sites Around #2 Orthogonal if:(is Mover (who at:(to))))
+                                index:0
+                            )
+                            Orthogonal
+        )))))
+        (remember Value #1 #2 unique:True)
+))
+
+(define "RecordEyesOf"
+    (if 
+        (not (no Pieces Mover in:(sites Around (last To) Orthogonal)))
+        (forEach Site
+            (intersection
+                (sites Empty)
+                (sites Around (last To) Orthogonal includeSelf:True)
+            )
+            ("AppendThisSingletonEyeSite" #1 (site))
+)))
+
+(define "RecordEyesMover"
+    (if
+        (is Mover P1)
+        ("RecordEyesOf" "P1")
+        ("RecordEyesOf" "P2")
+))
+
+(define "PlayableGroupSites"
+    (intersection
+        (sites Empty)
+        (sites Around (sites) Orthogonal 
+            if:(not
+                (is In (to)
+                    (sites Around
+                        (difference (sites Occupied by:Next) (sites))
+                        Orthogonal
+))))))
+
+(define "PlaceAbuttingOneGroupOfNext"
+    (move Add
+        (to
+            "PlayableGroupSites"
+            (apply
+                (forEach Site
+                    (sites)
+                    (set State at:(site) 0)
+        )))
+        (then "RecordEyesMover")
+))
+
+(define "RemoveGroupOfNext"
+    (forEach Group
+        Orthogonal
+        if:(and
+            {
+            (= (next) (who at:(to)))
+            (= 1 (state at:(to)))
+            }
+        )
+        (if
+            (not (can Move "PlaceAbuttingOneGroupOfNext"))
+            (do
+                (set Pending (sites))
+                next:(move Remove
+                    (regionSite (sites) index:0)
+                    (then (remove (sites Pending)))
+                )
+                (then "RecordEyesMover")
+))))
+
+(define "Play2RemainingGroupsOfNext"
+    (or
+        "RemoveGroupOfNext"
+        (forEach Group
+            Orthogonal
+            if:(and
+                {
+                (= (next) (who at:(to)))
+                (= 1 (state at:(to)))
+                }
+            )
+            "PlaceAbuttingOneGroupOfNext"
+        )
+        (then
+            (if
+                (not (no Pieces Next in:(sites State 1)))
+                (moveAgain)
+))))
+
+(define "Play2RemainingGroupsOfNextAI"
+    (priority
+        "RemoveGroupOfNext"
+        (forEach Group
+            Orthogonal
+            if:(and
+                {
+                (= (next) (who at:(to)))
+                (= 1 (state at:(to)))
+                }
+            )
+            (if
+                (is In
+                    (min (array (intersection (sites Occupied by:Next) (sites State 1))))
+                    (sites)
+                ) 
+                "PlaceAbuttingOneGroupOfNext"
+        ))
+        (then
+            (if
+                (not (no Pieces Next in:(sites State 1)))
+                (moveAgain)
+))))
+
+(define "IsNextToMultipleOpponentGroupsAtLastTo"
+    (< 1 
+        (count Groups
+            if:(is In (to)
+                (sites Distance Orthogonal
+                    (step Orthogonal
+                        (to if:(is In (to) (sites Occupied by:Next)))
+                    )
+                    from:(last To)
+                    (min 0)
+)))))
+
+(define "SitesFirstPlacement"
+    (difference
+        (union
+            (difference
+                (sites Empty)
+                (sites Around (sites Occupied by:Next) Orthogonal includeSelf:True) 
+            )
+            (sites To
+                (forEach Group
+                    Orthogonal
+                    if:(= (next) (who at:(to)))
+                    (move Add
+                        (to
+                            ("PlayableGroupSites" Next (to))
+        )))))  
+        (union
+            ("EyesOf" "P1")
+            ("EyesOf" "P2")
+)))
+
+(define "PlaceOutsideImmortalTerritory" 
+    (move Add
+        (to "SitesFirstPlacement"
+            (apply
+                (forEach Site
+                    (sites Group
+                        from:(sites Around (to) Orthogonal) 
+                        Orthogonal
+                        if:(is Next (who at:(to)))
+                    )
+                    (set State at:(site) 0)
+        )))
+        (then
+            (and
+                {
+                "RecordEyesMover"
+                (if
+                    (not (no Pieces Next in:(sites State 1)))
+                    (moveAgain)
+                )
+                }
+))))
+
+(define "Placements"
+    (if
+        (is Mover P1)
+        "Play2RemainingGroupsOfNext"
+        "Play2RemainingGroupsOfNext"
+))
+
+(game "Sprout-R-Out" 
+    (players 2)
+    (equipment
+        {
+        (board (trim (hex 5 6) )  use:Cell)
+        (piece "Ball" Each )
+        }
+    )
+    (rules
+        (meta (no Repeat Positional))
+        (play
+            (if "SameTurn"
+                "Placements"
+                (do 
+                    (forEach Site (sites Occupied by:Next)
+                        (set State at:(site) 1)
+                    )
+                    next:(priority
+                        {
+                        "PlaceOutsideImmortalTerritory"
+                        "RemoveGroupOfNext"
+                        (move Pass)
+                        }
+                ))
+                (then
+                    (and 
+                        {
+                        (set Score P1 ("ScoreOf" "P1"))
+                        (set Score P2 ("ScoreOf" "P2"))
+                        (if
+                            (is Mover P1)
+                            (set Value Mover ("ValueOf" "P1"))
+                            (set Value Mover ("ValueOf" "P2"))
+                        )
+                        (if
+                            (not (is Next Mover))
+                            (forEach Site (sites Occupied by:Next)
+                                (set State at:(site) 0)
+                        ))
+                        }
+                ))
+        ))
+        (end 
+            (if 
+                "EndCondition"
+                {
+                (if
+                    (= 
+                        (score P1) 
+                        (score P2)
+                    )
+                    (result Mover Win)
+                )
+                (if
+                    "EndCondition"
+                    (byScore)
+                )
+                }
+))))
+
+(define "MoverMajorityOfBoard"
+    (< 0 (value Player Mover))
+)
+
+(define "EndCondition" 
+    (or
+        "MoverMajorityOfBoard"
+        (all Passed)
+))
+
+(define "Perf2" (remove (hex  4 5) cells:{0 1 15 20 25 32 36 39 44 }))
+(define "Perf4" (remove (hex 6) cells:{0 1 5 12 17 23 30 37 40 45 50 53 60 67 73 78 85 89 90}))
+

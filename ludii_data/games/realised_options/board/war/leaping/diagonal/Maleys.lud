@@ -1,0 +1,144 @@
+(define "OrthogonalHopCaptureDoubleCounter"
+    (do
+        (move Hop 
+            #1
+            Orthogonal
+            (between 
+                before:3
+                after:1
+                if:(and (= 4 (count Steps (from) (between))) ("IsEnemyAt" (between)))
+                (apply (remove (between)))
+            ) 
+            (to if:(is Empty (to))) 
+        )
+        ifAfterwards:(is In (last To) (sites Phase 0))
+        #2
+    )
+)
+
+(define "DiagonalHopCaptureDoubleCounter"
+    (move Hop 
+        #1
+        Diagonal
+        (between 
+            before:1
+            if:(and (= 2 (count Steps (from) (between))) ("IsEnemyAt" (between)))
+            (apply (remove (between)))
+        ) 
+        (to if:(is Empty (to))) 
+        #2
+    )
+)
+
+(define "OrthogonalHopCaptureCounter"
+    (do
+        (move Hop 
+            #1
+            Orthogonal
+            (between 
+                before:3
+                after:1
+                if:(and (= 4 (count Steps (from) (between))) ("IsEnemyAt" (between)))
+                (apply (remove (between)))
+            ) 
+            (to if:(is Empty (to))) 
+        )
+        ifAfterwards:(is In (last To) (sites Phase 0))
+        #2
+    )
+)
+
+(define "DiagonalHopCaptureCounter"
+    (move Hop 
+        #1
+        Diagonal
+        (between 
+            before:1
+            if:(and (= 2 (count Steps (from) (between))) ("IsEnemyAt" (between)))
+            (apply (remove (between)))
+        ) 
+        (to if:(is Empty (to)))
+        #2
+    )
+)
+
+(define "DoubleCounterMoveAgainIfCanCaptureAgain" 
+    (then
+        ("ReplayIfCanMove" 
+            (or 
+                ("DiagonalHopCaptureDoubleCounter" (from (last To))) 
+                ("OrthogonalHopCaptureDoubleCounter" (from (last To)))
+            )
+        )
+    )
+)
+
+(define "DoubleCounterMove"
+    (or {
+        (do
+            (move Slide)
+            ifAfterwards:(is In (last To) (sites Phase 0))
+        )
+        ("DiagonalHopCaptureDoubleCounter" (from) ("DoubleCounterMoveAgainIfCanCaptureAgain"))
+        ("OrthogonalHopCaptureDoubleCounter" (from) ("DoubleCounterMoveAgainIfCanCaptureAgain"))
+    })
+)
+
+(define "CounterMoveAgainIfCanCaptureAgain" 
+    (then 
+        (and
+            ("PromoteIfReach" (sites Next) "DoubleCounter")
+            ("ReplayIfCanMove" 
+                (or 
+                    ("DiagonalHopCaptureCounter" (from (last To))) 
+                    ("OrthogonalHopCaptureCounter" (from (last To)))
+                )
+            )
+        )
+    )
+)
+
+(define "CounterMove"
+    (or {
+        ("StepToEmpty" (directions {FR FL}) 
+            (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+        )
+        ("DiagonalHopCaptureCounter" (from) ("CounterMoveAgainIfCanCaptureAgain"))
+        ("OrthogonalHopCaptureCounter" (from) ("CounterMoveAgainIfCanCaptureAgain"))
+    })
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Maleys" 
+    ("TwoPlayersNorthSouth")
+    ("DraughtsEquipment" (square 10))
+    (rules 
+        ("BlackCellsSetup" 4)
+        
+        (play 
+            (if ("SameTurn")
+                (or
+                    (if ("IsUnpromoted")
+                        (or 
+                            ("DiagonalHopCaptureCounter" (from (last To)) ("CounterMoveAgainIfCanCaptureAgain")) 
+                            ("OrthogonalHopCaptureCounter" (from (last To)) ("CounterMoveAgainIfCanCaptureAgain"))
+                        )
+                        (or 
+                            ("DiagonalHopCaptureDoubleCounter" (from (last To)) ("DoubleCounterMoveAgainIfCanCaptureAgain")) 
+                            ("OrthogonalHopCaptureDoubleCounter" (from (last To)) ("DoubleCounterMoveAgainIfCanCaptureAgain"))
+                        )
+                    )
+                    (move Pass)
+                )
+                (or 
+                    (forEach Piece "Counter" "CounterMove")
+                    (forEach Piece "DoubleCounter" "DoubleCounterMove")
+                )
+            )
+        ) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

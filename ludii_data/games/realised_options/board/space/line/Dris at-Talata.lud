@@ -1,0 +1,35 @@
+(game "Dris at-Talata"
+    (players 2)
+    (equipment {
+        (board (square 3))
+        (hand Each)
+        (piece "Marker" Each)
+    })
+    (rules
+        (start (place "Marker" "Hand" count:3))
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                )
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        (phase "Movement"
+            (play 
+                (move 
+                    (from (sites Occupied by:Mover))
+                    (to (sites Empty))
+                )
+            )
+        )
+        }
+        
+        (end ("Line3Win" Orthogonal))
+    )	
+)
+

@@ -1,0 +1,89 @@
+(define "DroppableFromDirection"
+    (and (
+            (= 0
+                (count Pieces All in:(sites LineOfSight at:(site) #1))
+            )
+            
+            (= 1
+                (count Pieces in:(sites Around (site) #2))
+            )    
+    ))
+)
+
+(define "FromEdgeToEdge"
+    (and (
+            (
+                (is In (site) (sites #1))
+            )
+            
+            (
+                (= 0
+                    (count Pieces All in:(sites LineOfSight at:(site) #2))
+                ) 
+            )
+    ))
+)
+
+(game "Centrifugal Force"
+    (players 2)
+    
+    (equipment
+        {
+        (board (square 13))
+        
+        (piece "Cross" P1) 
+        (piece "Disc" P2)
+        
+        (piece "Square" Neutral)
+        }
+    )
+    
+    (rules
+        (start
+            {
+            (place "Square0" coord:"A1")
+            (place "Square0" coord:"M1")
+            (place "Square0" coord:"M13") 
+            (place "Square0" coord:"A13")   
+            }     
+        )
+        
+        (play
+            (move Add 
+                (to   
+                    (forEach (sites Empty)
+                        if:
+                        (or (
+                                (or
+                                    {
+                                    ("FromEdgeToEdge" Top S)
+                                    ("FromEdgeToEdge" Bottom N)
+                                    ("FromEdgeToEdge" Left E)
+                                    ("FromEdgeToEdge" Right W)
+                                    }
+                                )
+                                
+                                (or
+                                    {
+                                    ("DroppableFromDirection" N S)
+                                    ("DroppableFromDirection" S N)
+                                    ("DroppableFromDirection" W E)  
+                                    ("DroppableFromDirection" E W)
+                                    }
+                                )
+                        ))
+                    )
+                )
+            )
+        )
+        
+        (end
+            {
+            (if (is Line 5) (result Mover Win))
+            
+            (if (no Moves Next) (result All Draw))
+            }
+        )
+    )
+)
+

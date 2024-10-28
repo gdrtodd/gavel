@@ -1,0 +1,35 @@
+(define "ColumnSize" 6)
+
+(define "EmptyTop" (intersection (sites Top) (sites Empty)))
+
+(define "LastColumn" (sites Column (column of:(last To))))
+
+(define "Distance" (count Sites in:(intersection (sites Empty) "LastColumn")))
+
+(define "Drop" (slide (from (last To)) S (between (exact "Distance"))))
+
+(game "Connect Four" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 1 7))
+        (piece "Disc" Each)
+    }) 
+    
+    (rules
+        
+        (play 
+            (move Add 
+                (to 
+                    (forEach 
+                        (sites Board) 
+                        if:(< (size Stack at:(site)) "ColumnSize")
+                    ) 
+                )
+                stack:True
+            )
+        )
+        (end (if (is Line 4 byLevel:True) (result Mover Win)))
+        
+    )
+)
+

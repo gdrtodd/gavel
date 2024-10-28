@@ -1,0 +1,202 @@
+(define "ThrowValue" (count Pips))
+
+(define "IsSpecialThrow" (= ("ThrowValue") 4))
+
+(define "ActivatedThrow" (is In ("ThrowValue") (sites {1 8})))
+
+(define "ActivatedPiece" (< 0 (state at:#1)))
+
+(define "ActivePiece" (set State at:#1 1))
+
+(define "MiddleSites" (difference (sites Board) (union (sites Top) (sites Bottom))))
+
+(define "CaptureMove"
+    (if ("IsEnemyAt" (to))
+        (remove (to))
+    )
+)
+
+(define "NeverGoInEnemyHome"
+    (< (state at:#1) 2)
+)
+
+(define "MoveOnLoop" 
+    (= (state at:#1) 3)
+)
+
+(define "MoveBackOnMiddleSites" 
+    (= (state at:#1) 2)
+)
+
+(define "PieceCanBeCapture" (< (state at:(to)) 2))
+
+(define "AllPiecesOutOfHomeAndCanNotBeCaptured"
+    (and
+        (= 0 (count Sites in:(difference (sites Occupied by:All) ("MiddleSites"))))
+        (= 0 (count Sites in:(forEach (sites Occupied by:All) if:(< (state at:(site)) 2))))
+    )
+)
+
+(define "Move"
+    (if ("NeverGoInEnemyHome" (from))
+        (or
+            (if (<= (var) 0)
+                (move
+                    (from (from)
+                        if:(if
+                            ("ActivatedPiece" (from))
+                            True
+                            ("ActivatedThrow")
+                        )
+                    )
+                    (to 
+                        ("NextSiteOnTrack" ("ThrowValue") "Track")
+                        if:(if (is In (to) ("MiddleSites"))
+                            (or (is Empty (to)) (and ("IsEnemyAt" (to)) ("PieceCanBeCapture")))
+                            (is Empty (to))
+                        )
+                        (apply ("CaptureMove"))
+                    )
+                    (then
+                        (if (not ("ActivatedPiece" (last To)))
+                            ("ActivePiece" (last To))
+                        )
+                    )
+                )
+            )
+            (if (or (= ("ThrowValue") 8) (> (var) 0))
+                (move
+                    (from (from))
+                    (to 
+                        
+                        ("NextSiteOnTrack" 1 "Track")
+                        if:(if (is In (to) ("MiddleSites"))
+                            (or (is Empty (to)) (and ("IsEnemyAt" (to)) ("PieceCanBeCapture")))
+                            (is Empty (to))
+                        )
+                        (apply ("CaptureMove"))
+                    )
+                    (then
+                        (and
+                            (if (not ("ActivatedPiece" (last To)))
+                                ("ActivePiece" (last To))
+                            )
+                            (if (> (var) 0)
+                                (and
+                                    (if (> (var) 1)
+                                        (moveAgain)
+                                    )
+                                    (set Var (- (var) 1))
+                                )
+                                (and
+                                    (set Var (- ("ThrowValue") 1))
+                                    (moveAgain)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (then
+                (if (is In (last To) (if (is In (mover) (players Team1)) (sites Top) (sites Bottom)))
+                    (set State at:(last To) 2)
+                )
+            )
+        )
+        (if ("MoveBackOnMiddleSites" (from))
+            (move
+                (from (from))
+                (to 
+                    ("NextSiteOnTrack" ("ThrowValue") "GoBackTrack")
+                    if:(if (is In (to) ("MiddleSites"))
+                        (not ("IsFriendAt" (to)))
+                        (is Empty (to))
+                    )
+                    (apply ("CaptureMove"))
+                )
+                (then
+                    (if (is In (last To) ("MiddleSites"))
+                        (set State at:(last To) 3)
+                    )
+                )
+            )
+            (if ("MoveOnLoop" (from))
+                (move
+                    (from (from))
+                    (to 
+                        ("NextSiteOnTrack" ("ThrowValue") "LoopTrack")
+                        if:(if (is In (to) ("MiddleSites"))
+                            (not ("IsFriendAt" (to)))
+                            (is Empty (to))
+                        )
+                        (apply ("CaptureMove"))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Sig (Mauritania)"
+    (players 4)
+    (equipment {
+        (board 
+            (rectangle 4 20)
+            
+            {
+            (track "Track1" "19,W,N1,E,N1,W,N1,E" P1 directed:True)
+            (track "Track2" "79,W,S1,E,S1,W,S1,E" P2 directed:True)
+            (track "LoopTrack1" "40,E,S1,W" loop:True P1)
+            (track "LoopTrack2" "20,E,N1,W" loop:True P2)
+            (track "GoBackTrack1" "79,W,S1,E,S1,W" P1 directed:True)
+            (track "GoBackTrack2" "19,W,N1,E,N1,W" P2 directed:True)
+            }
+            
+            use:Vertex
+        )
+        ("StickDice" 8)
+        (piece "Marker" P1 ("Move"))
+        (piece "Stick" P2 ("Move"))
+    })
+    (rules 
+        (start {
+            (place "Marker1" (sites Bottom))
+            (place "Stick2" (sites Top))
+            
+            (set Team 1 {P1 P3})
+            (set Team 2 {P2 P4})
+            
+        })
+        phases:{
+        (phase "MovingPhase"
+            (play
+                (do (if (<= (var) 0) (roll))
+                    next:(if (is In (mover) (players Team1))
+                        (forEach Piece P1)
+                        (forEach Piece P2)
+                    )
+                    (then
+                        (if ("IsSpecialThrow")
+                            (moveAgain)
+                        )
+                    )
+                )
+            )	
+            (nextPhase ("AllPiecesOutOfHomeAndCanNotBeCaptured") "RemovingPhase")
+        )
+        (phase "RemovingPhase"
+            (play
+                ("RollMove"
+                    (if (= ("ThrowValue") 4) 
+                        (move Remove
+                            (sites Occupied by:Enemy)
+                        )
+                    )
+                )
+            )	
+        )
+        }
+        (end ("CaptureAllTeam"))
+    )
+)
+

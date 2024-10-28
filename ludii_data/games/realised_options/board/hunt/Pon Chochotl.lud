@@ -1,0 +1,26 @@
+(game "Pon Chochotl" 
+    (players 2) 
+    (equipment {
+        ("AlquerqueBoard" 5 5)
+        (piece "Corn" P1 "StepToEmpty") 
+        (piece "Bean" P2 
+            (or ("HopCapture") 
+                (if ("SameTurn") 
+                    (move Pass) 
+                    ("StepToEmpty")
+                ) 
+            ) 
+        )
+    }) 
+    (rules 
+        (start { 
+            (place "Corn1" (union {(expand (sites Bottom)) (sites {"A3" "E3"})}))
+            (place "Bean2" (centrePoint))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P1 9))
+    )
+)
+

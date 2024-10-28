@@ -1,0 +1,115 @@
+(define "HigherValue"
+    (>= 
+        (value Piece at:(from))
+        (value Piece at:(to))
+    )
+)
+
+(define "ZuMovingOnJiang"
+    (and
+        ("IsPieceAt" "Zu" Mover (from))
+        ("IsPieceAt" "Jiang" Next (to))
+    )
+)
+
+(define "JiangMovingOnZu"
+    (and
+        ("IsPieceAt" "Jiang" Mover (from))
+        ("IsPieceAt" "Zu" Next (to))
+    )
+)
+
+(define "StepMove" 
+    (move Step
+        Orthogonal
+        (to 
+            if:(or 
+                (is Empty (to)) 
+                (and {
+                    (not (is Hidden What at:(to) to:Mover)) 
+                    ("IsEnemyAt" (to))
+                    (or
+                        ("ZuMovingOnJiang")
+                        (and
+                            ("HigherValue")
+                            (not ("JiangMovingOnZu"))
+                        )
+                    )
+                })
+            ) 
+            (apply (remove (to)))
+        ) 
+    )
+)
+
+(define "RevealAPiece"
+    (move Select 
+        (from (sites Hidden What to:Mover))
+        (then
+            (and {
+                (set Hidden What at:(last To) False to:P1)
+                (set Hidden Who at:(last To) False to:P1)
+                (set Hidden What at:(last To) False to:P2)
+                (set Hidden Who at:(last To) False to:P2)
+                #1
+            })
+        )
+    )
+)
+
+(game "Banqi" 
+    (players 2)
+    (equipment { 
+        (board (rectangle 4 8)) 
+        
+        (piece "Jiang" Each ("StepMove")) 
+        
+        (piece "Ju" Each ("StepMove")) 
+        
+        (piece "Ma" Each ("StepMove")) 
+        
+        (piece "Pao" Each ("StepMove")) 
+        
+        (piece "Shi" Each ("StepMove")) 
+        
+        (piece "Xiang" Each ("StepMove")) 
+        
+        (piece "Zu" Each ("StepMove")) 
+    }) 
+    
+    (rules 
+        (start { 
+            (place Random {"Zu1"} count:5 value:1) (place Random {"Zu2"} count:5 value:1) 
+            (place Random {"Pao1"} count:2 value:4) (place Random {"Pao2"} count:2 value:4) 
+            (place Random {"Ju1"} count:2 value:6) (place Random {"Ju2"} count:2 value:6) 
+            (place Random {"Ma1"} count:2 value:5) (place Random {"Ma2"} count:2 value:5) 
+            (place Random {"Xiang1"} count:2 value:2) (place Random {"Xiang2"} count:2 value:2) 
+            (place Random {"Shi1"} count:2 value:3) (place Random {"Shi2"} count:2 value:3) 
+            (place Random {"Jiang1"} count:1 value:7) (place Random {"Jiang2"} count:1 value:7) 
+            (set Hidden {What Who} (sites Board) to:P1)
+            (set Hidden {What Who} (sites Board) to:P2)
+        })
+        
+        phases:{
+        (phase "Opening" P1
+            (play 
+                ("RevealAPiece" 
+                    (set NextPlayer (player (who at:(last To))))
+                )
+            )
+            (nextPhase Mover "Play")
+        )
+        (phase "Play" 
+            (play 
+                (or
+                    (forEach Piece)
+                    ("RevealAPiece")
+                )
+            )
+        )
+        }
+        
+        (end ("BlockWin"))
+    )
+)
+

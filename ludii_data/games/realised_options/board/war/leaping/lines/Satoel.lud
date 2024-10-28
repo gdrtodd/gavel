@@ -1,0 +1,38 @@
+(define "BoardSize" 9)
+
+(game "Satoel"
+    (players 2)
+    (equipment {
+        (board 
+            (merge {
+                (square "BoardSize" diagonals:Alternating)
+                (shift 2 8 (rotate 180 (wedge 3)))
+                (shift 2 -2 (wedge 3))
+            })
+            use:Vertex
+        )
+        (piece "Marker" Each
+            (or 
+                ("HopSequenceCapture")
+                ("StepToEmpty")
+            )
+        )
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (forEach (sites Board) if:(< (site) (centrePoint))))
+            (place "Marker2" (forEach (sites Board) if:(and (> (site) (centrePoint)) (< (site) (* "BoardSize" "BoardSize")))))
+        })
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopSequenceCaptureAgain")	
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

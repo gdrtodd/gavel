@@ -1,0 +1,102 @@
+(define "CaptureForwardDiagonal" ("StepToEnemy" (directions {FR FL})))
+(define "NextCanNotMove" (not (can Move (do (forEach Piece Next) ifAfterwards:(not ("IsInCheck" "King_noCross" Next (forEach Piece)))))))
+(define "KingMove" ("StepToNotFriend"))
+(define "KnightMove" ("LeapCapture" "KnightWalk"))
+(define "QueenMove" ("StepToNotFriend" Diagonal))
+(define "RookMove" ("SlideCapture" Orthogonal))
+(define "ElephantMove"
+    (move Hop Orthogonal 
+        (between if:True) 
+        (to if:(not ("IsFriendAt" (to))) 
+            (apply (if ("IsEnemyAt" (to)) (remove (to)))) 
+        ) 
+    )		
+)
+
+(game "Sarvatobhadra"
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8)) 		
+        (dice d:6 from:1 num:1)
+        (piece "King_noCross" P1 ("KingMove"))
+        (piece "Ferz_noCross" P1 ("QueenMove"))
+        (piece "Knight" P1 ("KnightMove"))
+        (piece "Elephant" P1 ("ElephantMove"))
+        (piece "Rook" P1 ("RookMove"))
+        (piece "Pawn" P1
+            (or 
+                "StepForwardToEmpty" 
+                "CaptureForwardDiagonal"
+                (then ("PromoteIfReach" (sites Top) "Ferz_noCross"))
+            )		
+        )
+        (piece "King_noCross" P2
+            (or {
+                ("RookMove")
+                ("KnightMove")
+                ("ElephantMove")
+                ("QueenMove")
+                ("QueenMove")
+                ("KingMove")
+            })
+        )
+    })
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 1))
+            (place "Rook1" {"A1" "H1"}) (place "Knight1" {"B1" "G1"}) (place "Elephant1" {"C1" "F1"}) (place "Ferz_noCross1" coord:"D1") (place "King_noCross1" coord:"E1") 
+            (place "King_noCross2" coord:"E8") 
+        })
+        (play 
+            (do
+                (if (is Mover P1)
+                    (do (roll) 
+                        next:(if (= (count Pips) 6)
+                            (forEach Piece "King_noCross")
+                            (if (= (count Pips) 5)
+                                (forEach Piece "Ferz_noCross")
+                                (if (= (count Pips) 4)
+                                    (forEach Piece "Elephant")
+                                    (if (= (count Pips) 3)
+                                        (forEach Piece "Knight")
+                                        (if (= (count Pips) 2)
+                                            (forEach Piece "Rook")
+                                            (forEach Piece "Pawn")
+                                        )
+                                    )
+                            ))
+                        )
+                    )
+                    (forEach Piece)
+                )
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover (forEach Piece Next)))
+            )
+        )
+        
+        (end {
+            (if (and {
+                    (is Mover P2)
+                    ("IsInCheck" "King_noCross" Next)
+                    ("NextCanNotMove")
+                }) 
+                (result P2 Win)
+            )
+            (if
+                (and
+                    (is Mover P1)
+                    (no Moves P2) 
+                )
+                (result P1 Win)
+            )
+            (if
+                (and {
+                    (is Mover P1)
+                    ("IsInCheck" "King_noCross" P1)
+                    (no Moves P1)
+                })
+                (result P2 Win)
+            )
+        })
+    )
+)
+

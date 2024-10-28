@@ -1,0 +1,37 @@
+(game "Tron" 
+    (players 2) 
+    (equipment { 
+        (board (square 10)) 
+        (piece "King" Each 
+            (move Step 
+                Orthogonal 
+                (to 
+                    (apply 
+                        (if 
+                            (is Occupied (to)) 
+                            (trigger "Collision" (mover))
+                        )
+                    )
+                ) 
+                (then 
+                    (add 
+                        (piece (id "Square" Mover)) 
+                        (to (last From)) 
+                    )
+                )
+            )
+        )
+        (piece "Square" Each)
+    }) 
+    (rules 
+        (start { 
+            (place "King1" coord:"E5")
+            (place "King2" coord:"F6")
+        })
+        
+        (play (forEach Piece))
+        
+        (end (if (is Triggered "Collision" Mover) (result Next Win)))
+    )
+)
+

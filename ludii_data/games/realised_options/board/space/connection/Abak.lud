@@ -1,0 +1,66 @@
+(define "Nbors"
+    (count Sites 
+        in:(intersection 
+            (sites Around #1) 
+            (sites Occupied by:All) 
+        )
+    )
+)
+
+(define "RegularRegions"
+    (regions "Centre" (sites Centre))
+    (regions "CentreRing" (difference (expand (sites Centre)) (sites Centre)))
+    (regions "OuterGoals" (expand (sites Corners)))
+)
+
+(define "AlternateRegions"
+    (regions "Centre" (sites Centre))
+    (regions "CentreRing" (difference (expand (sites Centre)) (sites Centre)))
+    (regions "CornerSites" (sites {"B2" "J2" "R2" "B10" "R10" "B18" "J18" "R18"}))
+    (regions "DotSites" (sites {"F6" "J6" "N6" "N10" "F10" "F14" "J14" "N14"}))
+    (regions "OuterGoals" (difference (expand (sites "CornerSites")) (sites "CornerSites")))
+)
+
+(game "Abak" 
+    (players 2)
+    (equipment {
+        (board (square 11))
+        (piece "Disc" Each)
+        "RegularRegions"
+    })
+    (rules 
+        
+        phases:
+        {
+        (phase "Placement"
+            (play (move Add (to (intersection (sites "CentreRing") (sites Empty)))))
+            (nextPhase (= (count Pieces All) 2) "Movement")
+        )
+        
+        (phase "Movement"
+            (play 
+                (move Add 
+                    (to (difference (sites Playable) (sites Centre)))
+                    (then 
+                        (forEach Site (sites Occupied by:All) 
+                            (if (<= 4 ("Nbors" (to)))
+                                (remove (to)) 
+                            )
+                            (then 
+                                (forEach Site (sites Occupied by:All) 
+                                    (if (= 0 ("Nbors" (to)))
+                                        (remove (to)) 
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ) 
+            )
+        )
+        }
+        
+        (end (if (is Connected {(sites "CentreRing") (sites "OuterGoals")}) (result Mover Win))) 
+    )
+)
+

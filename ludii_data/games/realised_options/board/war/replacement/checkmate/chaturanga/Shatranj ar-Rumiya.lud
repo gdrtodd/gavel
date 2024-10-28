@@ -1,0 +1,129 @@
+(game "Shatranj ar-Rumiya" 
+    (players 2) 
+    (equipment { 
+        (board 
+            
+            (remove
+                (concentric {0 0 0 16 16 16 16})
+                cells:{1}
+            )
+            
+        )
+        (piece "Pawn" Each
+            (or {
+                ("StepToEmpty" (if (= (state at:(from)) 0) CW CCW))
+                (move 
+                    (from)
+                    (to 
+                        (sites Around 
+                            (sites To 
+                                (move Step
+                                    (if (= (state at:(from)) 0) CW CCW)
+                                    (to if:True)
+                                )
+                            )
+                            Orthogonal
+                        )
+                        if:(and 
+                            (is Related Diagonal (from) (to))
+                            ("IsEnemyAt" (to))
+                        )
+                    )
+                )
+                }
+                (then 
+                    (if (= (state at:(last To)) 0) 
+                        (if ("IsPieceAt" "Pawn" Next (ahead (last To) CW))
+                            (and 
+                                (remove (last To))
+                                (remove (ahead (last To) CW))
+                            )
+                        )
+                        (if ("IsPieceAt" "Pawn" Next (ahead (last To) CCW))
+                            (and 
+                                (remove (last To))
+                                (remove (ahead (last To) CCW))
+                            )
+                        )
+                    )	
+                )
+            )
+        )
+        (piece "Rook" Each ("SlideCapture" Rotational))
+        (piece "Knight" Each
+            (forEach Direction 
+                Orthogonal
+                (to 
+                    if:True 
+                    (apply 
+                        (forEach Direction 
+                            (from (to)) 
+                            Diagonal
+                            (if (and 
+                                    (not ("IsFriendAt" (to))) 
+                                    (= 3 (count Steps Orthogonal (from) (to)))
+                                )
+                                (move 
+                                    (from) 
+                                    (to 
+                                        (apply 
+                                            if:("IsEnemyAt" (to))
+                                            (remove (to))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ) 
+            )
+        )
+        (piece "Elephant" Each
+            (move 
+                (from)
+                (to
+                    (sites Around (sites Around (from) Diagonal) Diagonal)
+                    if:(and 
+                        (not ("IsFriendAt" (to))) 
+                        (< 2 (count Steps Orthogonal (from) (to)))
+                    )
+                    (apply 
+                        if:("IsEnemyAt" (to))
+                        (remove (to))
+                    )
+                )
+            )	
+        )
+        (piece "Queen" Each ("StepToNotFriend" Diagonal))
+        ("ChessKing" "King_noCross")
+    }) 
+    (rules 
+        
+        (start {
+            (place "Rook1" (sites {52 53}))
+            (place "Rook2" (sites {61 60}))
+            (place "Knight1" (sites {36 37}))
+            (place "Knight2" (sites {44 45}))
+            (place "Elephant1" (sites {20 21}))
+            (place "Elephant2" (sites {28 29}))
+            (place "Queen1" 4) (place "Queen2" 12)
+            (place "King_noCross1" 5) (place "King_noCross2" 13)
+            (place "Pawn1" (sites {3 19 35 51}) state:0) 
+            (place "Pawn1" (sites {54 38 22 6}) state:1) 
+            (place "Pawn2" (sites {11 27 43 59}) state:0) 
+            (place "Pawn2" (sites {14 30 46 62}) state:1) 
+        })
+        
+        (play 
+            (do
+                (forEach Piece)
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))
+            )
+        )
+        (end { 
+            ("Checkmate" "King_noCross")
+            
+        })
+    )
+)
+

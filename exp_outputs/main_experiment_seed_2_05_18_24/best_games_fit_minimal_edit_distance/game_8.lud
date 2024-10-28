@@ -1,0 +1,88 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 7)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (or 
+                    (move 
+                        (from)
+                        (to (sites LineOfSight Farthest at:
+                                (from)
+                                Orthogonal) if:(not 
+                                (is Friend (who at:
+                                        (to)
+                                ))
+                        ))
+                    copy:True)
+                    (move 
+                        (from)
+                        (to (sites LineOfSight Farthest at:
+                                (from)
+                                Diagonal) if:(not 
+                                (is Friend (who at:
+                                        (to)
+                                ))
+                        ))
+                    )
+                    (then (forEach Site 
+                            (intersection 
+                                (sites Around 
+                                    (last To)
+                                )
+                                (sites Occupied by:Next)
+                            )
+                            (and 
+                                (remove 
+                                    (site)
+                                )
+                                (add 
+                                    (piece 
+                                        (id "PIECE_ALPHA" Mover)
+                                    )
+                                    (to (site))
+                                )
+                            )
+                    ))
+                )
+            )
+    })
+
+    (rules 
+        (start {
+                (set Score Each 2)
+                (place "PIECE_ALPHA1" {"A1" "G7"})
+                (place "PIECE_ALPHA2" {"A7" "G1"})
+        })
+        (play 
+            (forEach Piece 
+                (then (and 
+                        (set Score P1 
+                            (count Sites in:(sites Occupied by:P1))
+                        )
+                        (set Score P2 
+                            (count Sites in:(sites Occupied by:P2))
+                        )
+                ))
+            )
+        )
+
+        (end 
+            (if (or 
+                    (= (count Sites in:(sites Occupied by:Next)) 0)
+                    (is Full)
+            ) (byScore))
+        )
+    )
+)
+
+// Ancestor: Ataxx
+// Selection metric: 0.00
+// Fitness: 0.95
+// Novelty: 0.46
+// Cell distance: 3.00
+// Edit Distance: 0.10
+// Global Edit Distance: 0.10
+// Lineage length: 5.00

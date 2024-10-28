@@ -1,0 +1,282 @@
+
+(define "CaptureToPieceAndResetCounter"
+    (apply
+        (if ("IsEnemyAt" (to))
+            (remove (to)
+                (then (set Counter))
+            )
+        )
+    )
+)
+
+(define "Directions"
+    ("P12" (directions #1) (directions #2))
+)
+
+(define "IsFromInStartCell"
+    (is In (from) (sites Start (piece (what at:(from)))))
+)
+
+(define "IsToEmpty"
+    (is In (to) (sites Empty))
+)
+
+(define "IsToEmptyOrEnemy"
+    (or "IsToEmpty"
+        ("IsEnemyAt" (to))
+    )
+)
+
+(define "P12"
+    (if (is Mover P1) #1 #2)
+)
+
+(define "SlideCaptureMove"
+    (move Slide
+        #1
+        (to if:("IsEnemyAt" (to))
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "History_HasNeverMoved"
+    (= (state at:(mapEntry #1 (mover))) 1)
+)
+
+(define "History_SaveMovement"
+    (set State at:(last To) 0)
+)
+
+(define "History_SaveMovementChange"
+    (then
+        (if (= (state at:(last To)) 1)
+            "History_SaveMovement"
+        )
+    )
+)
+
+(define "KingStepCapture"
+    (move Step
+        #1
+        (to if:"IsToEmptyOrEnemy"
+            "CaptureToPieceAndResetCounter"
+        )
+        #2
+    )
+)
+
+(define "Castle_PreCheck"
+    (and {
+        ("IsPieceAt" "King" Mover (mapEntry "King" (mover))) 
+        ("History_HasNeverMoved" "King")
+        (not ("IsInCheck" "King" Mover))
+    })
+)
+
+(define "Castle_Base"
+    (move Slide
+        (from (mapEntry #1 (mover)))
+        #2
+        (between
+            (exact #3)
+            if:#4
+        )
+        #5
+    )
+)
+
+(define "KingNotCheckedAndToEmpty"
+    (and
+        "IsToEmpty"
+        (not ("IsInCheck" "King" Mover at:(to)))
+    )
+)
+
+(define "Castle_KingRook"
+    ("Castle_Base"
+        "King"
+        #1
+        #2
+        "KingNotCheckedAndToEmpty"
+        (then (and ("History_SaveMovement") ("Castle_Base" #3 #4 #5 True)))
+    )
+)
+
+(define "Castle"
+    (if (and
+            ("History_HasNeverMoved" #3)
+            (can Move ("Castle_Base" #3 #4 #5 "IsToEmpty"))
+        )
+        ("Castle_KingRook" #1 #2 #3 #4 #5)
+    )
+)
+
+(define "Castle_KingSide_P1" ("Castle" ESE 2 "RookRight" WNW 2))
+(define "Castle_QueenSide_P1" ("Castle" WNW 3 "RookLeft" ESE 3))
+
+(define "Castle_KingSide_P2" ("Castle" ESE 2 "RookRight" WNW 2))
+(define "Castle_QueenSide_P2" ("Castle" WNW 3 "RookLeft" ESE 3))
+
+(define "Castle_KingSide" ("P12" "Castle_KingSide_P1" "Castle_KingSide_P2"))
+(define "Castle_QueenSide" ("P12" "Castle_QueenSide_P1" "Castle_QueenSide_P2"))
+
+(define "PawnCapture_Base"
+    (move Step
+        #1
+        (to if:("IsEnemyAt" (to))
+            (apply (remove (to)))
+        )
+    )
+)
+
+(define "PawnCapture_Diag"
+    ("PawnCapture_Base" ("Directions" {NNW E} {SSE W}))
+)
+
+(define "PawnHop"
+    (move Hop
+        #1
+        (between if:(is In (between) (sites Empty)))
+        (to if:"IsToEmpty")
+        (then (and {
+                (set Pending (ahead (last To) #2))
+                (set Var (last To))
+            })
+        )
+    )
+)
+
+(define "PawnStep_Double_Base"
+    ("P12"
+        (or ("PawnHop" #1 #2) ("PawnHop" #3 #4))
+        (or ("PawnHop" #5 #6) ("PawnHop" #7 #8))
+    )
+)
+
+(define "PawnStep_Double"
+    ("PawnStep_Double_Base" N S ENE WSW S N WSW ENE)
+)
+
+(define "PawnStep_ToEmpty_Base"
+    ("StepToEmpty" #1)
+)
+
+(define "PawnStep_ToEmpty"
+    ("PawnStep_ToEmpty_Base" ("Directions" {N ENE} {S WSW}))
+)
+
+(define "EnPassant_Base"
+    (move Step
+        #1
+        (to if:"IsEnPassantCapture")
+        (then (remove (var)))
+    )
+)
+
+(define "EnPassant_Ortho"
+    ("EnPassant_Base" ("Directions" {NNW E} {SSE W}))
+)
+
+(define "IsEnPassantCapture"
+    (and
+        (is Pending)
+        (= (to) (value Pending))
+    )
+)
+
+(define "PromoteTo"
+    (move Promote (last To) #1 Mover)
+)
+
+(game "De Vasa Chess"
+    (players {(player NNE) (player SSW)})
+    (equipment {
+        (board (hex Diamond 9))
+        
+        (piece "King" Each
+            (or {
+                ("KingStepCapture" All "History_SaveMovementChange")
+                (if "Castle_PreCheck"
+                    (or {
+                        "Castle_KingSide"
+                        "Castle_QueenSide"
+                    })
+                )
+            })
+        )
+        (piece "Queen" Each ("SlideCaptureMove" All ~))
+        (piece "Rook" Each ("SlideCaptureMove" Orthogonal "History_SaveMovementChange"))
+        (piece "Bishop" Each ("SlideCaptureMove" Diagonal ~))
+        ("ChessKnight" "Knight" (then (set Counter)))
+        
+        (piece "Pawn" Each
+            (or {
+                "PawnStep_ToEmpty"
+                (if "IsFromInStartCell" "PawnStep_Double")
+                "PawnCapture_Diag"
+                "EnPassant_Ortho"
+                }
+                (then
+                    (and 
+                        ("ReplayInMovingOn" (sites Mover "PromotionZone"))
+                        (set Counter)
+                    )
+                )
+            )
+        )
+        
+        (map "King"  {(pair 1 "A4") (pair 2 "I4")})
+        (map "RookLeft" {(pair 1 "A9") (pair 2 "I9")})
+        (map "RookRight" {(pair 1 "A1") (pair 2 "I1")})
+        
+        (regions "Region-Dark" (sites Phase 0))
+        (regions "Region-Light" (sites Phase 1))
+        (regions "Region-Medium" (sites Phase 2))
+        
+        (regions "PromotionZone" P1 (sites Side NE))
+        (regions "PromotionZone" P2 (sites Side SW))
+    })
+    
+    (rules
+        (start {
+            (place "King1" coord:"A4" state:1)
+            (place "Queen1" coord:"A6")
+            (place "Rook1" {"A9" "A1"} state:1)
+            (place "Bishop1" {"A3" "A5" "A7"})
+            (place "Knight1" {"A8" "A2"})
+            
+            (place "King2" coord:"I4" state:1)
+            (place "Queen2" coord:"I6")
+            (place "Rook2" {"I9" "I1"} state:1)
+            (place "Bishop2" {"I7" "I5" "I3"})
+            (place "Knight2" {"I8" "I2"})
+            
+            (place "Pawn1" {"C9" "C8" "C7" "C6" "C5" "C4" "C3" "C2" "C1"})
+            (place "Pawn2" {"G1" "G2" "G3" "G4" "G5" "G6" "G7" "G8" "G9"})
+        })
+        phases:{
+        (phase "Movement"
+            (play
+                (if ("SameTurn")
+                    ("PromoteTo" (piece {"Queen" "Rook" "Bishop" "Knight"}))
+                    (do (forEach Piece)
+                        ifAfterwards:(not ("IsInCheck" "King" Mover))
+                    )
+                )
+            )
+            (end {
+                ("Checkmate" "King")
+                (if (or
+                        (no Moves Mover)
+                        (= (counter) 100)
+                    )
+                    (result Mover Draw)
+                )
+            })
+        )
+        }
+    )
+)
+

@@ -1,0 +1,79 @@
+(define "NumCapturedPiecesIsOdd"
+    (is Even (count Steps (from) (to)))
+)
+
+(define "BigHop" 
+    (move
+        Hop 
+        (between 
+            (range 1 9)
+            if:#1
+            (apply (remove (between)))
+        )   
+        (to 
+            if:(and 
+                (is Empty (to)) 
+                ("NumCapturedPiecesIsOdd")
+            )
+        )
+    )
+)
+
+(game "Rimau-Rimau (One Tiger)" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithBottomAndTopTriangles")
+        (hand Each) 
+        (piece "Tiger" P1 
+            (or {
+                ("StepToEmpty")
+                ("BigHop" ("IsEnemyAt" (between))) 
+            })
+        ) 
+        (piece "human" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start {
+            (place "human2" (expand (sites Centre)))
+            (place "human2" (handSite P2) count:15)
+            (place "Tiger1" (handSite P1))
+        })
+        
+        phases:{
+        (phase "PlacementTiger" P1
+            (play (move (from (handSite P1)) (to (sites {"C3" "C7"})) (then (moveAgain))))
+            (nextPhase Mover "MoveHuman")
+        )
+        
+        (phase "MoveHuman" P1
+            (play 
+                (move 
+                    (from (intersection (expand (sites Centre)) (sites Occupied by:Next))) 
+                    (to (difference (sites Empty) (expand (sites Centre)))) 
+                    (then 
+                        (if (< 6 (count Sites in:(intersection (expand (sites Centre)) (sites Occupied by:Next))))
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+            (nextPhase Mover (= 6 (count Sites in:(intersection (expand (sites Centre)) (sites Occupied by:Next)))) "Movement")
+        )
+        
+        (phase "PlacementHuman" P2
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                ) 
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement"
+            (end ("NoMovesP1NoPiecesP2"))
+        )
+        }
+    )
+)
+

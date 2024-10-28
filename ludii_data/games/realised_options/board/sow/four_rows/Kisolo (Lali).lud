@@ -1,0 +1,67 @@
+(define "Columns" 8)
+
+(game "Kisolo (Lali)" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "16,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start 
+            (set Count 4 to:(union (sites P1 "Inner") (sites P2 "Inner")))
+        )
+        
+        (play 
+            (move Select
+                (from 
+                    (if ("SameTurn") 
+                        "LastHoleSowed" 
+                        (sites Mover "Home") 
+                    ) 
+                    if:(< 1 (count at:(from)))
+                )
+                (then 
+                    (sow
+                        "Track"
+                        owner:(mover)
+                        apply:(if (> (count at:(to)) 1)
+                            (and
+                                (moveAgain)
+                                (if (and
+                                        (!= (count at:("OppositePit" (to))) 0) 
+                                        (is In (to) (sites Mover "Inner"))	
+                                    )
+                                    (fromTo 
+                                        (from ("OppositePit" (to))) 
+                                        (to (to)) 
+                                        count:(count at:("OppositePit" (to)))
+                                    )
+                                )
+                            )
+                        )
+                        origin:True
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (if (and (!= (next) (mover)) (no Moves Next))
+                (result Mover Win)
+            )
+        )
+    )
+)
+

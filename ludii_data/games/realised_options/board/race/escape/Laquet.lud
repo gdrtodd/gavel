@@ -1,0 +1,48 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Laquet"
+    (players 2)
+    (equipment {
+        ("TableBoard" (track "Track1" {11..6 5..0 12..17 18..23} directed:True))
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsOffBoard" "SiteToMoveOnTrack")
+                    "RemoveAPiece"
+                    (if (not ("IsEnemyAt" "SiteToMoveOnTrack"))
+                        (move 
+                            (from) 
+                            (to "SiteToMoveOnTrack")
+                        )
+                    )
+                )
+            )
+        )
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 11 count:14)
+            (place Stack "Disc1" 23)
+            (place Stack "Disc2" (sites {7..10}) count:3)
+            (place Stack "Disc2" 6 count:2)
+            (place Stack "Disc2" 12)
+        })
+        (play 
+            (do 
+                (if (and (not (is Pending)) ("NewTurn")) (roll)) 
+                next:(if (can Move (forEach Piece))
+                    (forEach Piece 
+                        top:True
+                        (then ("ReplayNotAllDiceUsed"))
+                    )
+                    (move Pass (then (set Pending)))
+                )
+            )
+        )
+        (end ("EscapeWin"))
+    )
+)
+

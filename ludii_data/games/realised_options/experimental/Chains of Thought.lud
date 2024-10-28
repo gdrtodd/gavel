@@ -1,0 +1,234 @@
+
+(define "ThenCaptures"
+    (then
+        (remove
+            (forEach 
+                (sites Around
+                    (sites Group
+                        at:(last To) "GridDirection"
+                        if:(is In (to) (sites Occupied by:Mover))
+                    ) 
+                    "GridDirection"
+                    if:(is Next (who at:(to)))
+                )
+                if:(>
+                    (size Group at:(last To) "GridDirection" if:(is Mover (who at:(to))))
+                    (size Group at:(site) "GridDirection" if:(is Next (who at:(to))))
+                )
+            )
+            
+            (then 
+                (forEach Value
+                    (array (sites Around (sites Occupied by:Mover) "GridDirection" if:(is Next (who at:(to)))))
+                    (if 
+                        (>
+                            (count Pieces
+                                in:(sites Group
+                                    from:(sites Around (value) "GridDirection") 
+                                    "GridDirection"
+                                    if:(is Mover (who at:(to)))
+                                )
+                            )
+                            (size Group at:(value) "GridDirection" if:(is Next (who at:(to))))
+                        )
+                        (remove (value))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "IsNeitherSelfAdjacentNorSuicide"
+    (and
+        
+        (not (is In (to) (sites Around (sites Occupied by:Mover) "GridDirection"))) 
+        
+        (no Pieces Next
+            in:(intersection
+                (sites Around (to) "GridDirection") 
+                (sites Around (sites Occupied by:Next) "GridDirection")
+            )
+        )
+    )
+)
+
+(define "IfAdjacentIsContactBetween2EqualChains"
+    (or
+        (no Pieces in:(sites Around (to) "GridDirection"))
+        (=
+            (+ 1
+                (count Pieces 
+                    in:(sites Group
+                        from:(sites Around (to) "GridDirection")
+                        "GridDirection"
+                        if:(is Mover (who at:(to)))
+                    )
+                )
+            )
+            (count Pieces 
+                in:(sites Group
+                    from:(sites Around (to) "GridDirection")
+                    "GridDirection"
+                    if:(is Next (who at:(to)))
+                )
+            )
+        )
+    )
+)
+
+(define "SizeOfLargestGroupMover"
+    (max
+        (sizes Group "GridDirection" Mover) 
+    )
+)
+
+(define "SizeOfLargestGroupNext"
+    (max
+        (sizes Group "GridDirection" Next) 
+    )
+)
+
+(define "SizeOf2ndLargestGroupMover" 
+    (max
+        (difference
+            (sizes Group "GridDirection" P2) 
+            "SizeOfLargestGroupMover"
+        )
+    )
+) 
+
+(define "FindSizeOfGroupIfLargerThanAny"
+    (set Var "LargestMover"
+        (max (sizes Group "GridDirection" Mover))
+        (then
+            (set Var "LargestNext"
+                (max (sizes Group "GridDirection" Next))
+                (then 
+                    (set Var "SecondLargestMover" 
+                        (max
+                            (difference
+                                (sizes Group "GridDirection" Mover)
+                                (var "LargestMover") 
+                            )
+                        )
+                        (then
+                            (set Var "LargestUnique" 
+                                (if
+                                    (and
+                                        (>
+                                            (var "LargestMover")
+                                            (var "LargestNext")
+                                        )
+                                        (>
+                                            (var "LargestMover")
+                                            (var "SecondLargestMover")
+                                    ))
+                                    (var "LargestMover")
+                                    0
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "SitesAroundLargestChainIfOFMover"
+    (sites Around
+        (forEach
+            (sites Occupied by:Mover) 
+            if:(=
+                (size Group at:(site) "GridDirection")
+                (var "LargestUnique")
+            )
+        )
+        "GridDirection"
+    )
+)
+
+(define "RestrictededMergerSites"
+    (difference
+        (intersection
+            (sites Empty)
+            (sites Around (difference (sites Occupied by:Mover) (from)) "GridDirection") 
+        )
+        ("SitesAroundLargestChainIfOFMover")
+    )
+)
+
+(define "MergerSites"
+    (intersection
+        (sites Empty)
+        (sites Around (difference (sites Occupied by:Mover) (from)) "GridDirection") 
+    )
+)
+
+(define "GridDirection" Orthogonal)
+
+(game "Chains of Thought"
+    (players 2)
+    (equipment {
+        (board (tri Hexagon 4) use:Vertex)
+        (piece "Disc" Each)
+    })
+    (rules
+        (play
+            (or
+                (move Add
+                    (to (sites Empty)
+                        if:("IfAdjacentIsContactBetween2EqualChains")
+                    )
+                    ("ThenCaptures")
+                )
+                (do
+                    (and {
+                        (set Var "GroupCount" (count Groups "GridDirection" if:(is Mover (who at:(to)))))
+                        "FindSizeOfGroupIfLargerThanAny" 
+                    })
+                    next:(forEach Piece 
+                        (move Step "GridDirection"
+                            (to 
+                                if:(is In (to)
+                                    "RestrictededMergerSites" 
+                                )
+                            )
+                        )
+                    )
+                    ifAfterwards:(and {
+                        
+                        (< (count Groups "GridDirection" if:(is Mover (who at:(to)))) (var "GroupCount"))
+                        
+                        (>=
+                            (size Group at:(last To) "GridDirection" if:(is Mover (who at:(to)))) 
+                            (max
+                                (results
+                                    from:(sites Around (last To) "GridDirection" if:(is Next (who at:(to)))) 
+                                    to:(from)
+                                    (size Group at:(to) "GridDirection" if:(is Next (who at:(to))))
+                                )
+                            )
+                        )
+                    }) 
+                    ("ThenCaptures")
+                )
+                (then "SetScores")
+            )
+        )
+        (end 
+            (if (no Moves Next) (byScore))
+        )
+    )
+)
+
+(define "SetScores"
+    (and
+        (set Score P1 (max (difference (sizes Group "GridDirection" P1) (sizes Group "GridDirection" P2))))
+        (set Score P2 (max (difference (sizes Group "GridDirection" P2) (sizes Group "GridDirection" P1))))
+    )
+) 
+
+(define "GridDirection" Orthogonal)
+

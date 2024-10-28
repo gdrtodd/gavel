@@ -1,0 +1,25 @@
+(game "Maak Yek" 
+    (players 2)
+    (equipment {
+        (board (square 8))
+        (piece "Marker" Each 
+            (move Slide Orthogonal
+                (then 
+                    (and
+                        ("InterveneCapture" Orthogonal)
+                        ("CustodialCapture" Orthogonal)
+                    )
+                )
+            )
+        )
+    })
+    (rules
+        (start {
+            (place "Marker1" (union (sites Row 0) (sites Row 2)))
+            (place "Marker2" (union (sites Row 5) (sites Row 7)))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,79 @@
+
+(define "Tag"
+    (forEach Site
+        (sites Around (last To) if:(not (is Empty (to))))
+        (if
+            (is Mover (who at:(site)))
+            (set State at:(site) 0)
+            (set State at:(site) 1)
+)))
+
+(define "Placement"
+    (move
+        Add
+        (piece (mover))
+        (to (sites Empty))
+))
+
+(define "Movement"
+    (forEach Piece
+        (if
+            (= 0 (state at:(from)))
+            (move Slide (then "Tag"))
+)))
+
+(define "MPScoring"
+    (set Score #1 (* 2 (count Pieces #1 in:(sites State 0))))
+)
+
+(define "ScoreTerritory"
+    (and 
+        (set Score Mover (count Pieces Mover in:(sites State 0)))
+        (set Score Next  (count Pieces Next  in:(sites State 0)))
+))
+
+(game "Freeze Frenzy" 
+    (players 2)
+    (equipment
+        {
+        "BoardUsed"
+        (piece "Ball" Each (move Slide))
+        }
+    )
+    (rules
+        (start 
+            {
+            (set Score Each 0)
+            }
+        )
+        (play 
+            (or
+                ("Placement") 
+                ("Movement") 
+                (then 
+                    ("ScoreTerritory")
+        )))
+        (end
+            {
+            (if
+                (and 
+                    (no Moves Next) 
+                    (!= (score P1) (score P2))
+                )
+                (byScore)
+            )
+            (if
+                (no Moves Next) 
+                (result Next Win)
+            )
+            }
+)))
+
+(define "LoSDirection" Orthogonal)
+(define "BoardUsed" (board (tri Limping 3) use:Vertex))
+
+(define "Jungle" (poly { { -3.5 -11.75 } { -10.0 -5.25 } { -6.75 12.0 } { 1.25 14.75 } { 15.25 3.25 } { 14.0 -5.75 } } )) 
+
+(define "Perf2" (board (dual (remove (hex  4 5) cells:{0 1 15 20 25 32 36 39 44 })) use:Vertex))
+(define "Perf3" (board (dual (remove (hex 5 6) cells:{0 1 2 3 4 5 6 7 11 12 13 14 21 25 30 37 42 53 63 64 65 69 70 71 72 73 74})) use:Vertex))
+

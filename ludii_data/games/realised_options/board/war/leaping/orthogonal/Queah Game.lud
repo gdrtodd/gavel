@@ -1,0 +1,53 @@
+(define "HaveRemainingSticks" ("HandOccupied" Mover))
+
+(define "LessThanFourSticksOnBoard" (< (count Sites in:(sites Occupied by:Mover container:"Board")) 4))
+
+(define "ReplaceStick" 
+    (move 
+        (from (handSite Mover)) 
+        (to (sites Empty)) 
+        (then (moveAgain))
+    )
+)
+
+(game "Queah Game" 
+    (players 2)
+    (equipment {
+        (board 
+            (rotate 45
+                (merge
+                    (shift 1 -1 (rectangle 5 1))
+                    (merge
+                        (shift -1 1 (rectangle 1 5))
+                        (square 3)
+                    )
+                )
+            )
+        )
+        (piece "Stick" Each
+            (or
+                ("StepOrthogonalToEmpty")
+                ("HopOrthogonalCapture")
+            )
+        )
+        (hand Each)
+    })
+    (rules 
+        (start {
+            (place "Stick1" {"A1" "B2" "A3" "B4"})
+            (place "Stick2" {"E5" "D4" "E3" "D2"})
+            (place "Stick" "Hand" count:6)
+        })
+        (play
+            (if (and 
+                    ("HaveRemainingSticks") 
+                    ("LessThanFourSticksOnBoard") 
+                )
+                ("ReplaceStick")
+                (forEach Piece)
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

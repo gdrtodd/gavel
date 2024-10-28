@@ -1,0 +1,34 @@
+(game "Bagh Batti" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Goat" P1 "StepToEmpty")
+        (piece "Tiger" P2
+            (or
+                ("StepToEmpty")
+                ("HopSequenceCapture")
+            )
+        )
+    }) 
+    
+    (rules 
+        (start { 
+            (place Stack "Goat1" (sites {"B2" "D2" "B4" "D4"}) counts:{5 5 5 5})
+            (place "Tiger2" (sites {"C1" "C5"}))
+        })
+        
+        (play 
+            (if ("SameTurn")
+                (or
+                    (move Pass)
+                    ("HopSequenceCaptureAgain")
+                )
+                (forEach Piece top:True)
+            )
+            
+        )
+        
+        (end ("NoMovesP2NoPiecesP1")) 
+    )
+)
+

@@ -1,0 +1,76 @@
+(define "PlayAPiece"
+    (if (= (count Pips) 6)
+        (forEach Piece "King_noCross")
+        (if (= (count Pips) 5)
+            (forEach Piece "Queen")
+            (if (= (count Pips) 4)
+                (forEach Piece "Elephant")
+                (if (= (count Pips) 3)
+                    (forEach Piece "Knight")
+                    (if (= (count Pips) 2)
+                        (forEach Piece "Rook")
+                        (forEach Piece "Pawn")
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Shatranj al-Mustatila"
+    ("TwoPlayersNorthSouth") 
+    (equipment {
+        (board (rectangle 16 4))
+        ("ChessKing" "King_noCross")
+        (piece "Queen" Each ("StepToNotFriend" Diagonal))
+        (piece "Elephant" Each
+            (move Hop Diagonal 
+                (between if:True) 
+                (to 
+                    if:(or 
+                        (is Empty (to)) 
+                        (and ("IsEnemyAt" (to)) (not ("IsPieceAt" "Elephant" Next (to))))
+                    ) 
+                    (apply (remove (to)))
+                ) 
+            )		
+        )
+        ("ChessKnight" "Knight")
+        ("ChessRook" "Rook")
+        ("ChessPawn" "Pawn" ~ (then ("PromoteIfReach" (sites Mover "Promotion") "Queen")))
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+        (dice d:6 from:1 num:1)
+    })
+    (rules 
+        (start {
+            (place "Pawn1" (union (sites Row 4) (sites Row 5))) 
+            (place "Pawn2" (union (sites Row 10) (sites Row 11)))
+            (place "Elephant1" (sites {"A1" "D1"})) (place "Knight1" (sites {"B2" "C2"})) 
+            (place "Rook1" (sites {"A2" "D2"})) 
+            (place "King_noCross1" coord:"B1") (place "Queen1" coord:"C1")
+            (place "Elephant2" (sites {"A16" "D16"})) (place "Knight2" (sites {"B15" "C15"})) 
+            (place "Rook2" (sites {"A15" "D15"}))
+            (place "King_noCross2" coord:"C16") (place "Queen2" coord:"B16")
+        })
+        (play 
+            (do
+                (do (roll)
+                    next:(if ("IsInCheck" "King_noCross" Next (forEach Piece))
+                        (move Pass (then (trigger "NextCanNotEscape" (next))))
+                        ("PlayAPiece")
+                    )
+                )
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover (forEach Piece Next)))
+            )
+        )
+        (end {
+            ("Checkmate" "King_noCross")
+            (if (is Triggered "CanNotEscape" Next) (result Mover Win))
+            (if (not (can Move (forEach Piece Next)))
+                (result Mover Win)
+            ) 
+        })
+    )
+)
+

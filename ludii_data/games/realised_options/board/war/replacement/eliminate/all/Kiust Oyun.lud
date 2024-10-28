@@ -1,0 +1,115 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+(define "MiddleSites" (difference (sites Board) (union (sites Left) (sites Right))))
+(define "CaptureMove"
+    (if ("IsEnemyAt" (to))
+        (remove (to))
+    )
+)
+(define "CanEnterKiust" (= (var "Kiust") 1))
+
+(define "Move"
+    (if (is In (from) ("MiddleSites"))
+        (move
+            (from (from))
+            (to 
+                ("NextSiteOnTrack" ("ThrowValue") "LoopTrack")
+                if:(and {
+                    (if ("IsEnemyAt" (to))
+                        (= 2 ("ThrowValue"))
+                        (is Empty (to))
+                    )
+                    (if (is In (to) (sites Next "Home"))
+                        (= 1 (var "Kiust"))
+                        True
+                    )
+                    (if (or (and (= 2 ("ThrowValue")) ("IsEnemyAt" (to))) (= 3 ("ThrowValue")))
+                        True
+                        (all Sites (sites Track from:("NextSiteOnTrack" 1 from:(from) "LoopTrack") to:("NextSiteOnTrack" (- ("ThrowValue") 1) from:(from) "LoopTrack")) if:(not ("IsEnemyAt" (site))))
+                    )
+                })
+                (apply ("CaptureMove"))
+            )
+        )
+        (move
+            (from (from))
+            (to 
+                ("NextSiteOnTrack" ("ThrowValue") "Track")
+                if:(and {
+                    (if (is In (to) ("MiddleSites"))
+                        (if ("IsEnemyAt" (to))
+                            (= 2 ("ThrowValue"))
+                            (is Empty (to))
+                        )
+                        (is Empty (to))
+                    )
+                    (if (is In (to) (sites Next "Home"))
+                        (= 1 (var "Kiust"))
+                        True
+                    )
+                    (if (or (and (= 2 ("ThrowValue")) ("IsEnemyAt" (to))) (= 3 ("ThrowValue")))
+                        True
+                        (all Sites (sites Track from:("NextSiteOnTrack" 1 from:(from) "Track") to:("NextSiteOnTrack" (- ("ThrowValue") 1) from:(from) "Track")) if:(not ("IsEnemyAt" (site))))
+                    )
+                })
+                (apply ("CaptureMove"))
+            )
+        )
+        (then
+            (and
+                (if (= (count Pips) 4)
+                    (and
+                        (if (!= 1 (value Player Mover)) (moveAgain))
+                        (if (<= (value Player Mover) 0)
+                            (set Value Mover 3)
+                            (set Value Mover (- (value Player Mover) 1))
+                        )
+                    )
+                )
+                (set Var "Kiust" 0)
+            )
+        )
+    )
+)
+
+(game "Kiust Oyun"
+    (players 2) 
+    (equipment { 
+        (board 
+            (merge {
+                (scale 2 1 (rectangle 12 2))
+                (shift 2 0 (scale 4 1 (rectangle 12 2)))
+                (shift 6 0 (scale 2 1 (rectangle 12 2)))
+            })
+            {
+            (track "Track1" "22,S,E1,N,E1,S" P1 directed:True)
+            (track "Track2" "47,S,W1,N,W1,S" P2 directed:True)
+            (track "LoopTrack1" "1,N,E1,S" loop:True P1)
+            (track "LoopTrack2" "24,N,W1,S" loop:True P2)
+            }
+            use:Vertex
+        )
+        ("StickDice" 4)
+        (piece "Marker" Each ("Move"))
+        (map "Throw" {(pair 0 0) (pair 3 6) (pair 2 3) (pair 1 2) (pair 4 6)})
+        (regions "Home" P1 (expand (sites Left)))
+        (regions "Home" P2 (expand (sites Right)))
+    }) 
+    
+    (rules 
+        (start {
+            (place "Marker1" (sites Left))
+            (place "Marker2" (sites Right))
+        })
+        (play
+            (do 
+                (if (or (= (var "Kiust") 1) ("NewTurn")) (roll))
+                next:(if (= 0 ("ThrowValue"))
+                    (move Pass (then (and (moveAgain) (set Var "Kiust" 1))))
+                    (forEach Piece)
+                )
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,54 @@
+(game "Mlabalaba"
+    (players 2)
+    
+    (equipment { 
+        (board (concentric Square rings:3 joinCorners:True) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            (if (= 3 (count Pieces Mover))
+                (move 
+                    (from (from))
+                    (to (sites Empty))
+                )
+                ("StepToEmpty")
+                (then ("ReplayIfLine3" Orthogonal)) 
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3" Orthogonal)) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal)
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end
+            (forEach NonMover
+                if:(= 2 (count Pieces Player))
+                (result Player Loss)
+            )
+        )
+    )
+)
+

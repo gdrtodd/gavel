@@ -1,0 +1,36 @@
+(game "Hat Diviyan Keliya" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (scale 1 2 (wedge 4))
+            use:Vertex
+        )
+        (hand Each) 
+        (piece "Tiger" P1 (or "HopCapture" "StepToEmpty")) 
+        (piece "Leopard" P2 "StepToEmpty") 
+    }) 
+    
+    (rules 
+        (start {
+            (place "Tiger1" (handSite P1) count:1)
+            (place "Leopard2" (handSite P2) count:7)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                ) 
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement"
+            (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P2 3))
+        )
+        }
+    )
+)
+

@@ -1,0 +1,35 @@
+(game "Shatranj (14x14)"
+    (players 2) 
+    (equipment { 
+        (board (square 14)) 
+        ("ChessPawn" "Pawn")
+        ("ChessRook" "Rook")
+        ("ChessRook" "Commoner")
+        ("ChessRook" "Wazir")
+        ("ChessKing" "King_noCross")
+        ("ChessKing" "Mann")
+        ("ChessBishop" "Bishop_noCross")
+        ("ChessKnight" "Knight")
+        ("ChessQueen" "Queen")
+        ("ChessQueen" "Amazon")
+    })
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 1))
+            (place "Pawn2" (sites Row 12))
+            
+            (place "Rook1" {"A1" "N1"}) (place "Knight1" {"B1" "M1"}) (place "Commoner1" {"C1" "L1"}) (place "Wazir1" {"D1" "K1"}) 
+            (place "Bishop_noCross1" {"E1" "J1"}) (place "Amazon1" coord:"F1") (place "Queen1" coord:"G1") (place "King_noCross1" coord:"H1") (place "Mann1" coord:"I1") 
+            
+            (place "Rook2" {"A14" "N14"}) (place "Knight2" {"B14" "M14"}) (place "Commoner2" {"C14" "L14"}) (place "Wazir2" {"D14" "K14"}) 
+            (place "Bishop_noCross2" {"E14" "J14"}) (place "Amazon2" coord:"I14") (place "Queen2" coord:"H14") (place "King_noCross2" coord:"G14") (place "Mann2" coord:"F14") 
+        })
+        
+        (play 
+            (do (forEach Piece) ifAfterwards:(not ("IsInCheck" "King_noCross" Mover)))
+        )
+        
+        (end ("Checkmate" "King_noCross"))
+    )
+)
+

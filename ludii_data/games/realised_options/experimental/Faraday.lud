@@ -1,0 +1,191 @@
+(define "SimpleScoring"
+    (set Score Mover 
+        (max (sizes Group Orthogonal Mover))
+    )
+)
+
+(define "SimpleOrthoScoring"
+    (set Score Mover 
+        (max (sizes Group Orthogonal Mover))
+    )
+)
+
+(define "SpecialScoring"
+    (and
+        (set Score Mover 
+            (* 
+                (max (sizes Group Orthogonal Mover))
+                (count Pieces Next)
+            )
+        )
+        (set Score Next 
+            (* 
+                (max (sizes Group Orthogonal Next))
+                (count Pieces Mover)
+            )
+        )
+    )
+)
+
+(define "SpecialOrthoScoring"
+    (and
+        (set Score Mover 
+            (* 
+                (max (sizes Group Orthogonal Mover))
+                (count Pieces Next)
+            )
+        )
+        (set Score Next 
+            (* 
+                (max (sizes Group Orthogonal Next))
+                (count Pieces Mover)
+            )
+        )
+    )
+)
+
+(define "PiePhase"
+    (phase "Pie"
+        (play 
+            (if 
+                (is Mover P1)
+                (or {
+                    (move Add (piece (mover)) (to (sites Empty)))
+                    (move Add (piece (next)) (to (sites Empty)))
+                    (move Pass)
+                    }
+                    (then
+                        (if 
+                            (< 0 (counter)) 
+                            (set NextPlayer (player (next)))
+                            (moveAgain)
+                        )
+                    )
+                )
+                (or 
+                    (move Propose "Accept Pie Offer and Move" 
+                        (then (set NextPlayer (player (mover))))
+                    )
+                    (move Propose "Swap Pieces" 
+                        (then 
+                            (do 
+                                (forEach Site 
+                                    (sites Occupied by:Mover) 
+                                    (remember Value (site)) 
+                                ) 
+                                next:(forEach Site 
+                                    (sites Occupied by:Next)
+                                    (and
+                                        (remove (site))
+                                        (add (piece (mover)) (to (site)))
+                                    )
+                                )
+                                (then
+                                    (forEach Value (values Remembered)
+                                        (and
+                                            (remove (value))
+                                            (add (piece (next)) (to (value)))
+                                        )
+                                        (then 
+                                            (and 
+                                                (forget Value All)
+                                                (set NextPlayer (player (next)))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ) 
+        (nextPhase 
+            (or 
+                (is Proposed "Swap Pieces")
+                (is Proposed "Accept Pie Offer and Move")
+            )
+            "Placement"
+        )
+    )
+)
+
+(define "Connection" Orthogonal)
+(define "BoardUsed" "HexHex")
+
+(define "SquareGrid" (board (square 6) use:Vertex))
+(define "HexLimp" (board (tri Limping (- 6 1)) use:Vertex))
+(define "TriSquare" (board (tiling T33434 (- 6 2)) use:Vertex))
+(define "HexHex" (board (tri Hexagon 6) use:Vertex))
+(define "HexCell" (board (hex Hexagon 6) use:Cell))
+(define "Icosahedron" (board (add (remove (tri Limping 4) vertices:{0 1 3 4 5 6 7 8 9 10 11 13 15 17 18 19 20 23 24 25 26 27 31 32 34 35 36 37 39 40 42 43 44 45 46 47}) edges:{ {0 1} {0 2} {0 3} {0 9} {0 10} {1 2} {1 4} {1 6} {6 11} {7 11} {8 11} {1 9} {2 3} {3 5} {3 8} {3 10} {6 9} {8 10} {9 10} {9 11} {10 11} }) use:Vertex))
+
+(game "Faraday"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Ball" P1)
+        (piece "Ball" P2)
+    })
+    (rules
+        (meta (no Repeat Positional))
+        (start (set Score Each 0))
+        phases:{ 
+        "PiePhase"
+        (phase "Placement" 
+            (play
+                (move Add 
+                    (piece (mover))
+                    (to (sites Empty) 
+                        if:(or
+                            (<= 3 (count Pieces Next in:(sites Around (to) Orthogonal)))
+                            (< 0 
+                                (- 
+                                    (count Pieces Next in:(sites Around (to) Orthogonal))
+                                    (count Pieces Mover in:(sites Around (to) Orthogonal))
+                                )
+                            )
+                        )
+                    )
+                    (then 
+                        (and
+                            {
+                            ("SimpleOrthoScoring")
+                            (set Var "Last2Move" (mover))
+                            (if (not (no Moves Mover)) (moveAgain))
+                            }
+                        )
+                    )
+                )
+            )
+            (end 
+                (if 
+                    (all Passed)
+                    {
+                    (if 
+                        (!= (score Mover) (score Next))
+                        (byScore)
+                    )
+                    (if 
+                        (and
+                            (= (score Mover) (score Next))
+                            (= (var "Last2Move") (mover))
+                        )
+                        (result Mover Loss)
+                    )
+                    (if 
+                        (and
+                            (= (score Mover) (score Next))
+                            (!= (var "Last2Move") (mover))
+                        )
+                        (result Mover Loss)
+                    )
+                    }
+                    (byScore)
+                )
+            )
+        )
+        }
+    )
+)
+

@@ -1,0 +1,202 @@
+(define "Inward"
+    (>
+        (max
+            (count Sites
+                in:(sites Direction
+                    from:(from)
+                    #1
+                )
+            )
+            (count Sites
+                in:(sites Direction
+                    from:(from)
+                    #2
+                )
+            )
+        )
+        (max
+            (count Sites
+                in:(sites Direction
+                    from:(to)
+                    #1
+                )
+            )
+            (count Sites
+                in:(sites Direction
+                    from:(to)
+                    #2
+                )
+            )
+        )
+    )
+)
+
+(define "Hop"
+    (move Hop 
+        (from #1)
+        Orthogonal
+        (between 
+            if:(is Occupied (between)) 
+            (apply (remove (between)))
+        )
+        (to 
+            if:(and {
+                (is Empty (to))
+                (= 0 (count Sites in:(sites Around (to) Own Orthogonal)))
+            })
+        )
+        (then
+            (and {
+                (remove (sites Outer))
+                (set Var 1)
+                (if
+                    (can Move
+                        (move Hop 
+                            (from (last To))
+                            Orthogonal
+                            (between 
+                                if:(is Occupied (between)) 
+                                (apply (remove (between)))
+                            )
+                            (to 
+                                if:(and {
+                                    (is Empty (to))
+                                    (= 0 (count Sites in:(sites Around (to) Own Orthogonal)))
+                                })
+                            )
+                        )
+                    )
+                    (moveAgain)
+                    (set Var 0)
+                )
+            })
+        )
+    )
+)
+
+(define "Step"
+    (move Step 
+        (from) 
+        (to 
+            if:(and {
+                (is Empty (to))
+                (= 0 
+                    (count Sites 
+                        in:(difference
+                            (sites Around (to) Own Orthogonal)
+                            (sites {(from)})
+                        )
+                    )
+                )
+                (not
+                    (and
+                        (< 0 
+                            (count Sites 
+                                in:(sites Around (from) Enemy Orthogonal)
+                            )
+                        )
+                        (= 0 
+                            (count Sites 
+                                in:(sites Around (to) Enemy Orthogonal)
+                            )
+                        )
+                    )
+                )
+                (or {
+                    (and
+                        (= 0 
+                            (count Sites 
+                                in:(sites Around (from) Enemy Orthogonal)
+                            )
+                        )
+                        (< 0 
+                            (count Sites 
+                                in:(sites Around (to) Enemy Orthogonal)
+                            )
+                        )
+                    )
+                    (or {
+                        (and
+                            (or
+                                (= (from) (+ (to) 12))
+                                (= (from) (- (to) 12))
+                            )
+                            ("Inward" N S)
+                        )
+                        (and
+                            (or
+                                (= (from) (+ (to) 1))
+                                (= (from) (- (to) 1))
+                            )
+                            ("Inward" E W)
+                        )
+                        (and
+                            (or
+                                (= (from) (+ (to) (+ 12 1)))
+                                (= (from) (- (to) (+ 12 1)))
+                            )
+                            ("Inward" SW NE)
+                        )
+                        (and
+                            (or
+                                (= (from) (+ (to) (- 12 1)))
+                                (= (from) (- (to) (- 12 1)))
+                            )
+                            ("Inward" SE NW)
+                        )
+                    })         
+                })
+            })
+        )
+    )
+)
+
+(game "Cage"
+    (players 2)
+    (equipment {
+        (board (square 12))
+        (piece "Disc" Each)
+    })
+    (rules
+        (start {
+            (place "Disc1" 
+                (difference
+                    (sites Phase 0)
+                    (sites Outer)
+                )
+            )
+            (place "Disc2"
+                (difference
+                    (sites Phase 1)
+                    (sites Outer)
+                )
+            )
+        })
+        (play
+            (forEach Piece
+                (if
+                    (!= 1 (var))
+                    (or
+                        ("Hop" ~)
+                        ("Step")
+                    )
+                    ("Hop" if:(= (from) (last To)))
+                )
+            )
+        )
+        (end 
+            (if 
+                (or
+                    (= 0
+                        (count Sites in:(sites Occupied by:P1))
+                    )
+                    (= 0
+                        (count Sites in:(sites Occupied by:P2))
+                    )
+                ) 
+                (result Mover Win)
+            )
+        )
+    )
+)
+

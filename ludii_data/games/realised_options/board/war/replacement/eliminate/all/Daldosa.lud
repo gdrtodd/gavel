@@ -1,0 +1,70 @@
+(define "MoveAPiece" 
+    (if (or
+            (= (state at:(from)) 1) 
+            (and (= (state at:(from)) 0) (= 1 (pips)))
+        )
+        (move Slide
+            #1 
+            (between 
+                (exact (pips))
+                if:(is Empty (between))
+            ) 
+            (to 
+                if:("IsEnemyAt" (to)) 
+                (apply if:(not ("IsFriendAt" (to))) (remove (to)))
+            )
+            (then
+                (if (= (state at:(last To)) 0)
+                    (set State at:(last To) 1)
+                )
+            )
+        )
+    )
+)
+
+(game "Daldosa"
+    (players 2)
+    (equipment {
+        (board 
+            (add 
+                (merge {
+                    (rectangle 1 8)
+                    (shift -4 1.5 (rectangle 1 12))
+                    (shift 0 3 (rectangle 1 8))
+                })
+                vertices:{{-1 0.1} {-2 0.3} {-2.9 0.5} {-3.6 0.8} {-1 2.9} {-2 2.7} {-2.9 2.5} {-3.6 2.2}}
+            )
+            {
+            (track "Track1" {31..28 0..7 19..8 35..32 20..27 19..8} loop:True P1)
+            (track "Track2" {35..32 20..27 19..8 31..28 0..7 19..8} loop:True P2)
+            }
+            use:Vertex
+        )
+        (regions "AllSites" (sites Board))
+        (dice d:4 num:2)
+        (piece "Minus" P1 ("MoveAPiece" "Track1"))
+        (piece "Minus" P2 ("MoveAPiece" "Track2"))
+    })
+    (rules 
+        (start {
+            (place "Minus1" (sites {0..7 28..31}))
+            (place "Minus2" (sites {20..27 32..35}))
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (forEach Die 
+                    replayDouble:(and (= (face 36) 1) (= (face 37) 1))
+                    (forEach Piece
+                        (then 
+                            (if (not (all DiceUsed))
+                                ("ReplayIfCanMove" (forEach Die (forEach Piece)))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

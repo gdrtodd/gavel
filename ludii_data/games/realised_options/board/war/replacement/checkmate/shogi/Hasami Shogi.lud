@@ -1,0 +1,36 @@
+(define "SurroundCaptures" 
+    (surround 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            if:(and 
+                (is In (between) (sites Corners)) 
+                ("IsEnemyAt" (between))
+            ) 
+            (apply (remove (between)))
+        ) 
+        (to if:("IsFriendAt" (to))) 
+    )
+)
+
+(game "Hasami Shogi" 
+    (players 2) 
+    
+    (equipment { 
+        (board (square 9))
+        (piece "Fuhyo" P1 (move Slide Orthogonal (then (or ("CustodialCapture" Orthogonal (max 1)) "SurroundCaptures"))))
+        (piece "Tokin" P2 (move Slide Orthogonal (then (or ("CustodialCapture" Orthogonal (max 1)) "SurroundCaptures"))))
+    })
+    
+    (rules 
+        (start { 
+            (place "Fuhyo1" (sites Bottom))
+            (place "Tokin2" (sites Top))
+        })
+        
+        (play (forEach Piece))
+        
+        (end (if (= (count Pieces Next) 1) (result Mover Win)))
+    )
+)
+

@@ -1,0 +1,162 @@
+(define "NumRow" 12)
+(define "NumColumn" 4)
+(define "TopRow" (+ 2 (* 3 (- "NumRow" 1))))
+(define "NumTry" (var))
+(define "RowToPlace" (- "TopRow" (* 3 ("NumTry"))))
+(define "RowToCheck" (- "TopRow" (* 3 (- ("NumTry") 1))))
+
+(define "HintPositions" 
+    (union
+        (sites Row (+ "RowToPlace" 1))
+        (sites Row (- "RowToPlace" 1))
+    )
+)
+
+(define "RightPositionAndColor"
+    (= 
+        (what at:(regionSite (sites Row ("RowToPlace")) index:(value))) 
+        (what at:(coord row:0 column:(value)))
+    )
+)
+
+(define "ColorInSolution"
+    (is In (what at:(regionSite (sites Bottom) index:(value))) 
+        (results from:(sites Row ("RowToPlace")) to:0 (what at:(from)))
+    )
+)
+
+(define "CombinationPlaced"
+    (= 0 (count Sites in:(intersection (sites Empty) (sites Row ("RowToPlace")))))
+)
+
+(define "CombinationToFindPlaced"
+    (= 0 (count Sites in:(intersection (sites Empty) (sites Bottom))))
+)
+
+(define "PositionAndColorOK"
+    (= (what at:(site)) (what at:(coord row:0 column:(column of:(site)))))
+)
+
+(define "CombinationFound"
+    (and
+        (= 0 (count Sites in:(intersection (sites Empty) (sites Row ("RowToCheck")))))
+        (= "NumColumn" 
+            (count Sites in:(forEach (sites Row ("RowToCheck")) if:("PositionAndColorOK")))
+        )
+    )
+)
+
+(define "AddHint" 
+    (add (piece #1) (to (regionSite ("HintPositions") index:(value))))		
+)
+
+(define "AddBlackHint"
+    ("AddHint" "Disc2")
+)
+
+(define "AddWhiteHint"
+    ("AddHint" "Disc1")
+)
+
+(game "Mastermind"
+    (players 2)
+    (equipment {
+        (board
+            (merge {
+                (rectangle (+ 1 "NumRow") "NumColumn")
+                (shift "NumColumn" 0.75 
+                    (repeat "NumRow" 1 
+                        step:{{1 0} {0 1}} 
+                        (poly {{0 0} {0 0.5} {0.5 0.5} {0.5 0}})
+                    )
+                )
+            })
+            use:Vertex
+        )
+        (piece "Marker1" Shared)
+        (piece "Marker2" Shared)
+        (piece "Marker3" Shared)
+        (piece "Marker4" Shared)
+        (piece "Marker5" Shared)
+        (piece "Marker6" Shared)
+        (piece "Marker7" Shared)
+        (piece "Marker8" Shared)
+        
+        (piece "Disc1" Shared)
+        (piece "Disc2" Shared)
+        
+        (hand Shared size:8)
+    })
+    (rules
+        (start {
+            (place "Marker1" (handSite Shared))
+            (place "Marker2" (handSite Shared 1))
+            (place "Marker3" (handSite Shared 2))
+            (place "Marker4" (handSite Shared 3))
+            (place "Marker5" (handSite Shared 4))
+            (place "Marker6" (handSite Shared 5))
+            (place "Marker7" (handSite Shared 6))
+            (place "Marker8" (handSite Shared 7))
+        })
+        
+        phases:{
+        (phase "Placement" P1
+            (play 
+                (move
+                    (from (sites Hand Shared))
+                    (to (intersection (sites Empty) (sites Bottom)))
+                    copy:True
+                    (then
+                        (and {
+                            (set Hidden at:(last To) to:P2)
+                            (if ("CombinationToFindPlaced")
+                                (set Var 0) 
+                                (moveAgain)
+                            )
+                        })
+                    )
+                )
+            )
+        )
+        (phase "Finding" P2
+            (play
+                (move
+                    (from (sites Hand Shared))
+                    (to (intersection (sites Empty) (sites Row ("RowToPlace"))))
+                    copy:True
+                    (then
+                        (and 
+                            (moveAgain)
+                            (if ("CombinationPlaced")
+                                (and
+                                    (forEach Value min:0 max:(- "NumColumn" 1)
+                                        (if ("RightPositionAndColor")
+                                            ("AddBlackHint")
+                                            (if ("ColorInSolution")
+                                                ("AddWhiteHint")
+                                            )
+                                        )
+                                    )
+                                    (set Var (+ 1 ("NumTry")))
+                                    (then
+                                        (if (or ("CombinationFound") (>= "NumTry" "NumRow"))
+                                            (forEach Site (sites Bottom)
+                                                (set Hidden at:(site) False to:P2)	
+                                            )
+                                        )		
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (end {
+                (if ("CombinationFound") (result P2 Win))
+                (if (>= "NumTry" "NumRow") (result P1 Win))
+            })
+        )
+        }
+    )
+)
+

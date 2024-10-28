@@ -1,0 +1,76 @@
+(game "Currierspiel"
+    ("TwoPlayersNorthSouth") 
+    (equipment {
+        (board (rectangle 8 12))
+        (regions "StartingPawnRookQueen" P1 (sites {"A2" "G2" "L2"}))
+        (regions "StartingPawnRookQueen" P2 (sites {"A7" "G7" "L7"}))
+        ("ChessKing" "King")
+        (piece "Queen" Each 
+            (or
+                ("StepToNotFriend" Diagonal)
+                (if (= 1 (state at:(from)))
+                    (move Hop 
+                        (between 
+                            if:True
+                        )
+                        (to if:(not ("IsFriendAt" (to)))
+                            (apply (remove (to)))
+                        )
+                    )
+                    (then (set State at:(last To) 0))
+                )
+            )
+        )
+        ("ChessKing" "Mann")
+        (piece "Fool" Each ("StepToNotFriend" Orthogonal))
+        ("ChessBishop" "Ferz") 
+        (piece "Bishop" Each
+            (move Hop 
+                (between 
+                    if:True
+                )
+                (to if:(not ("IsFriendAt" (to)))
+                    (apply (remove (to)))
+                )
+            )
+        )
+        ("ChessKnight" "Knight")
+        ("ChessRook" "Rook")
+        ("ChessPawn" "Pawn")
+    })
+    (rules 
+        (start {
+            (place "Pawn1" (sites Row 1))
+            (place "Pawn2" (sites Row 6))
+            (place "Rook1" {"A1" "L1"}) (place "Knight1" {"B1" "K1"}) (place "Ferz1" {"C1" "J1"}) (place "Bishop1" {"D1" "I1"}) (place "Queen1" coord:"G1" state:1) (place "Fool1" coord:"H1") (place "Mann1" coord:"E1") (place "King1" coord:"F1") 
+            (place "Rook2" {"A8" "L8"}) (place "Knight2" {"B8" "K8"}) (place "Ferz2" {"C8" "J8"}) (place "Bishop2" {"D8" "I8"}) (place "Queen2" coord:"G8" state:1) (place "Fool2" coord:"H8") (place "Mann2" coord:"E8") (place "King2" coord:"F8") 
+        })
+        
+        phases:
+        {
+        (phase "Opening" 
+            (play 
+                (forEach Site 
+                    (intersection (sites Occupied by:Mover) (sites Mover))
+                    (move 
+                        (from (site))
+                        (to (ahead (site) steps:2 Forward))
+                    )
+                )
+            )
+            (nextPhase Mover (= 0 (count Sites in:(intersection (sites Occupied by:Mover) (sites Mover)))) "Playing")
+        )
+        (phase "Playing" 
+            (play 
+                (do 
+                    (forEach Piece) 
+                    ifAfterwards:(not ("IsInCheck" "King" Mover))
+                )
+            )
+        )
+        }
+        
+        (end ("Checkmate" "King"))
+    )
+)
+

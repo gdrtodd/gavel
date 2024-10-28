@@ -1,0 +1,52 @@
+(define "Columns" 6)
+
+(define "PiecesOwnedBy" (+ (count at:(mapEntry #1)) (count in:(sites #1))))
+
+(game "Yovodi"
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            (track "Track" "6,W,N,E" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (map {(pair P1 FirstSite) (pair P2 LastSite)}) 
+        (piece "Seed" Shared)
+    }) 
+    
+    (rules 
+        (start (set Count 4 to:(sites Track)))
+        (play 
+            (move Select 
+                (from 
+                    (if ("SameTurn") 
+                        ("LastHoleSowed") 
+                        (sites Mover) 
+                    ) 
+                    if:(< 0 (count at:(from)))
+                )
+                (then 
+                    (sow 
+                        apply:(if (> (count at:(to)) 1)
+                            (moveAgain)
+                            (if (is In (to) (sites Mover))
+                                (fromTo 
+                                    (from ("OppositePitTwoRows" (to))) 
+                                    (to (mapEntry (mover))) 
+                                    count:(count at:("OppositePitTwoRows" (to)))
+                                )
+                                (fromTo 
+                                    (from ("OppositePitTwoRows" (to))) 
+                                    (to (mapEntry (next))) 
+                                    count:(count at:("OppositePitTwoRows" (to)))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end ("MancalaByScoreWhen" (no Moves Mover)))
+    )	
+)
+

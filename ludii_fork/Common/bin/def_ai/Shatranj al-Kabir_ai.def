@@ -1,0 +1,7 @@
+(define "Shatranj al-Kabir_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (material weight:-1.0)
+    })
+    
+)

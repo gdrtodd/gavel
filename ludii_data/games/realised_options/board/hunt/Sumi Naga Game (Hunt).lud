@@ -1,0 +1,32 @@
+(game "Sumi Naga Game (Hunt)" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Goat" P1 "StepToEmpty")
+        (piece "Tiger" P2
+            (or
+                ("StepToEmpty")
+                ("HopSequenceCapture")
+            )
+        )
+        (hand P1)
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Goat1" (handSite P1) count:20)
+            (place "Tiger2" (sites Corners))
+        })
+        
+        phases:{
+        (phase "Placement" P1 
+            (play (move (from (handSite P1)) (to (sites Empty))))
+            (nextPhase Mover ("HandEmpty" Mover) "Moving")
+        )
+        (phase "Moving" (play (forEach Piece)))
+        }
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

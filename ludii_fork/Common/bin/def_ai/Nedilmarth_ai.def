@@ -1,0 +1,7 @@
+(define "Nedilmarth_ai"
+    (bestAgent "UCT")
+    trainedHeuristics:(heuristics {
+        (mobilitySimple weight:-1.0)
+    })
+    
+)

@@ -1,0 +1,114 @@
+
+(define "Directions"
+    ("P12" (directions #1) (directions #2))
+)
+
+(define "IsToEmpty"
+    (is In (to) (sites Empty))
+)
+
+(define "IsToEmptyOrEnemy"
+    (or "IsToEmpty"
+        ("IsEnemyAt" (to))
+    )
+)
+
+(define "P12"
+    (if (is Mover P1) #1 #2)
+)
+
+(define "KingCaptureStep"
+    (move
+        Step
+        #1
+        (to if:"IsToEmptyOrEnemy"
+            (apply
+                (if ("IsEnemyAt" (to))
+                    (remove (to)
+                        (then (set Counter))
+                    )
+                )
+            )
+        )
+        #2
+    )
+)
+
+(define "PromoteTo"
+    (move Promote (last To) #1 Mover)
+)
+
+(game "Mini Hexchess"
+    ("TwoPlayersNorthSouth")
+    (equipment {
+        (board (rotate 90 (hex 4)))
+        
+        (piece "King" Each ("KingCaptureStep" All ~))
+        (piece "Queen" Each ("SlideCapture" ~ ~ (then (set Counter))))
+        (piece "Rook" Each ("SlideCapture" Orthogonal ~ (then (set Counter))))
+        (piece "Bishop" Each ("SlideCapture" Diagonal ~ (then (set Counter))))
+        ("ChessKnight" "Knight" (then (set Counter)))
+        
+        (piece "Pawn" Each
+            (or {
+                "StepForwardToEmpty"
+                ("StepToEnemy" ("Directions" {NNW NNE} {SSW SSE}))
+                }
+                (then
+                    (and
+                        (if (is In (last To) (sites Mover "PromotionZone"))
+                            (moveAgain)
+                        )
+                        (set Counter)
+                    )
+                )
+            )
+        )
+        
+        (regions "PromotionZone" P1 (union (sites Side NW) (sites Side NE)))
+        (regions "PromotionZone" P2 (union (sites Side SW) (sites Side SE)))
+        
+        (regions "Region-Dark" (sites Phase 2))
+        (regions "Region-Light" (sites Phase 1))
+        (regions "Region-Medium" (sites Phase 0))
+    })
+    
+    (rules
+        (start {
+            (place "King1" coord:"B2")
+            (place "Rook1" coord:"B1")
+            (place "Bishop1" coord:"A1")
+            (place "Knight1" coord:"A2")
+            
+            (place "King2" coord:"F6")
+            (place "Rook2" coord:"F7")
+            (place "Bishop2" coord:"G7")
+            (place "Knight2" coord:"G6")
+            
+            (place "Pawn1" {"A3" "B3" "C3" "C2" "C1"})
+            (place "Pawn2" {"E7" "E6" "E5" "F5" "G5"})
+        })
+        phases:{
+        (phase "Movement"
+            (play
+                (if ("SameTurn")
+                    ("PromoteTo" (piece {"Rook" "Bishop" "Knight"}))
+                    (do (forEach Piece)
+                        ifAfterwards:(not ("IsInCheck" "King" Mover))
+                    )
+                )
+            )
+            (end {
+                ("Checkmate" "King")
+                (if (or
+                        (no Moves Mover)
+                        (= (counter) 100)
+                    )
+                    (result Mover Draw)
+                )
+            })
+        )
+        }
+    )
+)
+

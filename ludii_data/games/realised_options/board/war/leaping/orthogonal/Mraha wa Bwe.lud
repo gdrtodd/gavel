@@ -1,0 +1,56 @@
+(define "HopCounter" 
+    ("HopCapture"
+        (from #1) 
+        Orthogonal 
+        #2
+    ) 
+)
+
+(game "Mraha wa Bwe" 
+    (players 2) 
+    (equipment { 
+        (board (square 5)) 
+        (piece "Counter" Each)
+        (hand Each)
+    }) 
+    
+    (rules 
+        (start (place "Counter" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover))
+                    (to (difference (sites Empty) (sites Centre)))
+                    (then (if ("NewTurn") (moveAgain)))
+                )
+            )
+            (nextPhase Mover (is Empty (handSite Mover)) "Play")
+        )
+        (phase "Play"
+            (play 
+                (if "SameTurn"
+                    (or
+                        ("HopCounter" (last To)
+                            (then ("ReplayIfCanMove" ("HopCounter" (last To)))) 
+                        )
+                        (move Pass)
+                    )
+                    (or 
+                        (forEach Piece "Counter"
+                            ("HopCounter" (from) 
+                                (then ("ReplayIfCanMove" ("HopCounter" (last To)))) 
+                            ) 
+                        )
+                        (forEach Piece "Counter" ("StepOrthogonalToEmpty"))
+                    )
+                )
+            )
+        )
+        }
+        
+        (end (if (no Moves Mover) (result Mover Loss))) 
+    )
+)
+

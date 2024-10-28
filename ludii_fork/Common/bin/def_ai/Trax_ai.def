@@ -1,0 +1,7 @@
+(define "Trax_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (lineCompletionHeuristic weight:-1.0)
+    })
+    
+)

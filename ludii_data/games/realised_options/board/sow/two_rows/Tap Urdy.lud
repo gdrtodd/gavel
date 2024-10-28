@@ -1,0 +1,59 @@
+(define "Columns" 6)
+
+(define "NextHoleFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1))))
+
+(define "OneRowIsEmpty"
+    (or
+        (all Sites (sites P1) if:(= 0 (count at:(site))))
+        (all Sites (sites P2) if:(= 0 (count at:(site))))
+    )
+)
+
+(game "Tap Urdy"
+    (players 2) 
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "5,W,N,E" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (hand Each)
+        (piece "Seed" Shared)
+    }) 
+    
+    (rules 
+        (start (set Count 4 to:(sites Track)))
+        (play 
+            (move
+                Select 
+                (from 
+                    (if 
+                        ("SameTurn") 
+                        ("LastHoleSowed") 
+                        (sites Next) 
+                    ) 
+                    if:(< 0 (count at:(from)))
+                )
+                (then 
+                    (sow 
+                        apply:(if (and (!= (count at:("NextHoleFrom" (to) 1)) 0) (> (count at:(to)) 1))
+                            (moveAgain)
+                            (if (and (= (count at:("NextHoleFrom" (to) 1)) 0) (> (count at:(to)) 1))
+                                (fromTo 
+                                    (from ("NextHoleFrom" (to) 2)) 
+                                    (to (handSite (mover))) 
+                                    count:(count at:("NextHoleFrom" (to) 2))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" ("OneRowIsEmpty")))
+    )	
+)
+

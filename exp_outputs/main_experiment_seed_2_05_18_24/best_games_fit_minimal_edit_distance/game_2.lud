@@ -1,0 +1,162 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 8)
+            )
+            (piece "PIECE_ALPHA" Neutral 
+                (flips 1 2)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA0" 
+                    (sites Phase 0)
+                state:1)
+                (place "PIECE_ALPHA0" 
+                    (sites Phase 1)
+                state:2)
+        })
+        (play 
+            (move Select 
+                (from (sites Board))
+                (then (flip 
+                        (last To)
+                        (then (custodial 
+                                (from (last To))
+                                Adjacent 
+                                (between if:
+                                    (!= 
+                                        (state at:
+                                            (between)
+                                        )
+                                        (state at:
+                                            (last To)
+                                        )
+                                    )
+                                    (apply 
+                                        (allCombinations (add 
+                                                (piece "PIECE_ALPHA0" state:
+                                                    (mover)
+                                                )
+                                                (to (last To))
+                                                ) (flip 
+                                                (between)
+                                        ))
+                                    )
+                                )
+                                (to if:(= (state at:
+                                            (to)
+                                            ) (state at:
+                                            (last To)
+                                )))
+                        ))
+                ))
+            )
+        )
+
+        (end {
+                (if (and 
+                        (!= 0 
+                            (count Sites in:(forEach 
+                                    (sites Column 0)
+                                    if:
+                                    (or 
+                                        (all Sites (sites Row 
+                                                (row of:
+                                                    (site)
+                                                )
+                                                ) if:(= 1 (state at:
+                                                    (site)
+                                        )))
+                                        (all Sites (sites Row 
+                                                (row of:
+                                                    (site)
+                                                )
+                                                ) if:(= 2 (state at:
+                                                    (site)
+                                        )))
+                                    )
+                            ))
+                        )
+                        (!= 0 
+                            (count Sites in:(forEach 
+                                    (sites Row 0)
+                                    if:
+                                    (or 
+                                        (all Sites (sites Column 
+                                                (column of:
+                                                    (site)
+                                                )
+                                                ) if:(= 1 (state at:
+                                                    (site)
+                                        )))
+                                        (all Sites (sites Column 
+                                                (column of:
+                                                    (site)
+                                                )
+                                                ) if:(= 2 (state at:
+                                                    (site)
+                                        )))
+                                    )
+                            ))
+                        )
+                ) (result Mover Loss))
+                (if (!= 0 
+                        (count Sites in:(forEach 
+                                (sites Column 0)
+                                if:
+                                (or 
+                                    (all Sites (sites Row 
+                                            (row of:
+                                                (site)
+                                            )
+                                            ) if:(= 1 (state at:
+                                                (site)
+                                    )))
+                                    (all Sites (sites Row 
+                                            (row of:
+                                                (site)
+                                            )
+                                            ) if:(= 2 (state at:
+                                                (site)
+                                    )))
+                                )
+                        ))
+                ) (result P1 Win))
+                (if (!= 0 
+                        (count Sites in:(forEach 
+                                (sites Row 0)
+                                if:
+                                (or 
+                                    (all Sites (sites Column 
+                                            (column of:
+                                                (site)
+                                            )
+                                            ) if:(= 1 (state at:
+                                                (site)
+                                    )))
+                                    (all Sites (sites Column 
+                                            (column of:
+                                                (site)
+                                            )
+                                            ) if:(= 2 (state at:
+                                                (site)
+                                    )))
+                                )
+                        ))
+                ) (result P2 Win))
+        })
+    )
+)
+
+// Ancestor: Reversi
+// Selection metric: 0.47
+// Fitness: 1.00
+// Novelty: 0.60
+// Cell distance: 2.00
+// Edit Distance: 0.47
+// Global Edit Distance: 0.00
+// Lineage length: 2.00

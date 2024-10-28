@@ -1,0 +1,148 @@
+(define "NextCanNotMove"
+    (not (can Move (do (forEach Piece Next) ifAfterwards:(not ("IsInCheck" "King" Next)))))
+)
+
+(game "Chex" 
+    ("TwoPlayersNorthSouth") 
+    
+    (equipment { 
+        (boardless Square) 
+        (hand Each)
+        
+        (tile "Pawn" Each numSides:4
+            (or {
+                "StepForwardToEmpty" 
+                ("StepToEnemy" (directions {FR FL}))
+            })
+        )
+        
+        (tile "Rook" Each numSides:4 ("SlideCapture" Orthogonal))
+        (tile "King" Each numSides:4 ("StepToNotFriend"))
+        (tile "Bishop" Each numSides:4 ("SlideCapture" Diagonal))
+        (tile "Knight" Each numSides:4 ("LeapCapture" "KnightWalk"))
+        (tile "Queen" Each numSides:4 ("SlideCapture"))
+    }) 
+    
+    (rules 
+        (start {
+            (place Random 
+                { 
+                (count "Pawn1" 8) (count "Rook1" 2) (count "Knight1" 2) 
+                (count "Bishop1" 2) (count "Queen1" 1) (count "King1" 1) 
+                } 
+                (handSite 1) 
+            )
+            (place Random 
+                { 
+                (count "Pawn2" 8) (count "Rook2" 2) (count "Knight2" 2)
+                (count "Bishop2" 2) (count "Queen2" 1) (count "King2" 1) 
+                } 
+                (handSite 2) 
+            )
+            (forEach Value min:0 max:(topLevel at:(handSite 1)) 
+                (set Hidden What at:(handSite 1) level:(value) to:P1)		
+            )
+            
+            (forEach Value min:0 max:(topLevel at:(handSite 1)) 
+                (set Hidden What at:(handSite 1) level:(value) to:P2)		
+            )
+            
+            (forEach Value min:0 max:(topLevel at:(handSite 2)) 
+                (set Hidden What at:(handSite 2) level:(value) to:P1)		
+            )
+            
+            (forEach Value min:0 max:(topLevel at:(handSite 2)) 
+                (set Hidden What at:(handSite 2) level:(value) to:P2)		
+            )
+        }) 
+        (play 
+            (if "SameTurn"
+                (if (= (count Moves) 1)
+                    (move 
+                        (from (handSite (mover))) 
+                        (to (centrePoint))
+                    )
+                    (do (move 
+                            (from (handSite (mover))) 
+                            (to 
+                                (sites Around (union (sites Occupied by:P1 container:"Board") (sites Occupied by:P2 container:"Board")) Empty)
+                            )
+                        ) 
+                        ifAfterwards:(not ("IsInCheck" "King" Mover))
+                    )
+                )
+                (or 
+                    (if (is Occupied (handSite (mover)))
+                        (move Select
+                            (from (handSite (mover))) 
+                            (then 
+                                (and {
+                                    (moveAgain) 
+                                    (set Hidden What at:(last To) level:(topLevel at:(last To)) False to:P1)
+                                    (set Hidden What at:(last To) level:(topLevel at:(last To)) False to:P2)
+                                })
+                            )
+                        )
+                    )
+                    (do 
+                        (forEach Piece) 
+                        ifAfterwards:(and (= 1 (count Groups)) (not ("IsInCheck" "King" Mover)))
+                    )
+                )
+            )	
+        )
+        
+        (end {
+            (if (and {
+                    (not 
+                        (can Move 
+                            (if (!= (what at:(handSite (mover))) 0) (move Select (from (handSite (mover)))))
+                        )
+                    )
+                    ("IsNotOffBoard" (where "King" Next))
+                    ("IsInCheck" "King" Next)
+                    (not 
+                        (can Move 
+                            (do 
+                                (forEach Piece Next) 
+                                ifAfterwards:(and 
+                                    (= 1 (count Groups)) 
+                                    (not ("IsInCheck" "King" Next))
+                                )
+                            ) 
+                        )
+                    )
+                }) 
+                (result Mover Win)
+            )
+            (if (and { 
+                    "SameTurn"
+                    ("IsInCheck" "King" Mover) 
+                    (not 
+                        (can Move 
+                            (do 
+                                (move 
+                                    (from (handSite (mover))) 
+                                    (to 
+                                        (sites 
+                                            Around 
+                                            (union 
+                                                (sites Occupied by:P1 container:"Board") 
+                                                (sites Occupied by:P2 container:"Board")
+                                            ) 
+                                            Empty
+                                        )
+                                    )
+                                ) 
+                                ifAfterwards:(not ("IsInCheck" "King" Mover))
+                            )
+                        )
+                    )
+                })
+                (result Next Win)
+            )
+            ("DrawIfNoMoves" Mover)
+        })
+    )
+)
+

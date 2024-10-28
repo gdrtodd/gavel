@@ -1,0 +1,27 @@
+(game "Jiu Zi Xian Qi"
+    (players 1) 
+    (equipment { 
+        ("StarBoard" 5)
+        (piece "Marker" P1 ("HopFriendCapture"))
+    }) 
+    (rules 
+        (start 
+            (place "Marker" (sites Board))
+        )
+        
+        phases:{
+        (phase "Remove" 
+            (play (move Remove (sites Board)))
+            (nextPhase "Playing")
+        )
+        (phase "Playing"
+            (play (forEach Piece))
+            (end { 
+                (if (= 1 (count Pieces P1)) (result Mover Win))
+                ("NoMoves" Loss)
+            })
+        )
+        }
+    )		
+)
+

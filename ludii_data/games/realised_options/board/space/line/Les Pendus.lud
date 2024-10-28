@@ -1,0 +1,40 @@
+(game "Les Pendus"
+    (players 2) 
+    
+    (equipment { 
+        (board (square 3 diagonals:Alternating) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            (move
+                (from) 
+                (to (sites Empty)) 
+            )
+        ) 
+    })
+    
+    (rules 
+        (start (place "Marker" "Hand" count:3))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end 
+            (if 
+                (is Line 3)
+                (result Mover Win)
+            )
+        )
+    )
+)
+

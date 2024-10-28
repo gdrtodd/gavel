@@ -1,0 +1,7 @@
+(define "Castello_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (regionProximity region:1)
+    })
+    
+)

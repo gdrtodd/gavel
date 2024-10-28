@@ -1,0 +1,38 @@
+(game "Crusade"
+    (players 2)
+    (equipment {
+        (board (square 8))
+        (piece "Ball" Each
+            ("StepToEnemy" ~
+                (then
+                    (forEach Site
+                        (sites Around (last To))
+                        (if ("IsEnemyAt" (site))
+                            (and
+                                (remove (site))
+                                (add (piece (id "Ball" Mover)) (to (site)))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    })
+    (rules
+        (start {
+            (place "Ball1" (sites Phase 1))
+            (place "Ball2" (sites Phase 0))
+        })
+        
+        (play (forEach Piece))
+        
+        (end (if (no Moves Next)
+                (byScore {
+                    (score P1 (count Pieces P1))
+                    (score P2 (count Pieces P2))
+                })
+            )
+        )
+    )
+)
+

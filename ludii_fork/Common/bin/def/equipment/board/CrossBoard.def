@@ -1,0 +1,10 @@
+// Defines a regular start board (example: Kaooa).
+// #1 = The dimension of the start.
+// @example ("StarBoard" 5)
+
+(define "StarBoard"
+    (board 
+        (splitCrossings (regular Star #1))
+        use:Vertex
+    )
+)

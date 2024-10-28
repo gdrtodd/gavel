@@ -1,0 +1,66 @@
+(define "Columns" 7)
+(define "GoalNumCapturedCounters"
+    (/ (* 7 (- (count Sites in:(sites Board)) 2)) 2)
+)
+
+(game "Chonka" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns"
+            {
+            (track "Track1" "1,E,ENE,WNW,W" loop:True P1)
+            (track "Track2" "1,E,N,W,WSW" loop:True P2)
+            }
+        )
+        (piece "Seed" Shared) 
+        (regions P1 (sites Bottom))     
+        (regions P2 (sites Top))      
+        (map {(pair P1 LastSite) (pair P2 FirstSite)}) 
+    }) 
+    (rules 
+        
+        (start (set Count 7 to:(union (sites P1) (sites P2))))
+        
+        (play 
+            (move Select 
+                (from 
+                    (if ("SameTurn") 
+                        "LastHoleSowed" 
+                        (sites Mover) 
+                    ) 
+                    if:(> (count at:(from)) 0)
+                )
+                (then 
+                    (sow
+                        apply:(if (!= (to) (mapEntry Mover))
+                            (if (> (count at:(to)) 1)
+                                (moveAgain)
+                                (and
+                                    (fromTo 
+                                        (from ("OppositePitTwoRows" (to))) 
+                                        (to (mapEntry Mover)) 
+                                        count:(count at:("OppositePitTwoRows" (to)))
+                                    ) 
+                                    (fromTo 
+                                        (from (to)) 
+                                        (to (mapEntry Mover)) 
+                                        count:(count at:(to))
+                                    )
+                                )
+                            )
+                        )
+                        
+                    )
+                )
+            )
+        )
+        
+        (end
+            (if (<= ("GoalNumCapturedCounters") (count at:(mapEntry Mover)))
+                (result Mover Win)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,46 @@
+(define "CanNotMoveALPiece" 
+    (and 
+        (not (is Mover (next))) 
+        (no Moves Next)
+    )
+)
+
+(game "L Game" 
+    (players 2) 
+    (equipment { 
+        (board (square 4)) 
+        (piece "Dot" Neutral) 
+        (tile "L" Each "LWalk") 
+    }) 
+    (rules 
+        (start { 
+            (place "Dot0" {"A4" "D1"})
+            (place "L1" coord:"C1" state:0)
+            (place "L2" coord:"B4" state:2)
+        })
+        (play
+            (if ("SameTurn")
+                (or
+                    (move Pass)
+                    (move 
+                        (from (sites Occupied by:Neutral)) 
+                        (to (sites Empty))
+                    )
+                )
+                (move
+                    (from (sites Occupied by:Mover)) 
+                    (to (union (sites Empty) (sites Occupied by:Mover))) 
+                    (then (moveAgain))
+                )
+            )
+        )
+        
+        (end 
+            (if 
+                "CanNotMoveALPiece" 
+                (result Mover Win) 
+            ) 
+        ) 
+    ) 
+)
+

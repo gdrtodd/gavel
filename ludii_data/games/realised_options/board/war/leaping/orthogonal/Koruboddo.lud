@@ -1,0 +1,31 @@
+(game "Koruboddo" 
+    (players 2) 
+    (equipment { 
+        (board (square 5))
+        (piece "Marker" Each 
+            (or 
+                ("HopOrthogonalSequenceCapture")
+                ("StepOrthogonalToEmpty")
+            )
+        )
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (union {(sites Row 0) (sites Row 1) (sites {"A3" "B3"})}))
+            (place "Marker2" (union {(sites Row 3) (sites Row 4) (sites {"D3" "E3"})}))
+        })
+        
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopOrthogonalSequenceCaptureAgain")
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

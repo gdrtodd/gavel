@@ -1,0 +1,66 @@
+(define "Columns" 8)
+
+(define "NoPiece" (all Sites (sites Player "Home") if:(= 0 (count at:(site)))))
+
+(define "NextHoleFrom" ("NextSiteOnTrack" 1 from:#1))
+
+(game "Sute" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "16,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+    }) 
+    (rules 
+        
+        (start 
+            (set Count 1 
+                to:(difference
+                    (union (sites P1 "Home") (sites P2 "Home"))
+                    (union 
+                        (intersection (sites Right) (sites Row 1))
+                        (intersection (sites Left) (sites Row 2))
+                    )
+                ) 
+            ) 
+        )
+        
+        (play 
+            (move Select
+                (from 
+                    (sites Mover "Home") 
+                    if:(and 
+                        (> (count at:(from)) 0)
+                        (= 0 (count at:("NextHoleFrom" (from))))
+                    )
+                )
+                (then 
+                    (sow
+                        "Track"
+                        owner:(mover)
+                        apply:(if (and (= (count at:("OppositePit" (to))) 0) (is In (to) (sites Mover "Inner")))
+                            (remove ("OppositeOuterPit" (to)))
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end
+            (forEach NonMover
+                if:("NoPiece")
+                (result Player Loss)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,114 @@
+(define "PlayerSecondPhase" (var))
+
+(define "SetPlayerSecondPhase" 
+    (and
+        (if (and (< (var) 1) (is Line 3))	
+            (set Var #1)
+        )
+        (if (and ("HandEmpty" P1) ("HandEmpty" P2))
+            (if (< ("PlayerSecondPhase") 1) 
+                (moveAgain)
+                (set NextPlayer (player ("PlayerSecondPhase")))
+            )
+        )
+    )
+)
+
+(define "IfLine3MoveAgain" 
+    (then 
+        (if 
+            (and ("NewTurn") (is Line 3)) 
+            (moveAgain)
+            (if (no Moves Next)
+                (and (moveAgain) (set Pending))
+            )
+        )
+    )
+)
+
+(define "RemoveEnemyPiece" 
+    (move Remove
+        (sites Occupied by:Next container:"Board") 
+        #1
+    )
+)
+
+(define "ResetGame" 
+    (and { 
+        (remove (sites Occupied by:All))
+        (add (piece (id "Marker" P1)) (to (handSite P1)) count:12)
+        (add (piece (id "Marker" P2)) (to (handSite P2)) count:12)
+    })	
+)
+
+(game "Shah"
+    (players 2)
+    (equipment {
+        ("NineMensMorrisBoard")
+        (piece "Marker" Each ("StepToEmpty" ~ "IfLine3MoveAgain"))
+        (hand Each)
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        phases:{
+        (phase "Placement" 
+            (play 
+                (move 
+                    (from (handSite Mover))
+                    (to (sites Empty))
+                    (then ("SetPlayerSecondPhase" (mover)))
+                )
+            )
+            (nextPhase (and ("HandEmpty" P1) ("HandEmpty" P2)) "Remove")
+        )
+        (phase "Remove" 
+            (play ("RemoveEnemyPiece"))
+            (nextPhase Mover "Move")
+        )
+        (phase "Move" 
+            (play 
+                (if (and (not (is Pending)) "SameTurn")
+                    ("RemoveEnemyPiece"
+                        (then
+                            (if (no Moves Next)
+                                (and (moveAgain) (set Pending))
+                            )	
+                        )
+                    )
+                    (if (is Pending)
+                        (do
+                            (forEach Piece ("StepToEmpty")) 
+                            ifAfterwards:(can Move (forEach Piece Next))
+                        )
+                        (forEach Piece)
+                    )
+                    (then
+                        (if (= 2 (count Pieces P1))
+                            (addScore P2 1 
+                                (then 
+                                    (if (!= (score P2) 5) 
+                                        ("ResetGame")
+                                    )
+                                )
+                            )
+                            (if (= 2 (count Pieces P2))
+                                (addScore P1 1 
+                                    (then 
+                                        (if (!= (score P1) 5) 
+                                            ("ResetGame")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (nextPhase (= 0 (count Sites in:(sites Occupied by:All container:"Board"))) "Placement")
+        )
+        }
+        
+        (end (if (= (score Mover) 5) (result Mover Win)))
+    )
+)
+

@@ -1,0 +1,7 @@
+(define "Mini Wars_ai"
+    (bestAgent "AlphaBeta")
+    trainedHeuristics:(heuristics {
+        (sidesProximity)
+    })
+    
+)

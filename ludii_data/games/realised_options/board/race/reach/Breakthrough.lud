@@ -1,0 +1,34 @@
+(game "Breakthrough" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8)) 
+        (piece "Pawn" Each 
+            (or {
+                "StepForwardToEmpty" 
+                (move 
+                    Step
+                    (directions {FR FL}) 
+                    (to if:(or 
+                            (is Empty (to)) 
+                            ("IsEnemyAt" (to))
+                        ) 
+                        (apply (remove (to)))
+                    )
+                )
+            })
+        )
+        (regions P1 (sites Top))
+        (regions P2 (sites Bottom))
+    }) 
+    (rules 
+        (start { 
+            (place "Pawn1" (expand (sites Bottom)))
+            (place "Pawn2" (expand (sites Top)))
+        })
+        
+        (play (forEach Piece))
+        
+        (end ("ReachWin" (sites Mover) Mover)) 
+    )
+)
+

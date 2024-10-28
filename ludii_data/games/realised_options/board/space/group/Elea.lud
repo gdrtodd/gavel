@@ -1,0 +1,79 @@
+(define "UpdateScoreMoverAndMarkEvenGroups"
+    (and
+        (set Score Mover 0)
+        (forEach Group Orthogonal
+            if:(is Mover (who at:(to)))
+            (if 
+                (is Odd (count Sites in:(sites)))
+                (and
+                    (addScore Mover -1)
+                    (forEach Site 
+                        (sites)
+                        (set State at:(site) 0)
+                    )
+                )
+                (and
+                    (addScore Mover -2)
+                    (forEach Site 
+                        (sites)
+                        (set State at:(site) 1)
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "MarkEvenGroups"
+    (forEach Group Orthogonal
+        if:(is Mover (who at:(to)))
+        (if 
+            (is Odd (count Sites in:(sites)))
+            (forEach Site 
+                (sites)
+                (set State at:(site) 0)
+            )
+            (forEach Site 
+                (sites)
+                (set State at:(site) 1)
+            )
+        )
+    )
+)
+
+(define "UpdateScoreMover"
+    (and
+        (set Score Mover 0)
+        (forEach Group Orthogonal
+            if:(is Mover (who at:(to)))
+            (if 
+                (is Odd (count Sites in:(sites)))
+                (addScore Mover -1)
+                (addScore Mover -2)
+            )
+        )
+    )
+)
+
+(game "Elea"
+    (players 2)
+    (equipment {
+        (board (hex 5))
+        (piece "Disc" Each)
+    })
+    (rules
+        (meta (swap))
+        (play
+            (move Add
+                (to (sites Empty))
+                (then ("UpdateScoreMoverAndMarkEvenGroups"))
+            )
+        )
+        (end 
+            (if (is Full) 
+                (byScore)
+            )
+        )
+    )
+)
+

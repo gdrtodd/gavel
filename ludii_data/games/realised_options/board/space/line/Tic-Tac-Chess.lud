@@ -1,0 +1,40 @@
+(define "FromHand" 
+    (from (sites Occupied by:Mover container:(mover))) 
+)
+
+(define "HopOpponent" 
+    (move Hop 
+        (between if:("IsEnemyAt" (between)))
+        (to if:(is Empty (to)))
+    )
+)
+
+(game "Tic-Tac-Chess" 
+    (players 2) 
+    (equipment { 
+        (board (square 3)) 
+        (hand Each size:3)
+        (piece "Queen" Each (or ("HopOpponent") (move Slide All)))
+        (piece "King" Each (or ("HopOpponent") ("StepToEmpty")))
+        (piece "Rook" Each (or ("HopOpponent") (move Slide Orthogonal)))
+    }) 
+    (rules 
+        (start { 
+            (place "Queen" "Hand")
+            (place "King" "Hand")
+            (place "Rook" "Hand")
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play (move ("FromHand") (to (sites Empty))))
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("Line3Win" Mover))
+    )
+)
+

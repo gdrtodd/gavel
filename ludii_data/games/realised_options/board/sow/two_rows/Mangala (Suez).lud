@@ -1,0 +1,72 @@
+(define "Columns" 6)
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1))))
+
+(game "Mangala (Suez)" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (regions P1 (sites Bottom)) 
+        (regions P2 (sites Top)) 
+        (hand Each)
+    }) 
+    (rules 
+        (start (set Count 8 to:(sites Track)))
+        
+        phases:{
+        
+        (phase "Opening"
+            (play
+                (move Remove
+                    (sites Mover)
+                    count:(count at:(to))
+                )
+            )
+            (nextPhase (<= 3 (count Turns)) "Sowing")
+        )
+        
+        (phase "Sowing"
+            (play
+                (move Select
+                    (from
+                        (if ("SameTurn")
+                            (sites {(var "Replay")})
+                            (sites Mover)
+                        )
+                        if:(is Occupied (from))
+                    )
+                    (then
+                        (sow
+                            apply:(if (< 1 (count at:(to)))
+                                (and
+                                    (moveAgain)
+                                    (set Var "Replay" (to))
+                                )
+                                (if (<= 7 (count Turns))
+                                    (if (is Occupied ("OppositePitTwoRows" (to)))
+                                        (and {
+                                            (fromTo
+                                                (from ("OppositePitTwoRows" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositePitTwoRows" (to)))
+                                            )
+                                            (moveAgain)
+                                            (set Var "Replay" (to))
+                                        })
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            
+            (end ("MancalaByScoreWhen" (no Moves Next)))
+        )
+        }
+    )
+)
+

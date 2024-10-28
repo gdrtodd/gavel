@@ -1,0 +1,46 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(game "Seys Dos y As"
+    (players 2)
+    (equipment {
+        ("TableBoard"
+            {
+            (track "Track1" {24 11..0 12..17} P1 directed:True)
+            (track "Track2" {25 11..0 12..17} P2 directed:True)
+            }
+        )
+        (dice d:6 num:3)
+        (piece "Disc" Each
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsOffBoard" ("NextSiteFrom" (from) (pips)))
+                    (move Remove (from))
+                    (move 
+                        (from (from))
+                        (to 
+                            ("NextSiteFrom" (from) (pips))
+                            if:("NoEnemyOrOnlyOne" (to))
+                            ("HittingCapture" (handSite Next))
+                        )
+                    )
+                )
+                (then ("ReplayNotAllDiceUsed"))
+            )		
+        )
+        (hand Each)
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 11 count:8) (place Stack "Disc1" 6 count:3) 
+            (place Stack "Disc1" 7 count:4) (place Stack "Disc2" (sites {10..8}) count:5) 
+        })
+        (play 
+            ("RollEachNewTurnMove" 
+                (or (forEach Piece top:True) (forEach Piece container:(mover) top:True))
+            )
+        )
+        
+        (end ("EscapeWin"))
+    )
+)
+

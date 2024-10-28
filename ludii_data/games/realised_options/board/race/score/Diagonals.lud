@@ -1,0 +1,37 @@
+(define "DiagonalNESW"
+    (union (sites Direction from:(last To) NE included:True) (sites Direction from:(last To) SW))
+)
+
+(define "DiagonalSENW"
+    (union (sites Direction from:(last To) SE included:True) (sites Direction from:(last To) NW))
+)
+
+(game "Diagonals"
+    (players 2)
+    (equipment {
+        (board (square 8) use:Vertex)
+        (piece "Ball" Each)
+    })
+    (rules
+        (play 
+            (move Add (to (sites Empty))
+                (then
+                    (and
+                        (if (not (is In (last To) (sites {"A8" "H1"})))
+                            (if (all Sites ("DiagonalNESW") if:(is Occupied (site)))
+                                (addScore Mover (count Sites in:(forEach ("DiagonalNESW") if:("IsFriendAt" (site)))))
+                            )
+                        )
+                        (if (not (is In (last To) (sites {"A1" "H8"})))
+                            (if (all Sites ("DiagonalSENW") if:(is Occupied (site)))
+                                (addScore Mover (count Sites in:(forEach ("DiagonalSENW") if:("IsFriendAt" (site)))))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (end (if (is Full) (byScore))) 
+    )
+)
+

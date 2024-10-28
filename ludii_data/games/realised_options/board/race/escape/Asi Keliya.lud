@@ -1,0 +1,122 @@
+(define "ValueYellowDice" (face 65))
+
+(define "Sohatara" (and (= ("ThrowValue") 3) (= 0 ("ValueYellowDice"))))
+
+(define "ThrowValue" (count Pips))
+
+(define "SpecialThrows" 
+    (or
+        ("Sohatara")
+        (is In ("ThrowValue") (sites {1 5}))
+    )
+)
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "CaptureEnemyPiece" ("HittingCapture" (handSite (who at:(to)))))
+
+(define "Move" 
+    (if ("IsEndTrack" ("NextSiteOnTrack" #1))
+        "RemoveAPiece"
+        (if ("IsNotOffBoard" ("NextSiteOnTrack" #1)) 	 			
+            (if (or
+                    (is Empty ("NextSiteOnTrack" #1))
+                    (and 
+                        ("IsEnemyAt" ("NextSiteOnTrack" #1))
+                        (not (is In ("NextSiteOnTrack" #1) (sites "SafeSites")))
+                    )
+                )
+                (move 
+                    (from)
+                    (to 
+                        ("NextSiteOnTrack" #1) 
+                        "CaptureEnemyPiece"
+                    )
+                )
+            )
+        )
+    )			
+)
+
+(define "PlayingSohatara" (is Pending))
+
+(game "Asi Keliya"
+    (players 4)
+    (equipment {
+        (board
+            (merge {
+                (add
+                    (add
+                        (merge {
+                            (rectangle 3 4)
+                            (shift 7 0 (rectangle 3 4))
+                            (shift 3.5 3.5 (rotate 90 (rectangle 3 4)))
+                            (shift 3.5 -3.5 (rotate 90 (rectangle 3 4)))
+                        })
+                        vertices:{{5.5 1.5}}
+                    )
+                    edges:{{4 76} {35 76} {19 76} {20 76}}
+                )
+                (shift 3 3 (square 1))
+                (shift 7 3 (square 1))
+                (shift 3 -1 (square 1))
+                (shift 7 -1 (square 1))
+            })
+            {
+            (track "Track1" "6,52,S,E,N3,E,N1,E,N,W3,N1,W1,N,W,S3,W1,S1,W,S,E3,S1,E1,S,E1,N3,End" P1 directed:True)
+            (track "Track2" "7,11,W,S1,E3,S1,E1,S,E,N3,E1,N1,E,N,W3,N,W1,N,W2,S3,W1,S1,W,S1,E3,End" P2 directed:True)
+            (track "Track3" "17,39,N,W1,S3,W1,S1,W,S,E3,S1,E1,S,E,N3,E,N1,E,N,W3,N,W1,N,W1,S3,End" P3 directed:True)
+            (track "Track4" "21,26,E,N1,W3,N1,W1,N,W,S3,W1,S1,W,S,E3,S1,E1,S,E,N3,E1,N1,E,N1,W3,End" P4 directed:True)
+            } 
+        )
+        (piece "Marker" Each ("Move" ("ThrowValue")))
+        (hand Each)
+        ("StickDice" 6)
+        (map {(pair P1 6) (pair P2 7) (pair P3 17) (pair P4 21)})
+        (regions "SafeSites" (sites {3 19 16 34}))
+    })
+    (rules 
+        (start {
+            (set Team 1 {P1 P3})
+            (set Team 2 {P2 P4})
+            (place "Marker" "Hand" count:4)
+        })
+        (play 
+            (do (if (not ("PlayingSohatara")) (roll))
+                next:(or 
+                    (if ("SpecialThrows")
+                        (move
+                            (from (handSite Mover))
+                            (to 
+                                (mapEntry (mover))
+                                if:(is Empty (mapEntry (mover)))
+                            )
+                        )
+                    )
+                    (if (or ("PlayingSohatara") ("Sohatara"))
+                        (forEach Die 
+                            if:("DieNotUsed")
+                            (forEach Piece ("Move" (pips)))
+                            (then 
+                                (if (not (all DiceUsed))
+                                    (and
+                                        (set Pending)
+                                        (moveAgain)
+                                    )
+                                )
+                            )
+                        )
+                        (forEach Piece)
+                    )
+                )
+                (then 
+                    (if ("SpecialThrows")
+                        (moveAgain)
+                    )
+                )
+            )
+        )
+        (end ("EscapeTeamWin"))
+    )
+)
+

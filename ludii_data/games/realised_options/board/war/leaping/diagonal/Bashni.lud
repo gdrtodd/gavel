@@ -1,0 +1,129 @@
+(define "Hop" 
+    ("HopStackEnemyCaptureTop"
+        (from)
+        #1 
+        (then 
+            ("ReplayIfCanMove"
+                ("HopStackEnemyCaptureTop"
+                    (from (last To)) 
+                    #1 
+                )
+            ) 
+        )
+    ) 
+)
+
+(define "HopDistance" 
+    ("HopStackEnemyCaptureTopDistance"
+        (from)
+        #1 
+        (then 
+            ("ReplayIfCanMove"
+                (hop 
+                    (from (last To)) 
+                    #1 
+                    (between 
+                        before:(count Rows) 
+                        after:(count Rows)
+                        if:(and (not (is In (between) (last Between))) ("IsEnemyAt" (between))) 
+                        (apply (fromTo (from (between)) (to)))
+                    )  	
+                    (to if:(and 
+                            (is In (from) (sites Occupied by:Mover)) 
+                            (is Empty (to))
+                        )
+                    )
+                    stack:True
+                )
+            ) 
+        )
+    ) 
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To) level:(topLevel at:(last To))))
+
+(game "Bashni"
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8))
+        (piece "Counter" Each)
+        (piece "CounterStar" Each)
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play
+            (if "SameTurn"
+                (if "IsUnpromoted" 
+                    ("HopStackEnemyCaptureTop"
+                        (from (last To)) 
+                        (directions {FR FL}) 
+                        (then 
+                            ("PromoteIfReach" (sites Next) "CounterStar"
+                                ("ReplayIfCanMove"
+                                    ("HopStackEnemyCaptureTop"
+                                        (from (last To)) 
+                                        (directions {FR FL}) 
+                                    )
+                                )
+                            ) 
+                        )
+                    ) 
+                    (move Hop
+                        (from (last To)) 
+                        Diagonal 
+                        (between 
+                            before:(count Rows)
+                            after:(count Rows)
+                            if:(and (not (is In (between) (last Between))) ("IsEnemyAt" (between)))
+                            (apply (fromTo (from (between)) (to)))
+                        ) 
+                        (to if:(and 
+                                (is In (from) (sites Occupied by:Mover)) 
+                                (is Empty (to))
+                            )
+                        ) 
+                        stack:True 
+                        (then
+                            ("ReplayIfCanMove"
+                                (hop 
+                                    (from (last To)) 
+                                    Diagonal 
+                                    (between 
+                                        before:(count Rows)
+                                        after:(count Rows)
+                                        if:(and (not (is In (between) (last Between))) ("IsEnemyAt" (between)))
+                                        (apply (fromTo (from (between)) (to)))
+                                    ) 
+                                    (to if:(and 
+                                            (is In (from) (sites Occupied by:Mover)) 
+                                            (is Empty (to))
+                                        )
+                                    ) 
+                                    stack:True
+                                )
+                            ) 
+                        )
+                    ) 
+                )
+                (priority {
+                    (or { 
+                        (forEach Piece "Counter" ("Hop" (directions {FR FL})) top:True (then ("PromoteIfReach" (sites Next) "CounterStar")))
+                        (forEach Piece "CounterStar" ("HopDistance" Diagonal) top:True)
+                    })
+                    
+                    (or { 
+                        (forEach Piece "Counter" ("StepStackToEmpty" (directions {FR FL})) top:True (then ("PromoteIfReach" (sites Next) "CounterStar")))
+                        (forEach Piece "CounterStar" (move Slide Diagonal stack:True) top:True)
+                    })
+                })
+            )
+        ) 
+        
+        (end ("BlockWin"))
+    )
+)
+

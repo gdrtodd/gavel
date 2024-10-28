@@ -1,0 +1,85 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+(define "Throw4" (= ("ThrowValue") 4))
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #2 #1))
+
+(define "AllPiecesInCenter" ("AllOwnedPiecesIn" (sites {(centrePoint)})))
+
+(game "Tamman"
+    (players 4)
+    (equipment {
+        (board 
+            (merge {
+                (add
+                    (merge {
+                        (square 2)
+                        (shift 4 0 (square 2))
+                        (shift 0 4 (square 2))
+                        (shift 4 4 (square 2))
+                    })
+                    edges:{{2 9} {5 12} {8 15} {6 18} {8 20} {15 27} {17 29} {20 27} {23 30} {26 33} {7 19} {16 28}}
+                )
+            })
+            {
+            
+            (track "Track1" "2,E,N,W,S,E1,N3,E2,S2,W1,N1" P1 directed:True)
+            (track "Track2" "6,S,E,N,W,S1,E3,S2,W2,N1,E1" P2 directed:True)
+            (track "Track3" "20,W,S,E,N,W1,S3,W2,N2,E1,S1" P3 directed:True)
+            (track "Track4" "14,N,W,S,E,N1,W3,N2,E2,S1,W1" P4 directed:True)
+            
+            }
+        )
+        ("StickDice" 4)
+        (piece "Marker" Each
+            (move 
+                (from (from) level:(level))
+                (to
+                    ("SiteToMoveOnTrack" from:(from) ("ThrowValue"))
+                    if:True
+                    (apply
+                        (if (< 1 ("ThrowValue"))
+                            (forEach Site (sites Track Mover "Track" from:("SiteToMoveOnTrack" from:(from) 1) to:("SiteToMoveOnTrack" from:(from) (- ("ThrowValue") 1)))
+                                (if (not (is In (sites "SafeSites")))
+                                    (forEach Level (site) FromTop
+                                        (if ("IsEnemyAt" (site) level:(level))
+                                            (fromTo
+                                                (from (site) level:(level))
+                                                (to 
+                                                    (mapEntry "Entry" (who at:(site) level:(level)))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )	
+        )
+        (regions "SafeSites" (sites {2 6 14 20}))
+        (map "Throw" {(pair 0 8) (pair 1 1) (pair 2 2) (pair 3 3) (pair 4 4)})
+        (map "Entry" {(pair P1 2) (pair P2 6) (pair P3 20) (pair P4 14)})
+    })
+    (rules 
+        
+        (start {
+            (place Stack "Marker1" 2 count:4) 
+            (place Stack "Marker2" 6 count:4) 
+            (place Stack "Marker3" 20 count:4) 
+            (place Stack "Marker4" 14 count:4) 
+        })
+        
+        (play 
+            ("RollMove"
+                (forEach Piece)
+                (then
+                    (if (and ("Throw4") ("NewTurn"))
+                        (moveAgain)
+                    )
+                )
+            )
+        )
+        (end (if ("AllPiecesInCenter") (result Mover Win)))
+    )
+)
+

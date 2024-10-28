@@ -1,0 +1,48 @@
+(define "WolfBeyondSheepRow"
+    (= 0 
+        (count Sites 
+            in:(forEach 
+                (sites Occupied by:P2) 
+                if:(<= 
+                    (row of:(site)) 
+                    (row of:(where "Wolf" P1))
+                )
+            )
+        )
+    )
+)
+
+(game "Wolf und Schaaf" 
+    (players 2) 
+    (equipment { 
+        (board (square 8)) 
+        (piece "Sheep" P2 N ("StepToEmpty" (directions {FR FL}))) 
+        (piece "Wolf" P1 "StepDiagonalToEmpty")
+        (hand P1)
+    }) 
+    (rules 
+        (start {
+            (place "Wolf1" (handSite P1))
+            (place "Sheep2" {"A1" "C1" "E1" "G1"})
+        })
+        
+        phases:{
+        (phase "Placement" P1 
+            (play 
+                (move 
+                    (from (handSite P1)) 
+                    (to (intersection (sites Phase 0) (sites Empty)))
+                )
+            )
+            (nextPhase "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end {
+            (if (and (no Moves P1) (is Mover P1)) (result P2 Win))
+            (if ("WolfBeyondSheepRow") (result P1 Win))
+        }) 
+    )
+)
+

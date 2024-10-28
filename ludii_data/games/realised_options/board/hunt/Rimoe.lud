@@ -1,0 +1,58 @@
+(define "NumCapturedPiecesIsOdd"
+    (is Even (count Steps (from) (to)))
+)
+
+(define "Hop" 
+    
+    (move
+        Hop 
+        (between 
+            (range 1 9)
+            if:("IsEnemyAt" (between))
+            (apply (remove (between)))
+        )
+        (to 
+            if:(and 
+                (is Empty (to)) 
+                ("NumCapturedPiecesIsOdd")
+            )
+        )
+    )
+    
+)
+
+(game "Rimoe"
+    (players 2)
+    (equipment {
+        ("AlquerqueBoardWithBottomAndTopTriangles")
+        (piece "King" P1
+            (priority {
+                ("Hop")
+                ("StepToEmpty")
+            })
+        )
+        (piece "Marker" P2 ("StepToEmpty"))
+        (hand Each)
+    })
+    (rules
+        (start {
+            (place "King1" (centrePoint) count:1)
+            (place "Marker2" (handSite P2) count:16)
+            (place "Marker2" (difference (expand (sites Centre)) (centrePoint)))
+        })
+        phases:{
+        (phase "Placement" P2
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        (end ("NoMovesP1NoPiecesP2"))
+    )
+)
+

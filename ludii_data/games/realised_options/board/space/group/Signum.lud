@@ -1,0 +1,92 @@
+(define "ConnectsAt"
+    (or {
+        (is Connected at:#1 {(sites Side N) (sites Side S)})
+        (is Connected at:#1 {(sites Side NW) (sites Side SE)})
+        (is Connected at:#1 {(sites Side NE) (sites Side SW)})
+    })
+)
+
+(define "Connects"
+    (=
+        (max
+            (results
+                from:(intersection
+                    #1
+                    (sites Perimeter)
+                )
+                to:(intersection
+                    #1
+                    (sites Perimeter)
+                )
+                (count Steps (from) (to))
+            )
+        )
+        ("LengthOfDiagonal")
+    )
+)
+
+(define "ConnectsSLOWER"
+    (or {
+        (is Connected {(sites Side N) #1 (sites Side S)})
+        (is Connected {(sites Side NW) #1 (sites Side SE)})
+        (is Connected {(sites Side NE) #1 (sites Side SW)})
+    })
+)
+
+(define "LengthOfDiagonal"
+    (* 2 (- 6 1))
+)
+
+(define "UpdateScoreMover"
+    (and
+        (set Score Mover 0)
+        (forEach Group Orthogonal
+            if:(is Mover (who at:(to)))
+            (if 
+                ("Connects" (sites))
+                (addScore Mover (count Sites in:(sites)))
+                (addScore Mover (- (count Sites in:(sites))))
+            )
+        )
+    )
+)
+
+(define "ScoreOf" 
+    (+
+        (results
+            from:(sites Occupied by:#1)
+            to:0
+            (if 
+                ("ConnectsAt" (from))
+                1 
+                -1
+            )
+        )
+    )
+)
+
+(game "Signum"
+    (players 2)
+    (equipment {
+        (board (hex 6))
+        (piece "Disc" Each)
+    })
+    (rules
+        (meta (swap))
+        (play
+            (move Add
+                (to (sites Empty))
+                
+            )
+        )
+        (end 
+            (if (is Full) 
+                (byScore {
+                    (score P1 ("ScoreOf" P1))
+                    (score P2 ("ScoreOf" P2))
+                })
+            )
+        )
+    )
+)
+

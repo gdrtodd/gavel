@@ -1,0 +1,245 @@
+(define "HopCounter" 
+    (or
+        (do
+            (move Hop 
+                (from #1) 
+                Orthogonal 
+                (between 
+                    before:1
+                    after:1
+                    if:(and (not (is In (between) (sites ToClear))) ("IsEnemyAt" (between)))
+                    (apply (remove (between) at:EndOfTurn))
+                ) 
+                (to if:(is Empty (to))) 
+                #2
+            )
+            ifAfterwards:(is In (last To) (sites Phase 0))
+        )
+        
+        ("HopInternationalDraughtsStyle" (from #1) #2)
+    )
+)
+
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(define "HopFrisianSequenceCapture"
+    (do
+        (move Hop
+            All
+            (between
+                #1
+                #2
+                if:("IsEnemyAt" (between))
+                (apply (remove (between) #3))
+            )
+            (to if:(is Empty (to)))
+            (then	
+                (and
+                    (if (can Move
+                            (do
+                                (hop
+                                    (from (last To))
+                                    All
+                                    (between
+                                        #1
+                                        #2
+                                        if:(and
+                                            (not (is In (between) (sites ToClear)))
+                                            ("IsEnemyAt" (between))
+                                        )
+                                    )
+                                    (to if:(is Empty (to)))
+                                )
+                                ifAfterwards:(is In (last To) (sites Phase 0))
+                            )
+                        )
+                        (moveAgain)
+                    )
+                    (forEach Site (sites Occupied by:Mover)
+                        (if (!= 0 (state at:(site)))
+                            (set State at:(site) 0)
+                        )
+                    )
+                )
+            )
+        )
+        ifAfterwards:(is In (last To) (sites Phase 0))
+    )
+)
+
+(define "HopFrisianSequenceCaptureAgain"
+    (do
+        (move Hop
+            (from (last To))
+            All
+            (between
+                #1
+                #2
+                if:(and (not (is In (between) (sites ToClear))) ("IsEnemyAt" (between)))
+                (apply (remove (between) #3))
+            )
+            (to if:(is Empty (to)))
+            (then
+                (and
+                    (if (can Move
+                            (do
+                                (hop
+                                    (from (last To))
+                                    All
+                                    (between
+                                        #1
+                                        #2
+                                        if:(and
+                                            (not (is In (between) (sites ToClear)))
+                                            ("IsEnemyAt" (between))
+                                        )
+                                    )
+                                    (to if:(is Empty (to)))
+                                )
+                                ifAfterwards:(is In (last To) (sites Phase 0))
+                            )
+                        )
+                        (moveAgain)
+                    )
+                    (forEach Site (sites Occupied by:Mover)
+                        (if (!= 0 (state at:(site)))
+                            (set State at:(site) 0)
+                        )
+                    )
+                )
+            )
+        )
+        ifAfterwards:(is In (last To) (sites Phase 0))
+    )
+)
+
+(define "CounterSimpleMove" ("StepToEmpty" (directions {FR FL})))
+
+(define "TwoKingsMoverOneKingEnemy" 
+    (and {
+        ("IsOffBoard" (where "Counter" P1))
+        ("IsOffBoard" (where "Counter" P2))
+        (= 1 (count Pieces Next))
+        (= 2 (count Pieces Mover))
+    })
+)
+
+(game "Frisian Draughts" 
+    (players 2) 
+    (equipment { 
+        (board (square 10)) 
+        (piece "Counter" P1 N)
+        (piece "Counter" P2 S) 
+        (piece "DoubleCounter" Each maxState:128)
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Counter1" (difference (expand (sites Bottom) steps: (- 4 1)) (sites Phase 1)) value:10)
+            (place "Counter2" (difference (expand (sites Top) steps: (- 4 1)) (sites Phase 1)) value:10)
+        })
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    (max Moves withValue:True
+                        ("HopCounter" (last To)
+                            (then 
+                                (and
+                                    ("ReplayIfCanMove" ("HopCounter" (last To)) 
+                                        ("PromoteIfReach" (sites Next) "DoubleCounter" (then (set Value at:(last To) 19)))
+                                    ) 
+                                    (forEach Site (sites Occupied by:Mover)
+                                        (if (!= 0 (state at:(site)))
+                                            (set State at:(site) 0)
+                                        )
+                                    )
+                                )
+                            ) 
+                        )
+                    )
+                    (max Moves withValue:True
+                        ("HopFrisianSequenceCaptureAgain" before:(count Rows) after:(count Rows) at:EndOfTurn) 
+                    )
+                )
+                (priority {
+                    (max Moves withValue:True
+                        (or { 
+                            (forEach Piece "DoubleCounter" ("HopFrisianSequenceCapture" before:(count Rows) after:(count Rows) at:EndOfTurn))					
+                            (forEach Piece "Counter"
+                                ("HopCounter" (from) 
+                                    (then 
+                                        (and
+                                            ("ReplayIfCanMove" ("HopCounter" (last To))
+                                                ("PromoteIfReach" (sites Next) "DoubleCounter" (then (set Value at:(last To) 19)))
+                                            )
+                                            (forEach Site (sites Occupied by:Mover)
+                                                (if (!= 0 (state at:(site)))
+                                                    (set State at:(site) 0)
+                                                )
+                                            )
+                                        )
+                                    ) 
+                                ) 
+                            )
+                        })
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("CounterSimpleMove")
+                            (then 
+                                (and	
+                                    ("PromoteIfReach" (sites Next) "DoubleCounter" (then (set Value at:(last To) 19)))
+                                    (forEach Site (sites Occupied by:Mover)
+                                        (if (!= 0 (state at:(site)))
+                                            (set State at:(site) 0)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        (forEach Piece "DoubleCounter" 
+                            (if (if (> 2 (state at:(from))) 
+                                    True
+                                    (not (can Move (forEach Piece "Counter" ("CounterSimpleMove"))))
+                                )
+                                (move Slide Diagonal)
+                            )
+                            (then
+                                (if ("IsNotOffBoard" (where "Counter" Mover))
+                                    (and
+                                        (set State at:(last To) (+ 1 (state at:(last To))))
+                                        (forEach Site (sites Occupied by:Mover)
+                                            (if (and (!= (site) (last To)) (!= 0 (state at:(site))))
+                                                (set State at:(site) 0)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                })
+                (then
+                    (and
+                        (if (and ("TwoKingsMoverOneKingEnemy") (= Undefined (value Player Mover)))
+                            (set Value Mover 0)
+                        )
+                        (if (and ("NewTurn") (!= Undefined (value Player Mover)))
+                            (set Value Mover (+ 1 (value Player Mover)))
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end {
+            ("BlockWin")
+            (if (= 7 (value Player Mover)) (result Mover Draw))
+        })
+        
+    )
+)
+

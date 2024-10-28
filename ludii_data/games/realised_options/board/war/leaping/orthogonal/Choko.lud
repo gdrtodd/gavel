@@ -1,0 +1,27 @@
+(game "Choko" 
+    (players 2)
+    (equipment {
+        (board (square 5) use:Vertex)
+        (piece "Stick" Each
+            (or "StepOrthogonalToEmpty" "HopOrthogonalCapture")
+        )
+        (hand Each)
+        (regions "AllSites" (sites Board))
+    })
+    (rules
+        (start (place "Stick" "Hand" count:12))
+        (play
+            (if (is Pending)
+                (move (from (handSite Mover)) (to (sites Empty)))
+                (or
+                    (if ("HandOccupied" Mover)
+                        (move (from (handSite Mover)) (to (sites Empty)) (then (set Pending)))
+                    )
+                    (forEach Piece)
+                )
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,27 @@
+(game "Orissa Tiger Game (Four Tigers)" 
+    (players 2)
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Goat" P1 ("StepToEmpty"))
+        (piece "Tiger" P2 (or ("StepToEmpty") ("HopCapture")))
+        (hand P1)
+    }) 
+    
+    (rules 
+        (start { 
+            (place "Goat1" (handSite P1) count:20)
+            (place "Tiger2" (sites {"A5" "E5" "B2" "D2"}))
+        })
+        
+        phases:{
+        (phase "Placement" P1 
+            (play (move (from (handSite P1)) (to (sites Empty)) (then (if (< 16 (count Cell at:(handSite P1))) (moveAgain))))) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement") 
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

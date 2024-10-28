@@ -1,0 +1,164 @@
+
+(define "SitesEdge"
+    (union {
+        (sites {43 44 45 46 47})
+        (sites {0 1 2 3 4})
+        (sites {6 13 21 27 37})
+        (sites {10 20 26 34 41})
+    })
+)
+
+(define "DiagonallyAdjacent2"
+    (sites Direction
+        from:#1 
+        (difference
+            (difference
+                (difference
+                    (difference Diagonal
+                    N) 
+                S) 
+            E) 
+        W) 
+        distance:1
+    )
+) 
+
+(define "EdgeMajority"
+    (<= 2
+        (count Pieces Mover in:(sites Around (to) Orthogonal)) 
+    )
+)
+
+(define "Majority"
+    (<= 3
+        (count Pieces Mover in:(sites Around (to) Orthogonal)) 
+    )
+)
+
+(define "LobsidedVEmbrace"
+    (<= 1
+        (+
+            (results
+                from:(to)
+                to:(intersection
+                    (sites Around (from) Orthogonal)
+                    (sites Occupied by:Mover)
+                )
+                (if 
+                    (and
+                        (< 0 
+                            (count Sites
+                                in:(intersection
+                                    {
+                                    (sites Around (to) Orthogonal)
+                                    (sites Around (from) Orthogonal)
+                                    (sites Occupied by:Mover)
+                                    }
+                                )
+                            )
+                        )
+                        (< 0 
+                            (count Sites
+                                in:(intersection
+                                    {
+                                    ("DiagonallyAdjacent2" (to))
+                                    (sites Around (from) Orthogonal)
+                                    (sites Occupied by:Mover)
+                                    }
+                                )
+                            )
+                        )
+                    )
+                    1
+                    0
+                )
+            )
+        )
+    )
+)
+
+(define "AdjacentPair"
+    (<= 1
+        (+
+            (results
+                from:(to)
+                to:(intersection
+                    (sites Around (from) Orthogonal)
+                    (sites Occupied by:Mover)
+                )
+                (if 
+                    (< 0 
+                        (count Sites
+                            in:(intersection
+                                {
+                                (sites Around (to) Orthogonal)
+                                (sites Around (from) Orthogonal)
+                                (sites Occupied by:Mover)
+                                }
+                            )
+                        )
+                    )
+                    1
+                    0
+                )
+            )
+        )
+    )
+)
+
+(define "Check4Win"
+    (if
+        (is Mover P1)
+        (if 
+            (is Connected Orthogonal { (sites {43 44 45 46 47}) (sites {0 1 2 3 4}) })
+            (trigger "Win" Mover)
+        )
+        (if 
+            (is Connected Orthogonal { (sites {6 13 21 27 37}) (sites {10 20 26 34 41}) })
+            (trigger "Win" Mover)
+        )
+    )
+)
+
+(game "Morpharaoh" 
+    (players 2)
+    (equipment {
+        (board (trim (remove (dual (tiling T33434 5)) cells: {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 20 21 24 27 28 29 35 36 39 40 44 45 46 47 53 54 55 59 60 64 65 71 72 76 79 85 90 93 94 95 96 97 98 99})) use:Cell)
+        (piece "Disc" Each)
+        (piece "Disc" Neutral)
+    })
+    (rules 
+        (play
+            (or {
+                (move Add
+                    (to 
+                        (sites Empty)
+                    )
+                )
+                (move Add
+                    (to
+                        (intersection (sites Occupied by:Next) ("SitesEdge"))
+                        if:("AdjacentPair")
+                        (apply (remove (to)))
+                    )
+                )
+                (move Add
+                    (to
+                        (difference (sites Occupied by:Next) ("SitesEdge"))
+                        if:("LobsidedVEmbrace")
+                        (apply (remove (to)))
+                    )
+                )
+                }
+                (then "Check4Win")
+            )
+        )
+        (end 
+            (if
+                (is Triggered "Win" Mover)
+                (result Mover Win)
+            )
+        )
+    )
+)
+

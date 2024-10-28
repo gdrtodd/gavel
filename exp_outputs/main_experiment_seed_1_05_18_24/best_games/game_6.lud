@@ -1,0 +1,132 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 7)
+            )
+            (piece "PIECE_ALPHA" P1 
+                (move Step Orthogonal 
+                    (to if:(and 
+                            (is Empty (to))
+                            (not 
+                                (is In (to) (sites "BlackenedSquares"))
+                            )
+                    ))
+                    (then (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (and 
+                                    (is Enemy (who at:
+                                            (between)
+                                    ))
+                                    (not 
+                                        (is In (between) (sites "ActiveSites"))
+                                    )
+                                )
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                    ))
+                )
+            )
+            (piece "PIECE_ALPHA" P2 
+                (move Step Orthogonal 
+                    (to if:(and 
+                            (not 
+                                (is In (to) (sites Centre))
+                            )
+                            (not 
+                                (is In (to) (sites "BlackenedSquares"))
+                            )
+                    ))
+                    (then (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (= (what at:
+                                        (between)
+                                ) (id "PIECE_ALPHA1" Next))
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                    ))
+                )
+            )
+            (piece "PIECE_BETA" P2 
+                (move Step Orthogonal 
+                    (to if:(is Empty (to)))
+                    (then (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (= (what at:
+                                        (between)
+                                ) (id "PIECE_ALPHA1" Next))
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                    ))
+                )
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" {"C1" "D1" "E1" "D2" "A3" "A4" "A5" "B4" "G3" "G4" "G5" "F4" "D6" "C7" "D7" "E7"})
+                (place "PIECE_ALPHA2" 
+                    (difference 
+                        (expand 
+                            (sites Centre)
+                        )
+                        (sites Centre)
+                    )
+                )
+                (place "PIECE_BETA2" 
+                    (centrePoint)
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end {
+                (if (is Within (id "PIECE_BETA2") in:(sites Outer)) (result P2 Win))
+                (if (is Triggered "Surrounded" P2) (result P1 Win))
+        })
+    )
+)
+
+// Ancestor: ArdRi
+// Selection metric: 0.05
+// Fitness: 0.45
+// Novelty: 0.12
+// Cell distance: 1.00
+// Edit Distance: 0.12
+// Global Edit Distance: 0.12
+// Lineage length: 3.00

@@ -1,0 +1,63 @@
+(define "Columns" 7)
+
+(define "NoPieceOnBoard" (>= 1 (count Pieces All in:(sites Board))))
+(define "PiecesOwnedBy" (+ (count in:(sites Mover)) (count Cell at:(handSite #1))))
+
+(game "La'b Akila" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "TrackCCW" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (hand Each)
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start (set Count 7 to:(sites Track)))
+        
+        (play 
+            (move Select
+                (from
+                    (sites Mover)
+                    if:(is Occupied (from))
+                )
+                (then
+                    (sow
+                        if:True
+                        apply:(if
+                            (or 
+                                (= 2 (count at:(to)))
+                                (= 4 (count at:(to)))
+                            )
+                            (and
+                                (fromTo
+                                    (from (to))
+                                    (to (handSite Mover))
+                                    count:(count at:(to))
+                                )
+                                (if (!= 0 (count at:("OppositePitTwoRows" (to))))
+                                    (fromTo
+                                        (from ("OppositePitTwoRows" (to)))
+                                        (to (handSite Mover))
+                                        count:(count at:("OppositePitTwoRows" (to)))
+                                    )
+                                )
+                            )
+                        )
+                        backtracking:(or 
+                            (= 2 (count at:(to)))
+                            (= 4 (count at:(to)))
+                        )
+                    )
+                )
+            )	
+        )
+        
+        (end ("MancalaByScoreWhen" ("NoPieceOnBoard")))
+    )
+)
+

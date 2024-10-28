@@ -1,0 +1,112 @@
+(define "Move"
+    (move Hop
+        #1
+        (between if:(and
+                (is Occupied (between))
+                (!= 1 (state at:(between)))
+            )
+        )
+        (to 
+            if:(is Empty (to))
+            (apply
+                (if (is Even (count MovesThisTurn))
+                    (and {
+                        (remove (between))
+                        (if (= (what at:(between)) (id "Marker" Shared))
+                            (addScore Mover 1)
+                            (addScore Mover 2)
+                        )
+                        (forEach Site (sites Board) 
+                            (if (= 1 (state at:(site))) 
+                                (and
+                                    (remove (site))
+                                    (if (= (what at:(site)) (id "Marker" Shared))
+                                        (addScore Mover 1)
+                                        (addScore Mover 2)
+                                    )
+                                )
+                            )
+                        )
+                    })
+                    (set State at:(between) 1)
+                )
+            )	
+        )
+        #2
+    )
+)
+
+(define "CaptureAgain"
+    (then 
+        (if (and
+                (< (count MovesThisTurn) 6)
+                (can Move ("Move" (from (last To)))) 
+            )
+            (moveAgain)
+            (forEach Site (sites Board) 
+                (if (= 1 (state at:(site))) 
+                    (set State at:(site) 0)
+                )
+            )
+        )
+    )
+)
+
+(game "Pasang"
+    (players 2) 
+    (equipment { 
+        (board 
+            (add
+                (remove
+                    (square 11)
+                    vertices:{48 49 50 59 60 61 70 71 72}
+                )
+                edges:{ {0 12} {12 24} {24 36} {10 20} {20 30} {30 40} {75 87} {87 99} {99 111} {71 81} {81 91} {91 101} }
+            )
+            use:Vertex
+        ) 	
+        (piece "Marker" Shared ("Move" (from) ("CaptureAgain")))
+        (piece "Disc" Shared ("Move" (from) ("CaptureAgain")))
+    })
+    (rules 
+        (start {
+            (place "Marker" (forEach (sites {0..47 56..63}) if:(is Even (site))))
+            (place "Disc" (forEach (sites {0..47 56..63}) if:(is Odd (site))))
+            (place "Marker" (forEach (sites {48..55 64..111}) if:(is Odd (site))))
+            (place "Disc" (forEach (sites {48..55 64..111}) if:(is Even (site))))
+        })
+        phases:{
+        (phase "InitPhase"
+            (play
+                (move Remove
+                    (sites Corners)
+                    (then (set Score Mover 1))
+                )
+            )
+            (nextPhase "MainPhase")
+        )
+        
+        (phase "MainPhase"
+            (play 
+                (if ("SameTurn")
+                    (and
+                        (move Pass
+                            (then
+                                (forEach Site (sites Board) 
+                                    (if (= 1 (state at:(site))) 
+                                        (set State at:(site) 0)
+                                    )
+                                )		
+                            )
+                        )
+                        ("Move" (from (last To)) ("CaptureAgain"))
+                    )
+                    (forEach Piece Shared)
+                )
+            )
+        )
+        }
+        (end (if (no Moves Next) (byScore)))
+    )
+)
+

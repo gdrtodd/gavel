@@ -1,0 +1,35 @@
+(game "Unfair" 
+    (players 2) 
+    (equipment { 
+        (board (square 11) use:Vertex) 
+        (piece "Ball" Each) 
+    }) 
+    (rules 
+        
+        (play
+            (or 
+                (move Add (to (sites Empty) if:(= (id P1) (mover)))
+                    (then 
+                        (if (= 0 (count MovesThisTurn)) 
+                            (moveAgain)
+                        )
+                    )
+                ) 
+                (move Add (to (sites Empty) if:(= (id P2) (mover)))
+                    (then 
+                        (if 
+                            (< (count MovesThisTurn) 3) 
+                            (moveAgain)
+                        )
+                    )
+                ) 
+            )
+        )
+        
+        (end {
+            (if (and ((= (id P1) (mover)) (is Line 4 Orthogonal))) (result Mover Win))
+            (if (and ((= (id P2) (mover)) (is Line 7 Orthogonal))) (result Mover Win))
+        })
+    )
+)
+

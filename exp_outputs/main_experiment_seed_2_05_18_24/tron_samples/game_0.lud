@@ -1,0 +1,53 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 10)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (move Step Orthogonal 
+                    (to (apply 
+                            (if (is Enemy (who at:
+                                        (to)
+                                    ))  (trigger "Collision" 
+                                    (mover)
+                            ))
+                    ))
+                    (then (set State at:
+                            (last To)
+                    1) )
+                )
+            )
+            (regions "Hole" 
+                (sites {"A1" "B1" "D1" "E1" "G1" "H1" "J1" "L1" "N1" "P1"})
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (sites {23 25 27 29 31 33 35 37 39 41})
+                state:1)
+                (place "PIECE_ALPHA2" 
+                    (sites {22 24 26 28 30 32 34 36 38 40})
+                state:1)
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (no Moves Next) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Tron
+// Selection metric: 0.69
+// Fitness: 0.69
+// Cell distance: 5.00
+// Edit Distance: 0.31
+// Global Edit Distance: 0.30
+// Lineage length: 5.00
+// Length ratio: 0.83

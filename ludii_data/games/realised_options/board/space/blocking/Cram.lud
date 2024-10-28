@@ -1,0 +1,24 @@
+(game "Cram" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 6 6)) 
+        (tile "Tile" P1 {F} numSides:4)
+        (tile "Tile" P2 {F} numSides:4)
+    }) 
+    (rules 
+        (play 
+            (or 
+                (move Add 
+                    (piece (mover) state:0) 
+                    (to (sites Empty))
+                )
+                (move Add 
+                    (piece (mover) state:1) 
+                    (to (sites Empty))
+                )
+            )
+        )
+        (end ("NoMoves" Loss))
+    )
+)
+

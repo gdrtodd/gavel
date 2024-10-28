@@ -1,0 +1,45 @@
+(game "Padaivettu" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (remove
+                ("AlquerqueGraphWithFourTriangles")
+                edges:{{20 16} {16 12} {12 8} {8 4} {0 6} {6 12} {12 18} {18 24}}
+            )
+            use:Vertex
+        ) 
+        (piece "Marker" Each
+            (or
+                ("StepToEmpty")
+                ("HopCapture")
+            )
+        )
+    }) 
+    (rules 
+        (start {
+            (place "Marker1"
+                (difference
+                    (union 
+                        (expand (sites Right)) 
+                        (expand (sites Bottom) steps:4)
+                    )
+                    (expand (sites Centre) steps:2 W)
+                )
+            )
+            (place "Marker2"
+                (difference
+                    (union 
+                        (expand (sites Left)) 
+                        (expand (sites Top) steps:4)
+                    )
+                    (expand (sites Centre) steps:2 E)
+                )
+            )
+        })
+        
+        (play (forEach Piece))
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

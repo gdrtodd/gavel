@@ -1,0 +1,2 @@
+Players alternate turns placing pieces on one of the spaces. The first player to place four in a row without first making three in a row wins. The version of game with 2 players. The game is played on a 5x5 board.
+(game "Yavalath" (players 2) (equipment {(board (rotate 90 (hex 5))) (piece "Marker" Each)}) (rules (meta (swap)) (play (move Add (to (sites Empty)))) (end {(if (is Line 4) (result Mover Win)) (if (is Line 3) (result Mover Loss))}))) 

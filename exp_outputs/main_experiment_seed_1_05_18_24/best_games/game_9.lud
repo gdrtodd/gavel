@@ -1,0 +1,85 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 8)
+            )
+            (piece "PIECE_ALPHA" Neutral 
+                (flips 1 2)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA0" 
+                    (difference 
+                        (sites Centre)
+                        (sites Phase 1)
+                    )
+                state:1)
+                (place "PIECE_ALPHA0" 
+                    (difference 
+                        (sites Centre)
+                        (sites Phase 0)
+                    )
+                state:2)
+        })
+        phases:{
+
+            (phase "Playing" 
+                (play 
+                    (forEach Site 
+                        (sites Empty)
+                        (append 
+                            (custodial 
+                                (from (site))
+                                (between if:
+                                    (is Enemy (state at:
+                                            (between)
+                                    ))
+                                    (apply 
+                                        (allCombinations (add 
+                                                (piece "PIECE_ALPHA0" state:
+                                                    (mover)
+                                                )
+                                                (to (site))
+                                                ) (flip 
+                                                (between)
+                                        ))
+                                    )
+                                )
+                                (to if:(not 
+                                        (is Friend (state at:
+                                                (to)
+                                        ))
+                                ))
+                            )
+                            (then (and 
+                                    (set Score P1 
+                                        (count Sites in:(sites State 1))
+                                    )
+                                    (set Score P2 
+                                        (count Sites in:(sites State 2))
+                                    )
+                            ))
+                        )
+                    )
+                )
+            )
+        } 
+
+        (end 
+            (if (all Passed) (byScore))
+        )
+    )
+)
+
+// Ancestor: Reversi
+// Selection metric: 0.01
+// Fitness: 0.76
+// Novelty: 0.48
+// Cell distance: 1.00
+// Edit Distance: 0.01
+// Global Edit Distance: 0.01
+// Lineage length: 1.00

@@ -1,0 +1,57 @@
+(define "IsUnpromoted" ("IsPieceAt" "Counter" Mover (last To)))
+
+(game "Coc-Inbert" 
+    (players 2) 
+    ("DraughtsEquipment" (square 8)) 
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play 
+            (if "SameTurn"
+                (if "IsUnpromoted"
+                    (max Moves 
+                        ("HopOnlyCounters" (from (last To)) (directions {FR FL})
+                            (then 
+                                ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                    ("ReplayIfCanMove" ("HopOnlyCounters" (from (last To)) (directions {FR FL})))
+                                ) 
+                            ) 
+                        )
+                    )
+                    (max Moves ("HopDiagonalSequenceCaptureAgain"))
+                )
+                (priority {
+                    (max Moves
+                        (priority {
+                            (forEach Piece "DoubleCounter" ("HopDiagonalSequenceCapture"))
+                            (forEach Piece "Counter" 
+                                ("HopOnlyCounters" (from) (directions {FR FL})
+                                    (then 
+                                        ("PromoteIfReach" (sites Next) "DoubleCounter"
+                                            ("ReplayIfCanMove" ("HopOnlyCounters" (from (last To)) (directions {FR FL})))
+                                        ) 
+                                    ) 
+                                ) 
+                            )
+                        })
+                    )
+                    (or 
+                        (forEach Piece "Counter" 
+                            ("StepToEmpty" (directions {FR FL}))
+                            (then ("PromoteIfReach" (sites Next) "DoubleCounter")) 
+                        )
+                        (forEach Piece "DoubleCounter" "StepDiagonalToEmpty")
+                    )
+                })
+            )
+        ) 
+        
+        (end 
+            (forEach Player
+                if:(no Pieces Player) 
+                (result Player Win)
+            )
+        ) 
+    )
+)
+

@@ -1,0 +1,33 @@
+(game "Shatranj (12x12)"
+    (players 2) 
+    (equipment { 
+        (board (square 12)) 
+        ("ChessPawn" "Pawn")
+        ("ChessRook" "Rook")
+        ("ChessRook" "Commoner")
+        ("ChessRook" "Wazir")
+        ("ChessKing" "King_noCross")
+        ("ChessBishop" "Bishop_noCross")
+        ("ChessKnight" "Knight")
+        ("ChessQueen" "Queen")
+    })
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 1))
+            (place "Pawn2" (sites Row 10))
+            
+            (place "Rook1" {"A1" "L1"}) (place "Knight1" {"B1" "K1"}) (place "Commoner1" {"C1" "J1"}) (place "Wazir1" {"D1" "I1"}) 
+            (place "Bishop_noCross1" {"E1" "H1"}) (place "Queen1" coord:"F1") (place "King_noCross1" coord:"G1") 
+            
+            (place "Rook2" {"A12" "L12"}) (place "Knight2" {"B12" "K12"}) (place "Commoner2" {"C12" "J12"}) (place "Wazir2" {"D12" "I12"}) 
+            (place "Bishop_noCross2" {"E12" "H12"}) (place "Queen2" coord:"G12") (place "King_noCross2" coord:"F12") 
+        })
+        
+        (play 
+            (do (forEach Piece) ifAfterwards:(not ("IsInCheck" "King_noCross" Mover)))
+        )
+        
+        (end ("Checkmate" "King_noCross"))
+    )
+)
+

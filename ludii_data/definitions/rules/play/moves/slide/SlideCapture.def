@@ -1,0 +1,24 @@
+// Defines a slide move to capture an enemy piece.
+// #1 = Directions of the slide.
+// #2 = Between conditions to specify (by default sliding on empty sites).
+// #3 = Consequences of the capture effect.
+// #4 = The consequences of the moves.
+// @example ("SlideCapture" Orthogonal)
+
+(define "SlideCapture"
+    (move
+        Slide
+        #1
+        #2
+        (to 
+            if:("IsEnemyAt" (to))  
+            (apply 
+                (remove 
+                    (to) 
+                    #3
+                )
+            ) 
+        ) 
+        #4
+    ) 
+)

@@ -1,0 +1,23 @@
+(game "TriHex"
+    (players 2)
+    (equipment {
+        (board (hex Diamond 7))
+        (piece "Marker" Each)
+        (regions P1 {
+            (sites Side N)
+            (sites Side S)
+        })
+        (regions P2 {
+            (sites Side W)
+            (sites Side E)
+        })
+    })
+    (rules
+        (start {
+        (place "Marker1" (sites Empty))
+        (place "Marker2" (sites Empty))
+        })
+        (play (move (from (sites Occupied by:Mover)) (to (sites Empty))))
+        (end (if (is Connected Mover) (result Mover Win)))
+    )
+)

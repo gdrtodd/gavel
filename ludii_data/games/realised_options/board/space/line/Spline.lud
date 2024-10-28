@@ -1,0 +1,23 @@
+(game "Spline" 
+    (players 2) 
+    (equipment { 
+        (board (square 4 pyramidal:True) use:Vertex) 
+        (piece "Ball" Each) 
+    }) 
+    (rules 
+        (play 
+            (move Add 
+                (to (sites Empty) 
+                    if:(is Flat)
+                )
+            )
+        )
+        (end 
+            (if 
+                (is Line (- (count Rows) (layer of:(last To))) SameLayer) 
+                (result Mover Win)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,46 @@
+(define "ThreeStones"
+    (or {
+        (= 3 (count Sites in:
+                (forEach
+                    (sites Row (row of:(last To)))
+                    if:("IsFriendAt" (site))
+                )
+            )
+        )
+        (= 3 (count Sites in:
+                (forEach
+                    (sites Column (column of:(last To)))
+                    
+                    if:("IsFriendAt" (site))
+                )
+            )
+        )
+        (= 3 (count Sites in:
+                (forEach
+                    (union (sites Direction from:(last To) NE included:True) (sites Direction from:(last To) SW)) 
+                    if:("IsFriendAt" (site))
+                )
+            )
+        )
+        (= 3 (count Sites in:
+                (forEach
+                    (union (sites Direction from:(last To) NW included:True) (sites Direction from:(last To) SE)) 
+                    if:("IsFriendAt" (site))
+                )
+            )
+        )
+    })
+)
+
+(game "Trianon"
+    (players 2)
+    (equipment {
+        (board (square 5) use:Vertex)
+        (piece "Ball" Each)
+    })
+    (rules
+        (play (move Add (to (sites Empty))))
+        (end (if ("ThreeStones") (result Mover Loss)))
+    )
+)
+

@@ -1,0 +1,98 @@
+(define "CloserToCentre"
+    (>= (count Steps Orthogonal (from) (centrePoint)) 
+        (count Steps Orthogonal (to) (centrePoint)) 
+    )
+)
+
+(define "AllPawnsInInnerRing"
+    (all Sites 
+        (difference (sites Around (sites Centre)) (sites Centre))
+        if:("IsPieceAt" "Pawn" Mover (site))
+    )	
+)
+
+(define "CapturePiece"
+    (custodial 
+        (from (last To)) 
+        Orthogonal
+        (between (max 1) if:("IsEnemyAt" (between)) (apply (set State at:(between) 1)))
+        (to if:("IsFriendAt" (to))) 
+    )
+)
+
+(define "ReleaseCapturePiece"
+    (forEach Site 
+        (forEach (sites Occupied by:Mover component:#1) if:(!= 0 (state at:(site))))
+        (move
+            (from (site))
+            (to (sites #2) if:(is Empty (to)))
+            (then
+                (set State at:(last To) 0)
+            )
+        )
+    )	
+)
+
+(game "Agon" 
+    (players 2) 
+    (equipment { 
+        (board (hex 6))
+        (piece "Pawn" Each 
+            (move Step 
+                (to if:(and {
+                        (is Empty (to))
+                        ("CloserToCentre")
+                        (!= (to) (centrePoint))
+                    })
+                )
+                (then ("CapturePiece"))
+            )
+        ) 
+        (piece "Queen" Each
+            (move Step 
+                (to if:(and 
+                        (is Empty (to))
+                        ("CloserToCentre")
+                    )
+                )
+                (then ("CapturePiece"))
+            )		
+        ) 
+    }) 
+    (rules 
+        (start {
+            (place "Pawn1" (sites {89 60 20 3 6 51}))
+            (place "Pawn2" (sites {87 84 39 1 30 70}))
+            (place "Queen1" 85)
+            (place "Queen2" 5)
+        })
+        (play 
+            (priority {
+                ("ReleaseCapturePiece" "Queen" Board)
+                ("ReleaseCapturePiece" "Pawn" Outer)
+                (do (forEach Piece)
+                    ifAfterwards:(not (can Move
+                            ("InterveneCapture" Orthogonal)
+                    ))
+                )
+                
+                }
+            )
+        )
+        (end 
+            (if ("AllPawnsInInnerRing")
+                {
+                (if 
+                    ("IsPieceAt" "Queen" Mover (centrePoint))
+                    (result Mover Win)
+                )
+                (if 
+                    (not ("IsPieceAt" "Queen" Mover (centrePoint)))
+                    (result Mover Loss)
+                )
+                }
+            )
+        )
+    )
+)
+

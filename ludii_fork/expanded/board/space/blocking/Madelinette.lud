@@ -1,0 +1,2 @@
+Players move their pieces to an adjacent empty point. The goal is to block the other player from being able to move.
+(game "Madelinette" (players 2) (equipment {(board (add (remove (rectangle 3 3 diagonals:Alternating) vertices:{7 1}) edges:{{0 1}}) use:Vertex) (piece "Counter" Each (move Step (to if:(is Empty (to)))))}) (rules (start {(place "Counter1" (sites {"A1" "C2" "A3"})) (place "Counter2" (sites {"C1" "A2" "C3"}))}) (play (forEach Piece)) (end (if (no Moves Next) (result Next Loss))))) 

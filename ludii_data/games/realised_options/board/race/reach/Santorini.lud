@@ -1,0 +1,98 @@
+(define "LevelBetweenGroundAndDestinationPlusOne"
+    (<= 
+        (- 
+            (size Stack at:(to))
+            (topLevel at:(from)) 
+        )
+        1
+    ) 
+)
+
+(define "EmptyOrNeutralPiece" (= (who at:(to)) 0))
+
+(game "Santorini" 
+    (players 2) 
+    (equipment { 
+        (board (square 5)) 
+        (hand Each)
+        
+        (map {(pair 0 "SquareLarge0") (pair 1 "SquareSmall0") (pair 2 "Octagon0") (pair 3 "Marker0")})
+        (piece "Pawn3d" Each 
+            (move Step
+                (to 
+                    if:(and 
+                        ("LevelBetweenGroundAndDestinationPlusOne") 
+                        ("EmptyOrNeutralPiece")
+                    )
+                )
+                (then (moveAgain))
+            )
+        )
+        (piece "SquareLarge" Neutral)
+        (piece "SquareSmall" Neutral)
+        (piece "Octagon" Neutral)
+        (piece "Marker" Neutral)
+    }) 
+    (rules 
+        (start {
+            (place Stack "Pawn3d1" (handSite P1) count:2)
+            (place Stack "Pawn3d2" (handSite P2) count:2)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                    (then 
+                        (if 
+                            ("HandOccupied" Mover) 
+                            (moveAgain)
+                        )
+                    )
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        (phase "Movement" 
+            (play 
+                (if ("SameTurn")
+                    (move Select 
+                        (from
+                            (sites Around 
+                                (last To) 
+                                if:(and 
+                                    (< (size Stack at:(to)) 4) 
+                                    ("EmptyOrNeutralPiece")
+                                )
+                            ) 
+                        )
+                        (then 
+                            (add 
+                                (piece (mapEntry (size Stack at:(last To)))) 
+                                (to (last To)) 
+                                stack:True
+                            )
+                        )
+                    )
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end {
+            (if 
+                (and 
+                    (= 3 (topLevel at:(last To)))
+                    ("IsPieceAt" "Pawn3d" Mover (last To) level:(topLevel at:(last To))) 
+                )
+                (result Mover Win) 
+            )
+            (if (no Moves P1) (result P2 Win))
+            (if (no Moves P2) (result P1 Win))
+        })
+    )
+)
+

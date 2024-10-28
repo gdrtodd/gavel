@@ -1,0 +1,40 @@
+(game "Wari (Alignment)"
+    (players 2)
+    (equipment { 
+        (board (square 6)) 
+        (hand Each)
+        (piece "Marker" Each
+            (if (is Line 4 Orthogonal through:(from)) 
+                ("StepToEmpty" Orthogonal)
+                ("StepToEmpty" Orthogonal (then ("ReplayIfLine3" Orthogonal exact:True)))
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                ) 
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPiece")
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

@@ -1,0 +1,2 @@
+TURN - On each turn, each player drops a neutral stone on an empty cell provided that it does not share the same row, column or diagonal with all the stones already on board. GOAL - Wins the last player to move
+(game "First Attack" (players 2) (equipment {(board (square 8)) (piece "Ball" Shared)}) (rules (play (move Add (piece "Ball") (to (sites Empty) if:(all Sites (sites Direction from:(to) Adjacent) if:(is Empty (site)))))) (end (if (no Moves Next) (result Mover Win))))) 

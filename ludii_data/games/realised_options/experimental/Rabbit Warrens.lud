@@ -1,0 +1,214 @@
+
+(define "Included"
+    (= Infinity
+        (count Steps
+            (step Orthogonal (to if:(not (= (id #1) (who at:(to))))))
+            (site)
+            (difference (sites Outer) (sites Inner)) 
+        )
+    )
+)
+
+(define "RawTerritoryOf"
+    (forEach
+        (difference (sites Inner) (sites Occupied by:(player (id #1))))
+        if:("Included" #1)
+    )
+)
+
+(define "TC" 
+    (size Array
+        (array
+            (forEach
+                (difference (sites Inner) (sites Occupied by:#1))
+                if:(and
+                    ("Included" #1)
+                    (is Empty (site))
+                )
+            )
+        )
+    )
+)
+
+(define "IsSiteInSameTerritory"
+    (!= Infinity
+        (count Steps 
+            (step Orthogonal (to if:(not (= (id #1) (who at:(to))))))
+            (from) 
+            (site)
+        )
+    )
+)
+
+(define "Coordinates" 
+    (results
+        from:(to)
+        to:(forEach (sites Board) if:("IsSiteInSameTerritory" #1))
+        #2
+    )
+)
+
+(define "IsLowestReachableSite"
+    (= Infinity
+        (count Steps 
+            (step Orthogonal (to if:(not (= (id #1) (who at:(to))))))
+            (site) 
+            (sites
+                (results 
+                    from:(site)
+                    to:(forEach (sites Board) if:(< (from) (site)))
+                    (to)
+                )
+            )
+        )
+    )
+)
+
+(define "RCSQ" 
+    (+
+        (results
+            from:(forEach
+                (difference (sites Inner) (sites Occupied by:(player (id #1))))
+                if:(and
+                    ("Included" #1)
+                    ("IsLowestReachableSite" #1)
+            ))
+            to:(from)
+            (+ 1
+                (max
+                    (-
+                        (max ("Coordinates" #1 (column of:(to))))
+                        (min ("Coordinates" #1 (column of:(to))))
+                    )
+                    (-
+                        (max ("Coordinates" #1 (row of:(to))))
+                        (min ("Coordinates" #1 (row of:(to))))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "RCHX" 
+    (size Array
+        (array
+            (forEach
+                (difference (sites Inner) (sites Occupied by:#1))
+                if:(and
+                    ("Included" #1)
+                    (= Infinity
+                        (count Steps 
+                            (step Orthogonal (to if:(not (= (id #1) (who at:(to))))))
+                            (site) 
+                            (sites
+                                (results 
+                                    from:(site)
+                                    to:(forEach (sites Inner) if:(< (from) (site)))
+                                    (to)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "GetTerritorySitesAndScore"
+    (and {
+        (set Value at:(handSite #1 0) ("TC" #1))
+        (set Value at:(handSite #1 1) ("RCHX" #1))
+        (set Score #1
+            (*
+                ("TC" #1)
+                ("RCHX" #1)
+        ))
+    })
+)
+
+(define "RabbitMove"
+    (forEach Piece
+        (do
+            (set Var "SitesMoverAroundFrom" (count Sites in:(sites Around (from) Orthogonal if:(is Mover (who at:(to))))))
+            next:(move Hop
+                Adjacent
+                (between (range 0 Infinity) if:True)
+                (to (sites Empty)
+                    if:(is Empty (to))
+                )
+            )
+            ifAfterwards:(or
+                (<
+                    (var "SitesMoverAroundFrom")
+                    (count Sites in:(sites Around (last To) Orthogonal if:(is Mover (who at:(to)))))
+                )
+                (and 
+                    (=
+                        (var "SitesMoverAroundFrom")
+                        (count Sites in:(sites Around (last To) Orthogonal if:(is Mover (who at:(to)))))
+                    ) 
+                    (>
+                        (count Sites in:(sites Around (last From) Orthogonal if:(is Next (who at:(to)))))
+                        (count Sites in:(sites Around (last To) Orthogonal if:(is Next (who at:(to)))))
+                    )
+                )
+            )
+            (then 
+                (and {
+                    ("GetTerritorySitesAndScore" Mover)
+                    ("GetTerritorySitesAndScore" Next)
+                    (if
+                        (is Prev Next)
+                        (moveAgain)
+                    )
+                })
+            )
+        )
+    )
+)
+
+(game "Rabbit Warrens"
+    (players 2)
+    (equipment {
+        (board (hex Hexagon 6 8) use:Cell)
+        (hand P1 size:2)
+        (hand P2 size:2)
+        (piece "Ball" Each)
+        (piece "Hex" Each)
+        (piece "Hex" Neutral)
+    })
+    (rules
+        (start {
+            (place "Ball1" {2 6 9 13 17 21 25 29 33 37 38 42 46 53 57 61 64 68 72 77 81 85 89 93 97 101 108 112 113 117 121 125}) 
+            (place "Ball2" {1 5 11 15 18 22 26 27 31 35 41 45 49 51 55 59 65 69 73 75 79 83 88 92 99 103 105 109 115 119 120 124})
+            (place "Hex1" (handSite P1 0) value:0)
+            (place "Hex2" (handSite P2 0) value:0)
+            (place "Hex0" (handSite P1 1) value:0) 
+            (place "Hex0" (handSite P2 1) value:0)  
+        })
+        (play
+            (or
+                (move Pass)
+                "RabbitMove"
+            )
+        )
+        (end {
+            (if 
+                (and
+                    (= (score P1) (score P2))
+                    (all Passed)
+                )
+                (byScore {(score Mover 0)}) 
+            )
+            (if 
+                (all Passed)
+                (byScore)
+            )
+        })
+    )
+)
+
+(define "ColourBackground" (colour 245 245 245)) 
+

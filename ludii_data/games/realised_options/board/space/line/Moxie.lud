@@ -1,0 +1,50 @@
+(game "Moxie"
+    (players 2)
+    (equipment {
+        (board (square 4))
+        (piece "Pawn" Each)
+        (hand Each)
+    })
+    (rules
+        (start (place "Pawn" "Hand" count:8))
+        (play 
+            (if ("SameTurn")
+                ("HopCapture"
+                    (from (last To))
+                    ~
+                    (then
+                        (if (can Move ("HopCapture" (from (last To))))
+                            (moveAgain)
+                        )
+                    )
+                )
+                (priority {
+                    (forEach Piece 
+                        ("HopCapture" ~ ~
+                            (then
+                                (if (can Move ("HopCapture" (from (last To))))
+                                    (moveAgain)
+                                )
+                            )
+                        )
+                    )
+                    (or
+                        (if (is Occupied (handSite Mover))
+                            (move (from (handSite Mover)) (to (sites Empty)))
+                        )
+                        (forEach Piece (move Step (to if:(is Empty (to)))))
+                    )
+                    
+                })
+            )
+        )
+        (end {
+            (forEach NonMover
+                if:(<= (count Pieces Player) 2)
+                (result Player Loss)
+            )
+            ("Line3Win" All)
+        }) 
+    )
+)
+

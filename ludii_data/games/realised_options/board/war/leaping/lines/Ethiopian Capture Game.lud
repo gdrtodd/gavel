@@ -1,0 +1,21 @@
+(game "Ethiopian Capture Game"
+    (players 2)
+    (equipment {
+        ("AlquerqueBoard" 5 5)
+        (piece "Marker" Each
+            (or 
+                ("HopCapture") 
+                ("StepToEmpty")
+            )
+        )
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (union {(expand (sites Bottom)) (sites {"D3" "E3"}) }))
+            (place "Marker2" (union {(sites {"A3" "B3"}) (expand (sites Top)) }))
+        })
+        (play (forEach Piece))
+        (end ("HavingLessPiecesLoss" Next 5))
+    )
+)
+

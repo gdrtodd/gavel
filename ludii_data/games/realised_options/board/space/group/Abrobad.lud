@@ -1,0 +1,87 @@
+(define "Shooting"  
+    (forEach Piece 
+        (move 
+            (from)
+            (to (sites LineOfSight Farthest at:(from))
+                if:(is Empty (to))
+            )
+        )
+    )
+)
+
+(define "Hopping"  
+    (forEach Piece 
+        (or 
+            ("HopAllPiecesToEmpty")
+            ("StepToEmpty")
+        )
+    )
+)
+
+(define "Sliding"  
+    (forEach Piece 
+        (move Slide)
+    )
+)
+(define "Stepping"  
+    (forEach Piece 
+        ("StepToEmpty")
+    )
+)
+
+(define "Jumping"
+    (forEach Piece 
+        ("HopAllPiecesToEmpty" ~ ~ (range 0 18))
+    )
+)
+
+(game "Abrobad" 
+    (players 2)
+    (equipment {
+        (board (hex Limping 2))
+        (piece "Hex" Each)
+    })
+    (rules 
+        (play
+            (priority 
+                (move Add 
+                    (to 
+                        (sites Empty)
+                        if:(= 0 (count Sites in:(sites Around (to) Own)))
+                    ) 
+                ) 
+                (or
+                    "Jumping"
+                    (move Propose "Conclude"
+                        (then
+                            (if 
+                                (is Proposed "Conclude")
+                                (add 
+                                    (piece (next)) 
+                                    (to (sites Empty)) 
+                                    (then 
+                                        (and 
+                                            (set Score Mover (count Groups if:(= (who at:(to)) (mover)))) 
+                                            (set Score Next (count Groups if:(= (who at:(to)) (next))))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ) 
+            )  
+        ) 
+        (end 
+            (if 
+                (is Proposed "Conclude") 
+                (if 
+                    (<= (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                (result Next Win)
+            )
+        )
+    )
+)
+

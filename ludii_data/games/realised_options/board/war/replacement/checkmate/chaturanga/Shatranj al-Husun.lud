@@ -1,0 +1,63 @@
+(game "Shatranj al-Husun"
+    ("TwoPlayersNorthSouth") 
+    (equipment {
+        (board
+            (merge {
+                (square 10)
+                (shift -1 -1 (square 1))
+                (shift 10 -1 (square 1))
+                (shift -1 10 (square 1))
+                (shift 10 10 (square 1))
+            })
+        )
+        ("ChessKing" "King")
+        (piece "Queen" Each ("StepToNotFriend" Diagonal))
+        ("ChessRook" "Rook")
+        ("ChessKnight" "Knight")
+        (piece "Elephant" Each
+            (move Hop Diagonal 
+                (between if:True) 
+                (to 
+                    if:(or 
+                        (is Empty (to)) 
+                        (and ("IsEnemyAt" (to)) (not ("IsPieceAt" "Elephant" Next (to))))
+                    ) 
+                    (apply (remove (to)))
+                ) 
+            )		
+        )
+        ("ChessBishop" "Bishop")
+        ("ChessPawn" "Pawn"
+            (if (is In (from) (sites Start (piece (what at:(from)))))
+                ("DoubleStepForwardToEmpty")
+            )
+            (then ("PromoteIfReach" (sites Mover "Promotion") "Queen"))
+        )
+        (regions "Promotion" P1 (sites Row 10))
+        (regions "Promotion" P2 (sites Row 1))
+        (regions "OppositeExtraSquares" P1 (sites Top))
+        (regions "OppositeExtraSquares" P2 (sites Bottom))
+    })
+    (rules 
+        (start {
+            (place "Pawn1" (sites Row 2)) 
+            (place "Pawn2" (sites Row 9))
+            (place "Rook1" (sites {"B2" "K2"})) (place "Knight1" (sites {"C2" "J2"})) (place "Elephant1" (sites {"D2" "I2"})) (place "Bishop1" (sites {"E2" "H2"})) (place "King1" coord:"F2") (place "Queen1" coord:"G2")
+            (place "Rook2" (sites {"B11" "K11"})) (place "Knight2" (sites {"C11" "J11"})) (place "Elephant2" (sites {"D11" "I11"})) (place "Bishop2" (sites {"E11" "H11"})) (place "King2" coord:"F11") (place "Queen2" coord:"G11")
+        })
+        (play 
+            (do
+                (forEach Piece)
+                ifAfterwards:(not ("IsInCheck" "King" Mover))
+            )
+        )
+        (end { 
+            (if (is In (where "King" Mover) (sites Mover "OppositeExtraSquares"))
+                (result Mover Draw)
+            )
+            ("Checkmate" "King")
+            ("BlockWin")
+        })
+    )
+)
+

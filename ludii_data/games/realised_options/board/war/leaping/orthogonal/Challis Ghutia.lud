@@ -1,0 +1,33 @@
+(game "Challis Ghutia" 
+    (players 2) 
+    (equipment { 
+        (board
+            (square 9)
+            use:Vertex
+        )
+        (piece "Marker" Each 
+            (or 
+                ("HopSequenceCapture")
+                ("StepToEmpty")
+            )
+        )
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (union (expand (sites Bottom) steps:3) (sites {"F5" "G5" "H5" "I5"})))
+            (place "Marker2" (union (expand (sites Top) steps:3) (sites {"A5" "B5" "C5" "D5"})))
+        })
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopSequenceCaptureAgain")	
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

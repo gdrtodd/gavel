@@ -1,0 +1,176 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "EntryPoint" (mapEntry "Entry" (mover)))
+
+(define "SetCapturePiece"
+    (set State #1 #2 2)
+)
+
+(define "SetCapturingPiece"
+    (set State #1 #2 1)
+)
+
+(define "UnsetCapturingPiece" (set State #1 #2 0))
+
+(define "UnsetCapturingPieces" 
+    (forEach Level (last From) FromTop
+        (if (is Friend (who at:(last From) level:(level)))
+            ("UnsetCapturingPiece" at:(last From) level:(level))
+        )
+    ) 
+)
+
+(define "AtLeastAnEnemyPieceThere"
+    (is In #1 (sites Occupied by:Enemy top:False))
+)
+
+(define "CaptureMove" 
+    (forEach Level (last To) FromTop
+        (and
+            (if (is Enemy (who at:(last To) level:(level)))
+                ("SetCapturePiece" at:(last To) level:(level))
+            )
+            (if (is Friend (who at:(last To) level:(level)))
+                ("SetCapturingPiece" at:(last To) level:(level))
+            )
+        )
+    ) 
+)
+
+(define "CapturingPiece" (= 1 #1))
+
+(define "CapturedPiece" (= 2 #1))
+
+(define "FreePiece" (= 0 #1))
+
+(define "EnterAPiece" 
+    (move
+        (from (handSite Mover))
+        (to ("NextSiteOnTrack" (- "ThrowValue" 1) from:("EntryPoint" (mover)) "Track"))
+    )
+)
+
+(define "RemoveCapturedPieces" 
+    (forEach Level (last From) FromTop
+        (if ("CapturedPiece" (state at:(last From) level:(level)))
+            (remove (last From) level:(level))
+        )
+    )
+)
+(define "RebirthCapturingPiece"
+    (add
+        (piece (id "Marker" Mover))
+        (to (handSite Mover))
+    )
+)
+
+(define "CapturedPiecesFollowCapturingPiece"
+    (forEach Level (last From) FromTop
+        (if ("CapturedPiece" (state at:(last From) level:(level)))
+            (fromTo 
+                (from (last From) level:(level))
+                (to (last To))
+            )
+        )
+    )	
+)
+
+(define "CapturedPiecesFollowCapturingPiece"
+    (forEach Level (last From) FromTop
+        (if ("CapturedPiece" (state at:(last From) level:(level)))
+            (fromTo 
+                (from (last From) level:(level))
+                (to (last To))
+            )
+        )
+    )	
+)
+
+(game "Puluc"
+    (players 2)
+    (equipment {
+        (board 
+            (rectangle 1 10) 
+            {
+            (track "Track1" {0..8} loop:True P1)
+            (track "Track2" {8..0} loop:True P2)
+            (track "CaptureTrack1" {8..0} P1 directed:True)
+            (track "CaptureTrack2" {0..8} P2 directed:True)
+            } 
+            use:Edge
+        )
+        (piece "Marker" Each
+            (or
+                (if ("FreePiece" (state at:(from) level:(level)))
+                    (move 
+                        (from (from) level:(level))
+                        (to 
+                            ("NextSiteOnTrack" ("ThrowValue") from:(from) "Track")
+                        )
+                        (then 
+                            (if ("AtLeastAnEnemyPieceThere" (last To))
+                                ("CaptureMove")
+                            )
+                        )
+                    )
+                )
+                (if ("CapturingPiece" (state at:(from) level:(level)))
+                    (if ("IsNotOffBoard" ("NextSiteOnTrack" ("ThrowValue") from:(from) "CaptureTrack"))
+                        (move 
+                            (from (from) level:(level))
+                            (to 
+                                ("NextSiteOnTrack" ("ThrowValue") from:(from) "CaptureTrack")
+                            )
+                            (then 
+                                (and
+                                    ("CapturedPiecesFollowCapturingPiece")
+                                    ("UnsetCapturingPieces")
+                                )
+                            )
+                        )
+                        (move Remove (from) level:(level)
+                            (then
+                                (and {
+                                    ("UnsetCapturingPieces")
+                                    ("RemoveCapturedPieces")	
+                                    ("RebirthCapturingPiece")
+                                })
+                            )
+                        )
+                    )
+                )
+            )		
+        )
+        (regions "AllSites" (sites Board Vertex))
+        (map "Throw" {(pair 0 5) (pair 1 3) (pair 2 2) (pair 3 3) (pair 4 4)})
+        (map "Entry" { (pair 1 0) (pair 2 8)})
+        ("StickDice" 4)
+        (hand Each)
+    })
+    (rules
+        (start {
+            (place Stack "Marker1" (handSite P1) count:5)
+            (place Stack "Marker2" (handSite P2) count:5)
+        })
+        (play 
+            ("RollMove"
+                (or {
+                    (if (is Occupied (handSite Mover))
+                        ("EnterAPiece")
+                    )
+                    (forEach Piece)
+                })
+                (then
+                    (if ("NewTurn")
+                        (moveAgain)
+                    )
+                )
+            )
+        )
+        (end {
+            ("CaptureAll" P2)
+            ("CaptureAll" P1)
+        })
+    )
+)
+

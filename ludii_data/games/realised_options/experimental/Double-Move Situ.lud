@@ -1,0 +1,132 @@
+
+(define "ScoreFor"
+    (set Score #1
+        (+
+            (results
+                from:(forEach
+                    (difference (difference (sites Board) (sites Occupied by:#1)) (sites Occupied by:Neutral)) 
+                    if:("IsControlledBy" #1 (site))
+                )
+                to:(from) 
+                (if (is Empty (to)) 1 2)
+            )
+        )
+    )
+)
+
+(define "IsControlledBy" 
+    (<=
+        (+
+            3
+            (count Pieces
+                in:(difference
+                    (sites LineOfSight Piece at:#2 "LoSDirection")
+                    (sites Occupied by:Neutral)
+                )
+            )
+        )
+        (* 2
+            (count Pieces #1
+                in:(sites LineOfSight Piece at:#2 "LoSDirection")
+            )
+        )
+    )
+)
+
+(define "MoveTwiceThenScore" 
+    (if
+        (is Prev Next)
+        (moveAgain)
+        (and 
+            ("ScoreFor" Mover)
+            ("ScoreFor" Next) 
+        )
+    )
+)
+
+(game "Double-Move Situ"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Counter" P1)
+        (piece "Counter" P2)
+        (piece "X" Neutral)
+        (piece "Counter" Neutral)
+    })
+    (rules
+        (meta (passEnd NoEnd))
+        (play
+            (if
+                (and
+                    (= -1 (var "DoubleTurnPhase"))
+                    (= 1 (mover))
+                )
+                
+                (or
+                    (move Pass)
+                    (move Add
+                        (piece "X0") 
+                        (to (sites Empty))
+                        (then
+                            (if
+                                (> 2 (count Pieces in:(sites Occupied by:Neutral)))
+                                (moveAgain)
+                            )
+                        )
+                    )
+                )
+                
+                (or {
+                    (move Add
+                        (to
+                            (sites Empty)
+                            if:(not ("IsControlledBy" Next (to)))
+                        )
+                        (then
+                            (if
+                                (= -1 (var "DoubleTurnPhase"))
+                                (set Var "DoubleTurnPhase" 1)
+                                ("MoveTwiceThenScore")
+                            )
+                        )
+                    )
+                    (move Remove 
+                        (forEach
+                            (sites Occupied by:Next)
+                            if:("IsControlledBy" Mover (site)) 
+                        )
+                        (then ("MoveTwiceThenScore"))
+                    )
+                })
+                (then
+                    (if
+                        (no Moves Next)
+                        (and 
+                            ("ScoreFor" Mover)
+                            ("ScoreFor" Next) 
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (if 
+                (no Moves Mover)
+                (result Mover Loss) 
+            )
+        )
+    )
+)
+
+/-----------------------------------------
+
+(define "LoSDirection" Orthogonal)
+(define "BoardUsed" "Hex2Limp")
+
+(define "Hex2Limp" (board (dual (hex (/ 4 2) (+ 2 (/ 4 2)))) use:Vertex))
+(define "SquareGrid" (board (square 4) use:Vertex))
+(define "SquareDiagonal" (board (square 4) use:Vertex))
+
+(define "ColourBackground" (colour 135 170 130)) 
+

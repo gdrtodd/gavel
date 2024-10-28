@@ -1,0 +1,100 @@
+(define "ThrowValue" (count Pips))
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:("IsEnemyAt" (to)) 
+        (remove (to))
+    ) 
+)
+
+(define "ActivatePiece" (set State at:#1 1))
+
+(define "PieceActivated" (!= 0 (state at:#1)))
+
+(define "SiteInHome" (is In #1 (sites Mover "Home")))
+
+(define "CountOwnPiecesOutHome"
+    (count Pieces Mover in:(difference (sites Board) (sites Mover "Home")))
+)
+
+(define "OnlyOnePieceMovingOutOfHome" 
+    (if (not ("SiteInHome" (from)))
+        True
+        (if ("SiteInHome" ("NextSiteOnTrack" ("ThrowValue")))
+            True
+            (= ("CountOwnPiecesOutHome") 0)
+        )
+    )	
+)
+
+(define "Move"
+    (if 
+        (and {
+            (if ("PieceActivated" (from))
+                True
+                (= 1 ("ThrowValue")) 
+            )
+            #1
+        })
+        (if (and 
+                (not ("IsFriendAt" ("NextSiteOnTrack" ("ThrowValue"))))
+                ("OnlyOnePieceMovingOutOfHome")
+            )
+            (move 
+                (from)
+                (to 
+                    ("NextSiteOnTrack" ("ThrowValue"))
+                    "CaptureEnemyPiece"
+                )
+                (then
+                    (if (and (not ("PieceActivated" (last To))) (= 1 ("ThrowValue")))
+                        ("ActivatePiece" (last To))
+                    )
+                )
+            )
+        )	
+    )
+)
+
+(game "Bheri Bakhri"
+    (players 2)
+    (equipment {
+        (board
+            (rectangle 3 8)
+            {
+            (track "Track1" "0,E,N1,W,N1,E,S1,W" loop:True P1)
+            (track "Track2" "23,W,S1,E,S1,W,N1,E" loop:True P2)
+            }
+        )
+        ("StickDice" 4)
+        (piece "Marker" Each ("Move"))
+        (regions "Home" P1 (sites Bottom))
+        (regions "Home" P2 (sites Top))
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (sites Bottom))
+            (place "Marker2" (sites Top))
+        })
+        (play 
+            ("RollMove"
+                (if (= 1 ("ThrowValue"))
+                    (priority {
+                        (forEach Piece
+                            ("Move" (is In (from) (sites Mover "Home")))
+                        )
+                        (forEach Piece)
+                    })
+                    (forEach Piece)
+                )
+                (then 
+                    (if (= 1 ("ThrowValue"))
+                        (moveAgain)
+                    )
+                )
+            )
+        )
+        (end ("CaptureAll" Next))
+    )
+)
+

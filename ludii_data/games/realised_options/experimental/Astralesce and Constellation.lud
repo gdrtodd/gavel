@@ -1,0 +1,141 @@
+
+(define "PlayableSite" (difference (sites Inner) (sites Occupied by:Mover)))
+
+(define "ValueAtTo"
+    (max
+        1
+        (max 
+            (results
+                from:(last To) 
+                to:("FirstFriend" Orthogonal)
+                (size Group at:(to) Orthogonal if:(= (mover) (who at:(to))))
+            )
+        )
+    )
+)
+
+(define "ValueAtFrom"
+    (set Var "MaxSizeFrom"
+        (max
+            1
+            (max 
+                (results
+                    from:(from) 
+                    to:("FirstFriend" Orthogonal)
+                    (size Group at:(to) Orthogonal if:(= (mover) (who at:(to))))
+                )
+            )
+        )
+    )
+)
+
+(define "FirstFriend" 
+    (sites To
+        (move Hop 
+            #1
+            (between (min 0)
+                if:(or
+                    {
+                    (= (from) (between))
+                    (is Next (who at:(between)))
+                    (is Empty (between))
+                    }
+                )
+            )
+            (to (sites Inner) if:(is Mover (who at:(to))))
+        )
+    )
+)
+
+(define "Astralesce" 
+    (forEach Piece
+        (do
+            ("ValueAtFrom")
+            next:(do
+                (move Slide Orthogonal
+                    (between
+                        if:(or (= (between) (from)) (is In (between) "PlayableSite")) 
+                        (apply (remove (between)))
+                    )
+                    (to ("PlayableSite"))
+                ) 
+                ifAfterwards:(> "ValueAtTo" (var "MaxSizeFrom"))
+            )
+        )
+    )
+)
+
+(define "Constellate" 
+    (forEach Piece
+        (do
+            ("ValueAtFrom")
+            next:(do
+                (move Slide Orthogonal
+                    (between
+                        if:(or
+                            (= (between) (from)) 
+                            (is In (between) (intersection (sites Inner) (sites Empty)))
+                        )
+                    )
+                    (to 
+                        if:(is Next (who at:(to))) 
+                        (apply (remove (to))) 
+                    )
+                ) 
+                ifAfterwards:(> "ValueAtTo" (var "MaxSizeFrom"))
+            )
+        )
+    )
+)
+
+(game "Astralesce and Constellation"
+    (players 2)
+    (equipment {
+        (board (hex Hexagon 5) use:Cell)
+        (piece "Disc" Each)
+    })
+    (rules
+        (start {(place "Disc1" {7 12 15 21 24 28 31 38 41 44 47 52}) (place "Disc2" {8 13 16 19 22 29 32 36 39 45 48 53})})
+        (play
+            "Astralesce"
+        )
+        (end 
+            "StandardEnd"
+        )
+    )
+)
+
+(define "IsSingleGroupOf"
+    (= 1
+        (count Groups Cell Orthogonal
+            if:(is #1 (who at:(to)))
+        )
+    )
+)
+
+(define "StandardEnd"
+    (if 
+        (or {
+            (no Moves Next)
+            ("IsSingleGroupOf" Mover)
+            ("IsSingleGroupOf" Next)
+        })
+        {
+        (if 
+            ("IsSingleGroupOf" Mover)
+            (result Mover Win)
+        )
+        (if 
+            ("IsSingleGroupOf" Next)
+            (result Next Win)
+        )
+        ("AMSEnd") 
+        }
+))
+
+(define "AMSEnd" (if (no Moves Next) (result Mover Loss)))
+(define "Last2MoveEnd" ("BlockWin"))
+(define "Dummy" (place "Starfour" 1))
+
+(define "ColourBackground" (colour 245 245 245)) 
+

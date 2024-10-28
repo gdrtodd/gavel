@@ -1,0 +1,51 @@
+(game "GAME_NAME" 
+    (players {
+            (player N)
+            (player S)
+    })
+
+    (equipment {
+            (board 
+                (square 10)
+            )
+            (piece "PIECE_ALPHA" Each 
+                (move Step Orthogonal 
+                    (to (apply 
+                            (if (is Occupied (to) ) (trigger "Collision" 
+                                    (mover)
+                            ))
+                    ))
+                    (then (add 
+                            (piece 
+                                (id "PIECE_BETA" Mover)
+                            )
+                            (to (last From))
+                    ))
+                )
+            )
+            (piece "PIECE_BETA" Each)
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" coord:"E5")
+                (place "PIECE_ALPHA2" coord:"F6")
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (is Triggered "Collision" Mover) (result Next Win))
+        )
+    )
+)
+
+// Ancestor: Tron
+// Selection metric: 0.03
+// Fitness: 0.95
+// Novelty: 0.42
+// Cell distance: 2.00
+// Edit Distance: 0.03
+// Global Edit Distance: 0.03
+// Lineage length: 2.00

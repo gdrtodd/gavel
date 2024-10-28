@@ -1,0 +1,57 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 8)
+            )
+            (piece "Marker" Each 
+                (move Hop 
+                    (between if:
+                        (is Occupied (between))
+                    )
+                    (to if:(is Empty (to)))
+                )
+            )
+            (regions P1 
+                (sites Top)
+            )
+            (regions P2 
+                (sites Bottom)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "Marker1" 
+                    (expand 
+                        (sites Bottom)
+                    )
+                )
+                (place "Marker2" 
+                    (expand 
+                        (sites Top)
+                    )
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (or 
+                    (is In (last To) (sites Mover))
+                    (no Pieces Next)
+            )  (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Knightthrough
+// Selection metric: 0.95
+// Fitness: 0.95
+// Cell distance: 6.00
+// Edit Distance: 0.16
+// Global Edit Distance: 0.16
+// Lineage length: 4.00
+// Length ratio: 0.93

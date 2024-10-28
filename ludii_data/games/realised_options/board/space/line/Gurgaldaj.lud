@@ -1,0 +1,45 @@
+(game "Gurgaldaj"
+    (players 2) 
+    (equipment {
+        (board
+            (concentric Triangle rings:3 joinCorners:True)
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Marker" Each
+            ("StepToEmpty" ~ 
+                (then ("ReplayIfLine3" Orthogonal))
+            )
+        )
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:8))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) 
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3" Orthogonal))
+                    ) 
+                )
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3" Orthogonal) 
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        (end ("CaptureAll" Next))
+    )
+)
+

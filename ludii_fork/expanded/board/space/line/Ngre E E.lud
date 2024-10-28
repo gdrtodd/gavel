@@ -1,0 +1,2 @@
+3x3 intersecting lines with diagonals. Three pieces per player. Players alternate turns placing a piece on an empty spot on the board. When a player succeeds in making a line of three with their pieces, they win.
+(game "Ngre E E" (players 2) (equipment {(board (rectangle 3 3 diagonals:Alternating) use:Vertex) (hand Each) (piece "Marker" Each)}) (rules (start (place "Marker" "Hand" count:3)) (play (move (from (handSite Mover)) (to (sites Empty)))) (end (if (is Line 3) (result Mover Win))))) 

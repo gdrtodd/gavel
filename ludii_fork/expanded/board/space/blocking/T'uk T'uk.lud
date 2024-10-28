@@ -1,0 +1,2 @@
+Square grid of 36, 64, 100, or 144 squares. Each player has one piece lined up in each square on opposite sides of the square. Players may move their piece forward or backwards orthogonally. The player who blocks the opponent from being able to move wins. The board is 6x6.
+(game "T'uk T'uk" (players 2) (equipment {(board (square 6)) (piece "Marker" Each (move Step Orthogonal (to if:(is Empty (to)))))}) (rules (start {(place "Marker1" (sites Bottom)) (place "Marker2" (sites Top))}) (play (forEach Piece)) (end (if (no Moves Next) (result Mover Win))))) 

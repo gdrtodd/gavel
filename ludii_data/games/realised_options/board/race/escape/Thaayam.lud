@@ -1,0 +1,257 @@
+(define "ReplayThrow"
+    (or {
+        (= ("Throw") 1)
+        (= ("Throw") 4)
+        (= ("Throw") 8)
+    })
+)
+
+(define "Throw" 
+    (if (= 0 (count Pips))
+        8
+        (count Pips)
+    )
+)
+
+(define "StartPos" (mapEntry "Start" (mover)))
+
+(define "OppositeStartPos" (mapEntry "OppositeStart" (mover)))
+
+(define "HasToThrowAgain" (is Pending))
+
+(define "GetAnotherThrow" (set Pending))
+
+(define "ForgetAllUselessThrows" 
+    (forEach Value (values Remembered)
+        (forget Value (value))
+    )
+)
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" #1))
+
+(define "NoPieceInTheBoard" 
+    (all Sites (sites Occupied by:Mover) if:(not (is In (site) (sites Board))))
+)
+
+(define "CounterPlayer" 
+    (if (= #1 P1)
+        (id "Counter" P1)
+        (if (= #1 P2)
+            (id "Counter" P2)
+            (if (= #1 P3)
+                (id "Counter" P3)
+                (id "Counter" P4)
+            )
+        )
+    )
+)
+
+(define "AllPieceInCentre" 
+    (all Sites (sites Occupied by:Mover) if:(is In (site) (sites Centre)))
+)
+
+(define "Move" 
+    (if (or ("NewTurn") ("HasToThrowAgain")) 
+        ("RollMove"
+            (move Pass 
+                (then 
+                    (and {
+                        (if 
+                            ("ReplayThrow") 
+                            ("GetAnotherThrow")
+                        )
+                        (if (not ("NoPieceInTheBoard"))
+                            (remember Value "Throw")
+                            (if (or (= ("Throw") 1) (is In 1 (values Remembered)))
+                                (remember Value "Throw")
+                            )
+                        )
+                        (moveAgain)
+                    })
+                )
+            )
+        )
+        (or 
+            (forEach Value (values Remembered)
+                (or 
+                    (if (and ("HandOccupied" Mover) (= 1 (value)))
+                        (move 
+                            (from (handSite Mover))
+                            (to ("StartPos")
+                                (apply if:True (forget Value (value)))
+                            )
+                        )
+                    )
+                    (forEach Piece)
+                    (then 
+                        (if (!= 0 (size Array (values Remembered))) 
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+            (if 
+                (and {
+                    (= (size Stack at:("OppositeStartPos")) 2)
+                    (= (who at:("OppositeStartPos") level:0) Mover)
+                    (= (who at:("OppositeStartPos") level:1) Mover)
+                })
+                (move Select 
+                    (from ("OppositeStartPos"))
+                    (then 
+                        (and {
+                            (remove ("OppositeStartPos") count:2)
+                            (add 
+                                (piece (id "DoubleCounter" Mover)) 
+                                (to ("OppositeStartPos"))
+                                (then (set Value at:("OppositeStartPos") 2))
+                            )
+                            (moveAgain)
+                        })
+                    )
+                )
+            )
+        )
+    )	
+)
+
+(game "Thaayam"
+    (players 4)
+    (equipment {
+        (board (square 5)
+            {
+            (track "Track1" "2,E,N,W,S,E1,N3,E2,S2,W1,N1" P1 directed:True)
+            (track "Track2" "14,N,W,S,E,N1,W3,N2,E2,S1,W1" P2 directed:True)
+            (track "Track3" "22,W,S,E,N,W1,S3,W2,N2,E1,S1" P3 directed:True)
+            (track "Track4" "10,S,E,N,W,S1,E3,S2,W2,N1,E1" P4 directed:True)
+            }
+        )
+        (hand Each)
+        (regions "MarkedCells" 
+            (union {
+                (sites Centre) 
+                (intersection (sites Outer) (sites Row (row of:(centrePoint))))
+                (intersection (sites Outer) (sites Column (column of:(centrePoint))))
+            })
+        )
+        (piece "Counter" Each
+            (or
+                (if ("IsNotOffBoard" ("SiteToMoveOnTrack" (value)))
+                    (move 
+                        (from (from) level:(level))
+                        (to ("SiteToMoveOnTrack" (value))
+                            (apply 
+                                if:True 
+                                (and
+                                    (if 
+                                        (and {
+                                            ("IsEnemyAt" (to))
+                                            (= (value Piece at:(to)) 1) 
+                                            (not (is In (to) (sites "MarkedCells")))
+                                        })
+                                        (fromTo 
+                                            (from (to))
+                                            (to 
+                                                (handSite (who at:(to)))
+                                                (apply
+                                                    if:True 
+                                                    (and
+                                                        (set Pending)
+                                                        (moveAgain)
+                                                    )
+                                                )
+                                            )	
+                                            count:(size Stack at:(to))
+                                            stack:True
+                                        )
+                                    )
+                                    (forget Value (value))
+                                )
+                            )
+                        )
+                    )
+                )
+                (if (and (= 1 (value)) ("AllPieceInCentre"))
+                    (move 
+                        (from (from) level:(level))
+                        (to 
+                            (handSite Mover)
+                            (apply if:True
+                                (forget Value (value))
+                            )
+                        )
+                        (then 
+                            (remove (last To))
+                        )
+                    )
+                )
+            )
+        )
+        (piece "DoubleCounter" Each 
+            (if (and (> (/ (value) 2) 0) ("IsNotOffBoard" ("SiteToMoveOnTrack" (/ (value) 2))))
+                (move 
+                    (from (from) level:(level))
+                    (to ("SiteToMoveOnTrack" (/ (value) 2))
+                        (apply 
+                            if:True 
+                            (and
+                                (if 
+                                    (and {
+                                        ("IsEnemyAt" (to))
+                                        (= (value Piece at:(to)) 2) 
+                                        (not (is In (to) (sites "MarkedCells")))
+                                    })
+                                    (and {
+                                        (remove (to)) 
+                                        (add 
+                                            (piece ("CounterPlayer" (who at:(to)))) 
+                                            (to (handSite (who at:(to)))) 
+                                            count:2 
+                                            stack:True
+                                        )
+                                        (set Pending)
+                                        (moveAgain)
+                                    })
+                                )
+                                (forget Value (value))
+                            )
+                        )
+                    )
+                    (then 
+                        (if (= (centrePoint) (last To))
+                            (and
+                                (remove (last To))
+                                (add 
+                                    (piece ("CounterPlayer" (who at:(last To)))) 
+                                    (to ((last To))) 
+                                    count:2 
+                                    stack:True
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        ) 
+        ("StickDice" 4)
+        (map "Start" {(pair P1 2) (pair P2 14) (pair P3 22) (pair P4 10)})
+        (map "OppositeStart" {(pair P1 22) (pair P2 10) (pair P3 2) (pair P4 14)})
+    })
+    (rules 
+        (start {
+            (place Stack "Counter1" (handSite P1) count:4 value:1)
+            (place Stack "Counter2" (handSite P2) count:4 value:1)
+            (place Stack "Counter3" (handSite P3) count:4 value:1)
+            (place Stack "Counter4" (handSite P4) count:4 value:1)
+        })
+        (play 
+            (if (can Move ("Move"))
+                ("Move")
+                (move Pass (then "ForgetAllUselessThrows"))
+            )
+        )
+        
+        (end ("EscapeWin"))
+    )
+)
+

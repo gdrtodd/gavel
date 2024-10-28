@@ -1,0 +1,37 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (scale 1 2 
+                    (wedge 4)
+                )
+            use:Vertex)
+            (piece "PIECE_ALPHA" Each)
+    })
+
+    (rules 
+        (play 
+            (move Add 
+                (to (sites Empty))
+            )
+        )
+
+        (end 
+            (if (is Full)  (if (is Odd (+ (count Groups Orthogonal if:(= (who at:
+                                        (to)
+                                        ) P1) min:5) (count Groups Orthogonal if:(= (who at:
+                                        (to)
+            ) P2) min:5))) (result P1 Win)) )
+        )
+    )
+)
+
+// Ancestor: Gomoku
+// Selection metric: 0.54
+// Fitness: 0.54
+// Cell distance: 6.00
+// Edit Distance: 0.31
+// Global Edit Distance: 0.28
+// Lineage length: 9.00
+// Length ratio: 0.62

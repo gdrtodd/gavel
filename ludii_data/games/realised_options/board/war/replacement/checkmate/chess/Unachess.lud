@@ -1,0 +1,88 @@
+(define "KingNotCheckedAndToEmpty"
+    (and 
+        (is Empty (to)) 
+        (or (not ("IsInCheck" "King" Mover at:(to))) (no Pieces Next "King" in:(sites Board)))
+    ) 
+)
+
+(define "PlacePawn" 
+    (do
+        (move 
+            (from (sites Occupied by:#1 container:"Hand" component:"Pawn")) 
+            (to 
+                (intersection (sites Empty) (sites #1 "PawnPlacementRows"))
+            )
+        )
+        
+        ifAfterwards:True
+        
+    )
+)
+
+(game "Unachess" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8)) 
+        
+        ("ChessPawn" "Pawn" ~
+            (then 
+                (and
+                    ("ReplayInMovingOn" (sites Mover "Promotion"))
+                    (set Counter)
+                )
+            )
+        )
+        
+        ("ChessRook" "Rook" (then (set Counter)))
+        ("ChessKing" "King" (then (set Counter)))
+        ("ChessBishop" "Bishop" (then (set Counter)))
+        ("ChessKnight" "Knight" (then (set Counter)))
+        ("ChessQueen" "Queen" (then (set Counter)))
+        
+        (map "King" {(pair 1 "E1") (pair 2 "E8")})
+        (map "RookLeft" {(pair 1 "A1") (pair 2 "A8")})
+        (map "RookRight" {(pair 1 "H1") (pair 2 "H8")})
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+        (regions "PawnPlacementRows" P1 (expand (sites Bottom) steps:3))
+        (regions "PawnPlacementRows" P2 (expand (sites Top) steps:3))
+        (hand Each size:6)
+    }) 
+    (rules 
+        (start { 
+            (place "Pawn1" (handSite P1 0) count:8)
+            (place "Pawn2" (handSite P2 0) count:8)
+            (place "Rook1" (handSite P1 1) count:2 state:1) (place "Knight1" (handSite P1 2) count:2) (place "Bishop1" (handSite P1 3) count:2) (place "Queen1" (handSite P1 4)) (place "King1" (handSite P1 5) state:1) 
+            (place "Rook2" (handSite P2 1) count:2 state:1) (place "Knight2" (handSite P2 2) count:2) (place "Bishop2" (handSite P2 3) count:2) (place "Queen2" (handSite P2 4)) (place "King2" (handSite P2 5) state:1) 
+        })
+        
+        (play 
+            (if "SameTurn"
+                (move Promote (last To) (piece {"Queen" "Knight" "Bishop" "Rook"}) Mover)
+                (do 
+                    (or {
+                        (do
+                            (move 
+                                (from (sites Occupied by:Mover container:"Hand" components:{"King" "Queen" "Rook" "Bishop" "Knight"})) 
+                                (to (sites Empty))
+                            ) 
+                            
+                            ifAfterwards:True
+                            
+                        )
+                        ("PlacePawn" Mover)
+                        (forEach Piece)
+                        }
+                    )
+                    ifAfterwards:(or (not ("IsInCheck" "King" Mover)) (no Pieces Next "King" in:(sites Board)))
+                )
+            )
+        )
+        
+        (end {
+            ("Checkmate" "King")
+            (if (or (no Moves Mover) (= (counter) 99)) (result Mover Draw)) 
+        })
+    )
+)
+

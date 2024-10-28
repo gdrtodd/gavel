@@ -1,0 +1,21 @@
+(game "Addi Kul"
+    ("TwoPlayersNorthSouth")
+    (equipment {
+        (board (square 7))
+        (piece "Marker" Each
+            (or
+                ("StepToEmpty" (directions {Rightward Leftward Forwards}))
+                ("HopCapture")
+            )
+        )
+    })
+    (rules
+        (start {
+            (place "Marker1" (expand (sites Bottom) steps:2))
+            (place "Marker2" (expand (sites Top) steps:2))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

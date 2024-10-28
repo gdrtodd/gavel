@@ -1,0 +1,9 @@
+(match "Julbahar"
+    (players 2)
+    (games (subgame "JulbaharSubgame" result:(score Mover)))
+    (end { 
+        (if (>= (matchScore P1) 31) (result P1 Win))
+        (if (>= (matchScore P2) 31) (result P2 Win))
+    })
+)
+

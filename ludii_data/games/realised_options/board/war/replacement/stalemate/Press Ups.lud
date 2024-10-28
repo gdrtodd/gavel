@@ -1,0 +1,55 @@
+(define "AllSitesWithoutOwnedPiece" (difference (sites Board) (union (sites P1) (sites P2))))
+
+(game "Press Ups" 
+    (players 2) 
+    (equipment { 
+        (board (square 7)) 
+        (piece "Disc" Each) 
+        (piece "Disc" Neutral) 
+        (regions P1 (difference (union (sites Bottom) (sites Top)) (union (sites Right) (sites Left))))
+        (regions P2 (difference (union (sites Right) (sites Left)) (union (sites Bottom) (sites Top))))
+    }) 
+    
+    (rules 
+        (start {
+            (place "Disc1" (sites P1))
+            (place "Disc2" (sites P2))
+            (place "Disc0" "AllSitesWithoutOwnedPiece")
+        })
+        
+        phases:{
+        (phase "Init" 
+            (play 
+                (move Select
+                    (from "AllSitesWithoutOwnedPiece") 
+                    (then (remove (last To)))
+                )
+            ) 
+            (nextPhase "Remove")
+        )
+        (phase "Remove" 
+            (play 
+                (move Select
+                    (from 
+                        (sites Around (last To)) 
+                        if:(is Occupied (from))
+                    ) 
+                    (then (remove (last To)))
+                )
+            )
+        )
+        }
+        
+        (end {
+            ("CaptureAll" P1)
+            ("CaptureAll" P2)
+            (if (no Moves Next)
+                (byScore {
+                    (score P1 (count Pieces P1)) 
+                    (score P2 (count Pieces P2))
+                })
+            )
+        })
+    )
+)
+

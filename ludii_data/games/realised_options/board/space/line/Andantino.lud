@@ -1,0 +1,33 @@
+(define "NumTiles" 24)
+
+(game "Andantino" 
+    (players 2) 
+    (equipment { 
+        (boardless Hexagonal) 
+        (tile "Hex" Each numSides:6) 
+    }) 
+    
+    (rules 
+        (start {
+            (place "Hex1" (centrePoint)) 
+            (place "Hex2" (ahead (centrePoint) E))
+        })
+        
+        (play 
+            (move Add
+                (to 
+                    (sites Playable) 
+                    if:(<= 2 
+                        (count Sites in:(sites Around (to) NotEmpty)) 
+                    )
+                )
+            )
+        )
+        
+        (end {
+            (if (or (is Loop surround:Next) (is Line 5)) (result Mover Win))
+            (if (= (count Moves) (* (count Players) "NumTiles")) (result Mover Draw))
+        })
+    )
+)
+

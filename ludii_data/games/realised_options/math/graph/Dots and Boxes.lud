@@ -1,0 +1,51 @@
+(define "CellOfLastEdge" 
+    (sites Incident Cell of:Edge at:(last To)) 
+)
+
+(define "NoFreeEdge" 
+    ("NoSites" 
+        (intersection 
+            (sites Incident Edge of:Cell at:(site)) 
+            (sites Empty Edge) 
+        ) 
+    ) 
+)
+
+(define "CaptureTheCell" 
+    (claim
+        (to
+            Cell 
+            (site) 
+        )
+        (then 
+            (and 
+                (addScore Mover 1) 
+                (moveAgain)
+            )
+        )
+    ) 
+)
+
+(define "HalfBoardSize" (/ (count Cells) 2))
+
+(game "Dots and Boxes" 
+    (players 2)
+    (equipment {(board  (square 8) ) }) 
+    
+    (rules 
+        (play (move Add 
+                (to Edge (sites Empty Edge)) 
+                (then 
+                    (forEach Site
+                        "CellOfLastEdge" 
+                        (if "NoFreeEdge"
+                            "CaptureTheCell"
+                        )
+                    )
+                )
+            )
+        ) 
+        (end (if (> (score Mover) "HalfBoardSize") (result Mover Win))) 
+    )
+)
+

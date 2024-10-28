@@ -1,0 +1,87 @@
+(define "CaptureSurroundedPiece"
+    (enclose 
+        (from (last To)) 
+        Orthogonal 
+        (between 
+            if:("IsEnemyAt" (between)) 
+            (apply    
+                (and 
+                    (addScore Mover 1) 
+                    (remove (between)) 
+                )
+            ) 
+        )
+    )
+)
+
+(define "IllegalMove"
+    (and {
+        (note player:Mover "made an illegal move")
+        (note player:Mover "to play")
+        (moveAgain)
+    })
+)
+
+(define "NotEmpty" (not (is In (last To) (sites Empty))))
+
+(define "MadeALegalMove" 
+    (do
+        (add 
+            (to (last To))
+            (then 
+                (and {
+                    "CaptureSurroundedPiece"
+                    (set Hidden at:(last To) to:Next)
+                    (note player:Mover "has moved")
+                    (note player:Next "to play")
+                })
+            )
+        )
+        ifAfterwards:("HasFreedom" Orthogonal)
+    )
+)
+
+(game "Phantom Go" 
+    (players 2) 
+    (equipment { 
+        (board (square 9) use:Vertex) 
+        (piece "Marker" Each)
+    })
+    
+    (rules 
+        (play 
+            (or 
+                (move Select
+                    (from
+                        (union 
+                            (sites Empty) 
+                            (sites Hidden to:Mover)
+                        )
+                    )
+                    (then 
+                        (priority {
+                            (if ("NotEmpty")
+                                ("IllegalMove")
+                            )
+                            
+                            ("MadeALegalMove")
+                            
+                            ("IllegalMove")
+                        })
+                    )
+                )
+                (move Pass)
+            )
+        )
+        
+        (end
+            (if (all Passed)
+                (byScore {
+                    (score P1 (+ (score P1) (size Territory P1))) 
+                    (score P2 (+ (score P2) (size Territory P2)))
+                })
+            )
+        )
+    )
+)
+

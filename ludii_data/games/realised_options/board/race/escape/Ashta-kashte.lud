@@ -1,0 +1,84 @@
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "Grace" (is In (count Pips) (array {0 4})))
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" ("ThrowValue")))
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:(and (not (is In (to) (sites "ProtectedSites"))) ("IsEnemyAt" (to))) 
+        (and
+            (fromTo 
+                (from (to))
+                (to (handSite (who at:(to))))
+            )
+            (moveAgain)
+        )
+    ) 
+)
+
+(define "Goal" 24)
+
+(define "EntryPoint" (mapEntry #1))
+
+(game "Ashta-kashte"
+    (players 2)
+    (equipment {
+        (board 
+            (square 7)
+            {
+            (track "Track1" "27,N,W,S,E,N2,SW1,W4,N4,E4,S3,W3,N2,E2,S1,W1" P1 directed:True)
+            (track "Track2" "21,S,E,N,W,S2,NE1,E4,S4,W4,N3,E3,S2,W2,N1,E1" P2 directed:True)
+            
+            }
+        )
+        (piece "Paddle" Each
+            (if (and (is In (from) (sites Board)) ("IsNotOffBoard" "SiteToMoveOnTrack"))
+                (move 
+                    (from (from) level:(level))
+                    (to 
+                        "SiteToMoveOnTrack" 
+                        "CaptureEnemyPiece"
+                    )
+                )
+                (then 
+                    (if (= "Goal" (last To))
+                        (remove (last To))
+                    )
+                )
+            )	
+        )
+        (hand Each)
+        ("StickDice" 4)
+        (map {(pair 1 "G4") (pair 2 "A4") (pair 3 "D1") (pair 4 "D7")})
+        (map "Throw" {(pair 0 8)})
+        (regions "ProtectedSites" (sites {0 3 6 21 27 3 45 42 48 24}))
+    })
+    (rules 
+        (start {
+            (place Stack "Paddle1" (handSite P1) count:4)
+            (place Stack "Paddle2" (handSite P2) count:4)
+            
+        })
+        (play 
+            ("RollMove"
+                (or {
+                    (forEach Piece)
+                    (move Pass)
+                    (if (and ("Grace") (!= 0 (who at:(handSite Mover))))
+                        (move 
+                            (from (handSite Mover))
+                            (to (mapEntry Mover))
+                        )
+                    )
+                })
+                (then 
+                    (if ("Grace") (moveAgain))
+                )
+            )		
+        )
+        
+        (end ("EscapeWin"))
+    )
+)
+

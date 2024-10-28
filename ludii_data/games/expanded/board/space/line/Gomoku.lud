@@ -1,0 +1,1 @@
+(game "Gomoku" (players 2) (equipment {(board (square 15) use:Vertex) (piece "Marker" Each)}) (rules (play (move Add (to (sites Empty)))) (end (if (is Line 5 All exact:True) (result Mover Win))))) 

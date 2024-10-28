@@ -1,0 +1,86 @@
+(define "GetCandidate" (set Var (mapEntry "PlayerPhase" (phase of:(last To)))))
+
+(define "Candidate" (var))
+
+(define "Bunny" 
+    (if (= (mover) 1)
+        (if (= ("Candidate") 2)
+            3
+            2
+        )
+        (if (= (mover) 2) 
+            (if (= ("Candidate") 1)
+                3
+                1
+            )
+            (if (= ("Candidate") 1)
+                2
+                1
+            )
+        )
+    )
+)
+
+(game "Triad" 
+    (players 3) 
+    (equipment { 
+        (board (hex 5)) 
+        (piece "Marker" Each 
+            (move Slide
+                Orthogonal
+                (to 
+                    (apply 
+                        if:(!= 
+                            (mover) 
+                            (mapEntry "PlayerPhase" (phase of:(to)))
+                        )
+                    )
+                ) 
+                (then
+                    (and {
+                        (forEach Site 
+                            (sites Around (last To) Orthogonal)
+                            (if (is Enemy (what at:(site)))
+                                (remove (site))
+                            )
+                        )
+                        "GetCandidate"
+                        (moveAgain)
+                    })
+                )
+            )
+        )
+        (map "PlayerPhase" {(pair 1 1) (pair 0 2) (pair 2 3)})
+    }) 
+    (rules
+        (start {
+            (place "Marker1" (expand origin:(coord "A5") steps:2))
+            (place "Marker2" (expand origin:(coord "I9") steps:2))
+            (place "Marker3" (expand origin:(coord "E1") steps:2))
+        })
+        (play
+            (if "SameTurn"
+                (move Add 
+                    (piece ("Bunny"))
+                    (to (sites Empty))
+                    (then (set NextPlayer (player "Candidate")))
+                )
+                (max Captures (forEach Piece))
+            )
+        )
+        (end
+            (if (or {
+                    (no Pieces P1) 
+                    (no Pieces P2) 
+                    (no Pieces P3)
+                }) 
+                (byScore {
+                    (score P1 (count Pieces P1)) 
+                    (score P2 (count Pieces P2))
+                    (score P3 (count Pieces P3))
+                })
+            )
+        )
+    )
+)
+

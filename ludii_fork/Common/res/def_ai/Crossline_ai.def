@@ -1,0 +1,7 @@
+(define "Crossline_ai"
+    (bestAgent "MC-GRAVE")
+    trainedHeuristics:(heuristics {
+        (mobilitySimple)
+    })
+    
+)

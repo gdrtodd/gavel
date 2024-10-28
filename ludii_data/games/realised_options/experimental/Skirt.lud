@@ -1,0 +1,132 @@
+(define "SameTurn" (is Prev Mover))
+
+(define "CanSkirtByFrom" 
+    (>=
+        (+ 1 (count Pieces of:(mover) in:(difference (sites Around #1 Orthogonal) #2)))
+        (count Pieces of:(next) in:(sites Around #1 Orthogonal))
+))
+
+(define "IsTerritoryOfAt" 
+    (> 
+        (count Pieces of:#1 in:(sites Around #2 Orthogonal))
+        (count Pieces of:(- 3 #1) in:(sites Around #2 Orthogonal))
+))
+
+(define "TerritoryOf" 
+    (forEach (sites Empty)
+        if:(> 
+            (count Pieces of:#1 in:(sites Around (site) Orthogonal))
+            (count Pieces of:(- 3 #1) in:(sites Around (site) Orthogonal))
+)))
+
+(define "Placement"
+    (move Add 
+        (piece (id "Disc" Mover))
+        (to ("TerritoryOf" (mover)))
+))
+
+(define "PieOffer"
+    (move Select 
+        (from (sites Empty))
+        (to (sites Around (from) Orthogonal))
+        (then
+            (and
+                (add (piece (next)) (to (last To)))
+                (add (piece (mover)) (to (last From)))
+))))
+
+(define "PieRefusal"
+    (do
+        (set Var "LF" (last From)
+            (then 
+                (set Var "LT" (last To))
+        ))
+        next:(move Propose "SwapPieceLocations"
+            (then
+                (if
+                    (is Proposed "SwapPieceLocations")
+                    (and
+                        (add (piece (mover))
+                            (to (var "LF")
+                                (apply (remove (to)))
+                        ))
+                        (add (piece (next))
+                            (to (var "LT")
+                                (apply (remove (to)))
+))))))))
+
+(define "Skirt"
+    (forEach Piece
+        (do
+            (set Var "LF" (from))
+            next:(move (from)
+                (to (sites Empty)
+                    if:(!= Infinity
+                        (count Steps Orthogonal
+                            (step Orthogonal
+                                (to
+                                    if:(and
+                                        {
+                                        (is Empty (to))
+                                        
+                                        ("CanSkirtByFrom" (to) (var "LF"))
+                                        (not
+                                            (no Pieces
+                                                in:(difference
+                                                    (intersection
+                                                        (sites Around (from) Orthogonal)
+                                                        (sites Around (to) Orthogonal)
+                                                    )
+                                                    (var "LF")
+                                                )
+                                        ))
+                                        }
+                            )))
+                            (from)
+                            (to)
+            ))))
+            (then (moveAgain))
+)))       
+
+(game "Skirt"
+    (players 2)
+    (equipment
+        {
+        (board (tri {3 5 3 5 3}) use:Vertex)
+        (piece "Disc" Each)
+        }
+    )
+    (rules 
+        (play
+            (if
+                (> 0 (counter))
+                ("PieOffer")
+                (if
+                    ("SameTurn")
+                    ("Placement")
+                    (or
+                        (if
+                            (= 0 (counter))
+                            ("PieRefusal")
+                        )
+                        (or
+                            ("Skirt")
+                            ("Placement")
+        ))))) 
+        (end 
+            {
+            (if
+                "EndCondition"
+                (result Mover Loss)
+            )
+            
+            }  
+)))
+
+(define "EndCondition"(no Moves Mover)) 
+
+(define "Tri46Bug"  (tri {4 6 4 7 4}))
+(define "Tri56Bug"  (tri {5 6 5 7 5}))
+(define "Tri57Bug"  (tri {5 7 5 8 5}))
+(define "Tri78Bug"  (tri {7 8 7 10 6}))
+

@@ -1,0 +1,70 @@
+(define "TransferPoints"	           
+    (if (>= (state at:(regionSite (sites Occupied by:Mover) index:#1)) #3)
+        (move Select
+            (from (regionSite (sites Occupied by:Mover) index:#1))
+            (to (regionSite (sites Occupied by:Mover) index:#2)
+                if:(< (+ #3 (state at:(to))) 5)
+            )	
+            (then
+                (and 
+                    (set State 
+                        at:(last From) 
+                        (- (state at:(last From)) #3)
+                    )
+                    (set State 
+                        at:(last To) 
+                        (+ #3 (state at:(last To)))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(game "Chopsticks"
+    (players 2) 
+    (equipment { 
+        (board (square 2))
+        (piece "Hand" Each)
+        (piece "HandFlip" Each)
+    }) 
+    (rules 
+        (start { 
+            (place "HandFlip1" coord:"A1" state:1) 
+            (place "Hand1" coord:"B1" state:1) 
+            (place "Hand2" coord:"A2" state:1) 
+            (place "HandFlip2" coord:"B2" state:1) 
+        })
+        (play 
+            (or {
+                (move Select
+                    (from 
+                        (sites Occupied by:Mover) 
+                        if:(!= (state at:(to)) 0)
+                    )
+                    (to 
+                        (sites Occupied by:Next) 
+                        if:(!= (state at:(to)) 0)
+                    )
+                    (then 
+                        (set State 
+                            at:(last To) 
+                            (% (+ (state at:(last From)) (state at:(last To))) 5)
+                        )
+                    ) 
+                )
+                ("TransferPoints" 0 1 1)
+                ("TransferPoints" 0 1 2)
+                ("TransferPoints" 0 1 3)
+                ("TransferPoints" 0 1 4)
+                ("TransferPoints" 1 0 1)
+                ("TransferPoints" 1 0 2)
+                ("TransferPoints" 1 0 3)
+                ("TransferPoints" 1 0 4)
+            })
+        )
+        
+        (end ("BlockWin"))
+    )
+)
+

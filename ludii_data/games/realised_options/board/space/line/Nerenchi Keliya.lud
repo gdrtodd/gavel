@@ -1,0 +1,52 @@
+(define "IfLine3MoveAgainPlacement" 
+    (then 
+        (if 
+            (and (is Line 3) ("HandOccupied" Mover))
+            (moveAgain)
+        )
+    )
+)
+
+(game "Nerenchi Keliya"
+    (players 2)
+    
+    (equipment { 
+        ("NineMensMorrisBoard")
+        (hand Each)
+        (piece "Marker" Each ("StepToEmpty" ~ (then ("ReplayIfLine3")))) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:9))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                    "IfLine3MoveAgainPlacement" 
+                ) 
+            ) 
+            (nextPhase (and ("HandEmpty" P1) ("HandEmpty" P2)) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play (forEach Piece))
+            (nextPhase Mover (is Line 3) "Capture")
+        )
+        
+        (phase "Capture" 
+            (play ("RemoveAnyEnemyPiece" (then (moveAgain))))
+            (nextPhase Mover "Movement")
+        )
+        }
+        
+        (end
+            (forEach Player
+                if:(<= (count Pieces Player) 2)
+                (result Player Loss)
+            )
+        )
+    )
+)
+

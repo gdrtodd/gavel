@@ -1,0 +1,36 @@
+(game "Do Guti" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (add
+                (remove
+                    ("AlquerqueGraph" 3 3)
+                    vertices:{1 3 5 7}
+                )
+                edges:{{3 0} {0 1} {1 4}}
+            )
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Disc" Each "StepToEmpty")
+    }) 
+    
+    (rules 
+        (start (place "Disc" "Hand" count:2))
+        phases:{
+        (phase "Placement" 
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        ) 
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        (end ("NoMoves" Loss)) 
+    )
+)
+

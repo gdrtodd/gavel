@@ -1,0 +1,89 @@
+(game "GAME_NAME" 
+    (players {
+            (player N)
+            (player S)
+    })
+
+    (equipment {
+            (board 
+                (merge {
+                        (square 5 diagonals:Alternating)
+                        (shift 0 4 
+                            (rotate 180 
+                                (wedge 3)
+                            )
+                        )
+                        (shift 0 -2 
+                            (wedge 3)
+                        )
+                })
+            use:Vertex)
+            (piece "PIECE_ALPHA" Each 
+                (or {
+                        (move Step 
+                            (to if:(not 
+                                    (is Friend (who at:
+                                            (to)
+                                    ))
+                                    ) (apply 
+                                    (remove 
+                                        (to)
+                                    )
+                            ))
+                        )
+                        (move Step 
+                            (directions {FR FL})
+                            (to if:(or 
+                                    (is Empty (to))
+                                    (is Enemy (who at:
+                                            (to)
+                                    ))
+                                    ) (apply 
+                                    (if (is Enemy (who at:
+                                                (to)
+                                            )) (remove 
+                                            (to)
+                                    ))
+                            ))
+                        )
+                })
+            )
+            (regions P1 
+                (sites Top)
+            )
+            (regions P2 
+                (sites Bottom)
+            )
+    })
+
+    (rules 
+        (start {
+                (place "PIECE_ALPHA1" 
+                    (expand 
+                        (sites Bottom)
+                    )
+                )
+                (place "PIECE_ALPHA2" 
+                    (expand 
+                        (sites Top)
+                    )
+                )
+        })
+        (play 
+            (forEach Piece)
+        )
+
+        (end 
+            (if (is In (last To) (sites Mover)) (result Mover Win) )
+        )
+    )
+)
+
+// Ancestor: Breakthrough
+// Selection metric: 0.85
+// Fitness: 0.85
+// Cell distance: 5.00
+// Edit Distance: 0.16
+// Global Edit Distance: 0.16
+// Lineage length: 4.00
+// Length ratio: 0.76

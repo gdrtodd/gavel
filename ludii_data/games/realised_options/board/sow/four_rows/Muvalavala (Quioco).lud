@@ -1,0 +1,89 @@
+(define "Columns" 6)
+
+(game "Muvalavala (Quioco)" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "12,E,N1,W" loop:True P2)
+            }
+        )
+        (piece "Seed" Shared)
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (regions "Outer" P1 (sites Bottom))          
+        (regions "Outer" P2 (sites Top))           
+    }) 
+    (rules 
+        
+        (start { 
+            (set Count 1 
+                to:(union { 
+                    (difference (sites P1 "Home") (sites Left)) 
+                    (difference (sites P2 "Home") (sites Right)) 
+                }) 
+            ) 
+            (set Count (- (- (* 4 "Columns") 2) (* 2 (- "Columns" 1))) 
+                to:(union 
+                    (intersection (sites Left) (sites P1 "Outer"))
+                    (intersection (sites Right) (sites P2 "Outer"))
+                )
+            )
+        })
+        
+        (play 
+            (move
+                Select
+                (from 
+                    (if ("SameTurn") 
+                        ("LastHoleSowed")
+                        (sites Mover "Home") 
+                    ) 
+                    if:(> (count at:(from)) 1)
+                )
+                (then 
+                    (sow
+                        "Track"
+                        owner:(mover)
+                        apply:(if (and {
+                                (> (count at:(to)) 1)
+                                (is In (to) (sites Mover "Inner")) 
+                                (> (count at:("OppositePit" (to))) 0) 
+                            })
+                            (and
+                                {
+                                (fromTo 
+                                    (from ("OppositePit" (to))) 
+                                    (to (to)) 
+                                    count:(count at:("OppositePit" (to)))
+                                ) 
+                                (if (> (count at:("OppositeOuterPit" (to))) 0)
+                                    (fromTo 
+                                        (from ("OppositeOuterPit" (to))) 
+                                        (to (to)) 
+                                        count:(count at:("OppositeOuterPit" (to)))
+                                    )
+                                )
+                                (sow 
+                                    (to)
+                                    count:(+ (count at:("OppositePit" (to))) (count at:("OppositeOuterPit" (to))))
+                                    "Track"
+                                    owner:(mover)
+                                )
+                                }
+                            )
+                            (if (> (count at:(to)) 1) (moveAgain))
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("BlockWin"))
+    )
+)
+

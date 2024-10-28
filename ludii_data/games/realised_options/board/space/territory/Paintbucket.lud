@@ -1,0 +1,86 @@
+(define "FlipGroup"
+    (add 
+        (to 
+            (sites Group at:(last From) Orthogonal)
+            (apply (remove (to)))
+        )
+    )
+)
+
+(define "FlipGroupAndCountFriendly"
+    (do
+        (add 
+            (to 
+                (sites Group at:(last From) Orthogonal)
+                (apply (remove (to)))
+            )
+        )
+        next:(and
+            (set Score P1 (count Groups Orthogonal if:(= (id P1) (who at:(to)))))
+            (set Score P2 (count Groups Orthogonal if:(= (id P2) (who at:(to)))))
+        )
+    )
+)
+
+(define "FlipGroupAndCountEnemy"
+    (do
+        (add 
+            (to 
+                (sites Group at:(last From) Orthogonal)
+                (apply (remove (to)))
+            )
+        )
+        next:(and
+            (set Score P1 (* -1 (count Groups Orthogonal if:(= (id P2) (who at:(to))))))
+            (set Score P2 (* -1 (count Groups Orthogonal if:(= (id P1) (who at:(to))))))
+        )
+    )
+)
+
+(define "FlipGroupAndCalculateDifference"
+    (do
+        (add 
+            (to 
+                (sites Group at:(last From) Orthogonal)
+                (apply (remove (to)))
+            )
+        )
+        next:(and
+            (set Score P1 
+                (-
+                    (count Groups Orthogonal if:(= (id P1) (who at:(to))))
+                    (count Groups Orthogonal if:(= (id P2) (who at:(to))))
+                )
+            )
+            (set Score P2 
+                (-
+                    (count Groups Orthogonal if:(= (id P2) (who at:(to))))
+                    (count Groups Orthogonal if:(= (id P1) (who at:(to))))
+                )
+            )
+        )
+    )
+)
+
+(game "Paintbucket"
+    (players 2)
+    (equipment {
+        (board (square 8))
+        (tile "Square" Each)
+    })
+    (rules
+        (start {
+            (place "Square1" (sites Phase 0))
+            (place "Square2" (sites Phase 1))
+            
+        })
+        (play
+            (move Select
+                (from (sites Occupied by:Next))
+                (then ("FlipGroup"))
+            )
+        )
+        (end ("CaptureAll" Next Loss))
+    )
+)
+

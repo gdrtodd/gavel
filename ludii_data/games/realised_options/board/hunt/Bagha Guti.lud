@@ -1,0 +1,29 @@
+(game "Bagha Guti"
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Goat" P2 "StepToEmpty")
+        (piece "Tiger" P1
+            (or
+                ("StepToEmpty")
+                ("HopCapture")
+            )
+        )
+        (hand P1)
+    }) 
+    
+    (rules 
+        (start { 
+            (place Stack "Goat2" 12 count:21)
+            (place "Tiger1" (handSite P1))
+        })
+        
+        phases:{
+        (phase "Opening" P1 (play (move (from (handSite Mover)) (to (sites Empty)))) (nextPhase "Movement"))
+        (phase "Movement" (play (forEach Piece top:True)))
+        }
+        
+        (end ("NoMovesP1NoPiecesP2"))
+    )
+)
+

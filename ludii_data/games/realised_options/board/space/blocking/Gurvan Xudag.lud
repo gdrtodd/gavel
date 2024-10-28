@@ -1,0 +1,25 @@
+(define "AllCowsInBottom" (all Sites (difference (sites Occupied by:P2) (sites Bottom)) if:(= 0 (count at:(site)))))
+
+(game "Gurvan Xudag"
+    (players 2)
+    (equipment {
+        (board 
+            (remove (square 3) edges:{{0 1}{1 2}})
+            use:Vertex
+        )
+        (piece "Human" P1 "StepToEmpty")
+        (piece "Cow" P2 "StepToEmpty")
+    })
+    (rules 
+        (start {
+            (place "Human1" (sites Left))
+            (place "Cow2" (sites Right))
+        })
+        (play (forEach Piece))
+        (end {
+            (if (no Moves P1) (result P2 Win))
+            (if (and ("AllCowsInBottom") (no Moves P2)) (result P1 Win))
+        })
+    )
+)
+

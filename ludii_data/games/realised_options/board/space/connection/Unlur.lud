@@ -1,0 +1,72 @@
+
+(define "IsSidesConnected"
+    (is Connected {(sites Side #1) (sites Side #2) #3})
+)
+
+(define "WhiteVC" 
+    (or {
+        ("IsSidesConnected" S N)
+        ("IsSidesConnected" SW NE)
+        ("IsSidesConnected" SE NW)
+    })
+)
+
+(define "BlackVC" 
+    (or
+        ("IsSidesConnected" S NW (sites Side NE))
+        ("IsSidesConnected" N SW (sites Side SE))
+    )
+)
+
+(define "IsPlayingPhase" (= 1 (var)))
+
+(game "Unlur" 
+    (players 2) 
+    (equipment { 
+        (board (hex 6)) 
+        (piece "Disc" Each) 
+    }) 
+    (rules 
+        phases:{
+        (phase "Opening"
+            (play
+                (or
+                    (move Add
+                        (piece (id "Disc" P2))
+                        (to (intersection (sites Empty) (sites Inner)))
+                    )
+                    (move Pass
+                        (then
+                            (if (is Mover P1)
+                                (swap Players P1 P2
+                                    (then
+                                        (note "Player 1 is now Black. Player 2 is now White." to:All)
+                                    )
+                                )
+                                (note "Player 1 remains White. Player 2 remains Black." to:All)
+                                (then
+                                    (do
+                                        (set NextPlayer (player 1))
+                                        next:(set Var 1) 
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            (nextPhase ("IsPlayingPhase") "Playing")
+        )
+        (phase "Playing"
+            (play (move Add (to (sites Empty))))
+        )
+        }
+        (end {
+            (if (and {("IsPlayingPhase") (= (id P1) (mover)) ("BlackVC") (not ("WhiteVC"))}) (result P1 Loss)) 
+            (if (and {("IsPlayingPhase") (= (id P2) (mover)) ("WhiteVC") (not ("BlackVC"))}) (result P2 Loss)) 
+            (if (and {("IsPlayingPhase") (= (id P1) (mover)) ("WhiteVC")}) (result P1 Win)) 
+            (if (and {("IsPlayingPhase") (= (id P2) (mover)) ("BlackVC")}) (result P2 Win)) 
+        })
+    )
+)
+

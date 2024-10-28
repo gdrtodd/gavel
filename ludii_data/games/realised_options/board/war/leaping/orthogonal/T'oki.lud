@@ -1,0 +1,44 @@
+(game "T'oki"
+    (players 2)
+    (equipment {
+        (board (square 5)) 
+        (piece "Marker" Each
+            (or
+                ("StepOrthogonalToEmpty")
+                (move Hop 
+                    Orthogonal
+                    (between 
+                        (range 1 (count Rows))
+                        if:("IsEnemyAt" (between)) 
+                        (apply (remove (between)))
+                    )
+                    (to 
+                        if:(or 
+                            (and 
+                                (is In (to) (sites Outer)) 
+                                ("IsEnemyAt" (to))
+                            ) 
+                            (is Empty (to))
+                        )
+                    )
+                )
+            )
+        )
+        (hand Each)
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:20))
+        (play
+            (or
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty)) 
+                    count:2
+                ) 
+                (forEach Piece)
+            )
+        )
+        (end (if (and ("HandEmpty" Next) (no Pieces Next)) (result Mover Win)))
+    )
+)
+

@@ -1,0 +1,158 @@
+(define "Outward"
+    (<
+        (max
+            (count Sites
+                in:(sites Direction
+                    from:(from)
+                    #1
+                )
+            )
+            (count Sites
+                in:(sites Direction
+                    from:(from)
+                    #2
+                )
+            )
+        )
+        (max
+            (count Sites
+                in:(sites Direction
+                    from:(to)
+                    #1
+                )
+            )
+            (count Sites
+                in:(sites Direction
+                    from:(to)
+                    #2
+                )
+            )
+        )
+    )
+)
+
+(define "Step"
+    (move Step 
+        (from) 
+        (to 
+            if:(and {
+                (is Empty (to))
+                (or {
+                    (and
+                        (or
+                            (= (from) (+ (to) 6))
+                            (= (from) (- (to) 6))
+                        )
+                        ("Outward" N S)
+                    )
+                    (and
+                        (or
+                            (= (from) (+ (to) 1))
+                            (= (from) (- (to) 1))
+                        )
+                        ("Outward" E W)
+                    )
+                    (and
+                        (or
+                            (= (from) (+ (to) (+ 6 1)))
+                            (= (from) (- (to) (+ 6 1)))
+                        )
+                        ("Outward" SW NE)
+                    )
+                    (and
+                        (or
+                            (= (from) (+ (to) (- 6 1)))
+                            (= (from) (- (to) (- 6 1)))
+                        )
+                        ("Outward" SE NW)
+                    )
+                })
+            })
+        )
+    )
+)
+
+(define "Capture"
+    (move
+        (from)
+        (to
+            (intersection
+                (sites Occupied by:Next)
+                (sites Direction
+                    from:(from)
+                    (directions {#1 #2}) 
+                    stop:(is Occupied (to))
+                    stopIncluded:True
+                )
+            )
+            if:(not
+                (>
+                    (min
+                        (count Sites
+                            in:(sites Direction
+                                from:(from)
+                                #1
+                            )
+                        )
+                        (count Sites
+                            in:(sites Direction
+                                from:(from)
+                                #2
+                            )
+                        )
+                    )
+                    (min
+                        (count Sites
+                            in:(sites Direction
+                                from:(to)
+                                #1
+                            )
+                        )
+                        (count Sites
+                            in:(sites Direction
+                                from:(to)
+                                #2
+                            )
+                        )
+                    )
+                )
+            )
+            (apply (remove (to)))
+        )
+    )
+)
+
+(game "Zola"
+    (players 2)
+    (equipment {
+        (board (square 6))
+        (piece "Disc" Each)
+    })
+    (rules
+        (start {
+            (place "Disc1" (sites Phase 0))
+            (place "Disc2" (sites Phase 1))
+        })
+        (play
+            (forEach Piece
+                (or {
+                    ("Capture" N S)
+                    ("Capture" NE SW)
+                    ("Capture" E W)
+                    ("Capture" SE NW)
+                    ("Step")
+                })
+            )
+        )
+        (end 
+            (if 
+                (or
+                    (no Pieces P1)
+                    (no Pieces P2)
+                ) 
+                (result Mover Win)
+            )
+        )
+    )
+)
+

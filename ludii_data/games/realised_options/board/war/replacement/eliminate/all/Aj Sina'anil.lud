@@ -1,0 +1,232 @@
+(define "ThrowValue" (count Pips))
+
+(define "NoPieceOnBoard" (< (count Pieces Mover in:(sites Board)) 1))
+
+(define "SetCapturePiece"
+    (set State #1 #2 2)
+)
+
+(define "SetCapturingPiece"
+    (set State #1 #2 1)
+)
+
+(define "UnsetCapturingPiece" (set State #1 #2 0))
+
+(define "UnsetCapturingPieces" 
+    (forEach Level (last From) FromTop
+        (if ("IsFriendAt" (last From) level:(level))
+            ("UnsetCapturingPiece" at:(last From) level:(level))
+        )
+    ) 
+)
+
+(define "CapturingPiece" (= 1 #1))
+
+(define "CapturedPiece" (= 2 #1))
+
+(define "FreePiece" (= 0 #1))
+
+(define "AtLeastAnEnemyPieceThere"
+    (is In #1 (sites Occupied by:Enemy top:False))
+)
+
+(define "CaptureMove" 
+    (forEach Level (last To) FromTop
+        (and
+            (if ("IsEnemyAt" (last To) level:(level))
+                ("SetCapturePiece" at:(last To) level:(level))
+            )
+            (if ("IsFriendAt" (last To) level:(level))
+                ("SetCapturingPiece" at:(last To) level:(level))
+            )
+        )
+    ) 
+)
+
+(define "RemoveCapturedPieces" 
+    (forEach Level (last From) FromTop
+        (if ("CapturedPiece" (state at:(last From) level:(level)))
+            (remove (last From) level:(level))
+        )
+    )
+)
+
+(define "RebirthCapturingPiece"
+    (add
+        (piece (id "Stick" Mover))
+        (to (handSite Mover))
+    )
+)
+
+(define "CapturedPiecesFollowCapturingPiece"
+    (forEach Level (last From) FromTop
+        (if ("CapturedPiece" (state at:(last From) level:(level)))
+            (fromTo 
+                (from (last From) level:(level))
+                (to (last To))
+            )
+        )
+    )	
+)
+
+(game "Aj Sina'anil"
+    (players 6)
+    (equipment {
+        (board
+            (rectangle 1 20)
+            
+            {
+            (track "Track1" {19 0..18} P1 directed:True)
+            (track "Track2" {20 0..18} P2 directed:True)
+            (track "Track3" {21 0..18} P3 directed:True)
+            (track "Track4" {22 18..0} P4 directed:True)
+            (track "Track5" {23 18..0} P5 directed:True)
+            (track "Track6" {24 18..0} P6 directed:True)
+            (track "CaptureTrack1" {18..0} P1 directed:True)
+            (track "CaptureTrack2" {18..0} P2 directed:True)
+            (track "CaptureTrack3" {18..0} P3 directed:True)
+            (track "CaptureTrack4" {0..18} P4 directed:True)
+            (track "CaptureTrack5" {0..18} P5 directed:True)
+            (track "CaptureTrack6" {0..18} P6 directed:True)
+            } 
+            
+            use:Edge
+        )
+        (regions "AllSites" (sites Board Vertex))
+        (piece "Stick" Each
+            (forEach Value (values Remembered "Throws")
+                (or
+                    (if ("FreePiece" (state at:(from) level:(level)))
+                        (or
+                            (if ("IsOffBoard" ("NextSiteOnTrack" (value) from:(from) "Track"))
+                                (move 
+                                    (from (from) level:(level))
+                                    (to 
+                                        (handSite Mover)
+                                        (apply (forget Value "Throws" (value)))		
+                                    )
+                                )
+                                (move 
+                                    (from (from) level:(level)
+                                        if:(if (is In (from) (sites Hand Mover))
+                                            ("NoPieceOnBoard")
+                                            True
+                                        )
+                                    )
+                                    (to 
+                                        ("NextSiteOnTrack" (value) from:(from) "Track")
+                                        (apply (forget Value "Throws" (value)))
+                                    )
+                                    (then 
+                                        (if ("AtLeastAnEnemyPieceThere" (last To))
+                                            ("CaptureMove")
+                                        )
+                                    )
+                                )
+                            )
+                            (if (and (is In (from) (sites Board)) ("IsNotOffBoard" ("NextSiteOnTrack" (value) from:(from) "CaptureTrack")))
+                                (if ("AtLeastAnEnemyPieceThere" ("NextSiteOnTrack" (value) from:(from) "CaptureTrack"))
+                                    (move 
+                                        (from (from) level:(level))
+                                        (to 
+                                            ("NextSiteOnTrack" (value) from:(from) "CaptureTrack")
+                                            (apply (forget Value "Throws" (value)))
+                                        )
+                                        (then 
+                                            ("CaptureMove")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (if ("CapturingPiece" (state at:(from) level:(level)))
+                        (if ("IsOffBoard" ("NextSiteOnTrack" (value) from:(from) "CaptureTrack"))
+                            (do (forget Value "Throws" (value))
+                                next:(move Remove (from) level:(level)
+                                    (then
+                                        (and {
+                                            ("UnsetCapturingPieces")
+                                            ("RemoveCapturedPieces")	
+                                            ("RebirthCapturingPiece")
+                                        })
+                                    )
+                                )
+                            )
+                            (move 
+                                (from (from) level:(level))
+                                (to 
+                                    ("NextSiteOnTrack" (value) from:(from) "CaptureTrack")
+                                    (apply (forget Value "Throws" (value)))
+                                )
+                                (then 
+                                    (and
+                                        ("CapturedPiecesFollowCapturingPiece")
+                                        ("UnsetCapturingPieces")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )		
+        )
+        ("StickDice" 4)
+        (hand Each)
+    })
+    (rules 
+        (start {
+            
+            (set Team 1 {P1 P2 P3})
+            (set Team 2 {P4 P5 P6})
+            (place Stack "Stick1" (handSite P1) count:5)
+            (place Stack "Stick2" (handSite P2) count:5)
+            (place Stack "Stick3" (handSite P3) count:5)
+            (place Stack "Stick4" (handSite P4) count:5)
+            (place Stack "Stick5" (handSite P5) count:5)
+            (place Stack "Stick6" (handSite P6) count:5)
+            
+        })
+        
+        phases:{
+        (phase "ThrowPhase" 
+            (play 
+                ("RollMove"
+                    (move Pass
+                        (then
+                            (if (not (no Pieces Mover))
+                                (and {
+                                    (if (!= 0 ("ThrowValue"))
+                                        (do
+                                            (remember Value "Throws" ("ThrowValue"))
+                                            ifAfterwards:(can Move (or (forEach Piece container:(mover)) (forEach Piece)))
+                                        )
+                                    )
+                                    (moveAgain)
+                                    (if ("SameTurn") (set Pending))
+                                })
+                            )
+                        )
+                    )
+                )	
+            )
+            (nextPhase (is Pending) "MovePhase")
+        )
+        (phase "MovePhase" 
+            (play 
+                (or (forEach Piece) (forEach Piece container:(mover))
+                    (then
+                        (if (< 0 (size Array (values Remembered "Throws")))
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+            (nextPhase (= 0 (size Array (values Remembered "Throws"))) "ThrowPhase")
+        )
+        }
+        
+        (end ("CaptureAllTeam"))
+    )
+)
+

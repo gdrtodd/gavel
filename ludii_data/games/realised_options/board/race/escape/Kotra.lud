@@ -1,0 +1,91 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" #2 from:#1))
+
+(define "AllPiecesInFinalQuadrant" ("AllOwnedPiecesIn" (sites Mover "FinalQuadrant")))
+
+(define "EnterPieces"
+    (if (is Occupied (handSite Mover))
+        (forEach Die
+            replayDouble:True 
+            if:("DieNotUsed")
+            (move 
+                (from (handSite Mover))
+                (to 
+                    ("NextSiteFrom" (mapEntry "Entry" Mover) (- (pips) 1))
+                    if:(is Empty (to))
+                )
+            )
+            
+            (then ("ReplayNotAllDiceUsed"))
+        )
+    )
+)
+
+(game "Kotra"
+    (players 2)
+    (equipment {
+        ("BackgammonBoard" 
+            {
+            (track "Track1" {12..7 5..0 13..18 20..25 End} P1 directed:True)
+            (track "Track2" {13..18 20..25 12..7 5..0 End} P2 directed:True)
+            }		
+        )
+        (dice d:6 num:2)
+        (piece "Disc" Each
+            (forEach Die
+                replayDouble:True 
+                if:("DieNotUsed")
+                (if ("IsEndTrack" ("NextSiteFrom" (from) (pips)))
+                    (if ("AllPiecesInFinalQuadrant")
+                        (move Remove (from))
+                    )
+                    (move 
+                        (from (from))
+                        (to 
+                            ("NextSiteFrom" (from) (pips))
+                            if:(and {
+                                ("NoEnemyOrOnlyOne" (to))
+                                (if (not (is In (to) (sites Mover "StartingSide")))
+                                    True
+                                    (> 2 (size Stack at:(to)))
+                                )
+                                (if (not (is In (to) (sites Mover "AfterPenultimate")))
+                                    True
+                                    (>= 10 (count Pieces in:(sites {(handSite Mover) (mapEntry "Entry" Mover)})))
+                                )
+                            })
+                            ("HittingCapture" (handSite Next))
+                        )
+                    )
+                )
+                (then ("ReplayNotAllDiceUsed"))
+            )		
+        )
+        (hand Each)
+        (regions "FinalQuadrant" P1 (sites {20..25}))
+        (regions "FinalQuadrant" P2 (sites {0..5}))
+        (regions "StartingSide" P1 (sites {0..5 7..12}))
+        (regions "StartingSide" P2 (sites {13..18 20..25}))
+        (regions "AfterPenultimate" P1 (sites {25}))
+        (regions "AfterPenultimate" P2 (sites {0}))
+        (map "Entry" {(pair P1 12) (pair P2 13)})
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 12 count:15)
+            (place Stack "Disc2" 13 count:15)
+        })
+        (play 
+            ("RollEachNewTurnMove"
+                (or
+                    ("EnterPieces")
+                    (forEach Piece top:True)
+                )
+                (then
+                    (if (no Pieces Mover) (set Score Mover 2))
+                )
+            )		
+        )
+        (end ("EscapeWin"))
+    )
+)
+

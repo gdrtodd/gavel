@@ -1,0 +1,121 @@
+(define "Plant"
+    (move Add
+        (to 
+            (sites Empty)
+            if:(= 0
+                (count Sites
+                    in:(sites Around (to) Own Orthogonal)
+                )
+            )
+        )
+        (then ("UpdateScore"))
+    )
+)
+
+(define "PlaceGrey"
+    (do
+        (move Add
+            (piece "Marker0")
+            (to
+                (sites Empty)
+                if:(< 0
+                    (count Sites
+                        in:(sites Around (to) Own Orthogonal)
+                    )
+                )
+            )
+        )
+        ifAfterwards:(all Groups Orthogonal of:(is Mover (who at:(to)))
+            if:(> 2
+                (count Sites
+                    in:(intersection
+                        (sites Around (sites) NotEmpty Orthogonal)
+                        (sites Occupied by:Neutral)
+                    )
+                )
+            )
+        )
+        #1
+    )
+)
+
+(define "ReplaceAllGrey"
+    (add 
+        (to 
+            (sites Occupied by:Neutral)
+            (apply (remove (to)))
+        )
+        (then 
+            (if 
+                (!= 1 (var "HasGrown"))
+                (and
+                    (set Var "HasGrown" 1)
+                    (if 
+                        (= (id P2) (mover))
+                        (and
+                            (set Var "MoveThatMustBePlant" (count Moves))
+                            (moveAgain)
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "Grow"
+    ("PlaceGrey"
+        (then 
+            (if
+                (can Move ("PlaceGrey" ~))
+                (moveAgain)
+                (do
+                    ("ReplaceAllGrey")
+                    next:("UpdateScore")
+                )
+            )
+        )
+    )
+)
+
+(define "UpdateScore"
+    (set Score Mover
+        (-
+            (count Sites in:(sites Occupied by:Mover))
+            (* 10
+                (count Groups Orthogonal if:(is Mover (who at:(to))))
+            )
+        )
+    )
+)
+
+(game "Symple"
+    (players 2)
+    (equipment {
+        (board (square 19) use:Vertex)
+        (piece "Marker" Each)
+        (piece "Marker" Neutral)
+    })
+    (rules
+        (play
+            (if
+                (= (count Moves) (var "MoveThatMustBePlant"))
+                ("Plant")
+                (if
+                    (= 0 (count MovesThisTurn))
+                    (or
+                        ("Plant")
+                        ("Grow")
+                    )
+                    ("Grow")
+                )
+            )
+        )
+        (end 
+            (if (is Full) 
+                (byScore)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,44 @@
+(game "Futoshiki"
+    (players 1) 
+    (equipment { 
+        (board 
+            (square 5) 
+            (values Vertex (range 1 5)) 
+            use:Vertex
+        ) 
+        
+        (hints 
+            {
+            (hint {0 1})
+            (hint {1 2})
+            (hint {8 9})
+            (hint {21 20})
+            (hint {23 22})
+            (hint {24 23})
+            }
+            Vertex
+        )
+        
+        (regions {Columns Rows})
+    }) 
+    (rules 
+        (start 
+            (set 
+                { 
+                {9 4} 
+                {12 4}
+                {15 4}
+                {19 2} 
+                }
+            )
+        )
+        (play 
+            (satisfy {
+                (forAll Hint (< (from) (to)))
+                (all Different)
+            })
+        )
+        (end (if (is Solved) (result P1 Win)))
+    )
+)
+

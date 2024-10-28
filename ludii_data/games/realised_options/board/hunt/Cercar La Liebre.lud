@@ -1,0 +1,19 @@
+(game "Cercar La Liebre" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoard" 5 5)
+        (piece "Counter" P1 "StepToEmpty") 
+        (piece "Hare" P2 (or "HopCapture" (if "SameTurn" (move Pass) "StepToEmpty")))
+    }) 
+    (rules 
+        (start { 
+            (place "Counter1" (union {(expand (sites Bottom)) (sites {"A3" "E3"})}))
+            (place "Hare2" (centrePoint))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P1 9))
+    )
+)
+

@@ -1,0 +1,49 @@
+(game "Lam Turki"
+    (players 1) 
+    (equipment { 
+        ("StarBoard" 5)
+        (hand Each) 
+        (piece "Marker" P1 ("HopFriendCapture"))
+    })
+    (rules 
+        (start {
+            (place "Marker" (handSite P1) count:9)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (if (is Even (count Moves))
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty))
+                        (then (moveAgain))
+                    ) 
+                    (forEach Piece
+                        (if (= (from) (last To))
+                            (move Hop 
+                                (between 
+                                    if:(or ("IsFriendAt" (between)) (is Empty (between)))
+                                )
+                                (to if:(is Empty (to)))
+                            )
+                        )
+                    )
+                )
+            )
+            (end 
+                (if (no Moves Next) (result Mover Loss))
+            )
+            (nextPhase Mover (and (is Even (count Moves)) ("HandEmpty" Mover)) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement"
+            (end {
+                (if (= (count Pieces) 1) (result Mover Win))
+                (if (no Moves Next) (result Mover Loss))
+            })
+        )
+        }
+    )		
+)
+

@@ -1,0 +1,586 @@
+(define "Same"
+    (and 
+        (is In #1 (sites #3))
+        (is In #2 (sites #3))
+    )		
+)
+
+(define "SameSection" 
+    (or {
+        ("Same" #1 #2 "Section0")
+        ("Same" #1 #2 "Section1")
+        ("Same" #1 #2 "Section2")
+        ("Same" #1 #2 "Section3")
+        ("Same" #1 #2 "Section4")
+        ("Same" #1 #2 "Section5")
+        ("Same" #1 #2 "Section6")
+        ("Same" #1 #2 "Section7")
+        ("Same" #1 #2 "Section8")
+        ("Same" #1 #2 "Section9")
+        ("Same" #1 #2 "Section10")
+        ("Same" #1 #2 "Section11")
+    })
+)
+
+(define "SectionDistance"
+    
+    (if (is In #1 (sites "Section0"))
+        (if (is In #2 (sites "Section0"))
+            0
+            (if (or 
+                    (is In #2 (sites "Section1"))
+                    (is In #2 (sites "Section11"))
+                )
+                1
+                (if (or 
+                        (is In #2 (sites "Section2"))
+                        (is In #2 (sites "Section10"))
+                    )
+                    2
+                    (if (or 
+                            (is In #2 (sites "Section3"))
+                            (is In #2 (sites "Section9"))
+                        )
+                        3
+                        (if (or 
+                                (is In #2 (sites "Section4"))
+                                (is In #2 (sites "Section8"))
+                            )
+                            4
+                            (if (or 
+                                    (is In #2 (sites "Section5"))
+                                    (is In #2 (sites "Section7"))
+                                )
+                                5
+                                6
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (if (is In #1 (sites "Section1"))
+            (if (is In #2 (sites "Section1"))
+                0
+                (if (or 
+                        (is In #2 (sites "Section2"))
+                        (is In #2 (sites "Section0"))
+                    )
+                    1
+                    (if (or 
+                            (is In #2 (sites "Section3"))
+                            (is In #2 (sites "Section11"))
+                        )
+                        2
+                        (if (or 
+                                (is In #2 (sites "Section4"))
+                                (is In #2 (sites "Section10"))
+                            )
+                            3
+                            (if (or 
+                                    (is In #2 (sites "Section5"))
+                                    (is In #2 (sites "Section9"))
+                                )
+                                4
+                                (if (or 
+                                        (is In #2 (sites "Section6"))
+                                        (is In #2 (sites "Section8"))
+                                    )
+                                    5
+                                    6
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            
+            (if (is In #1 (sites "Section2"))
+                (if (is In #2 (sites "Section2"))
+                    0
+                    (if (or 
+                            (is In #2 (sites "Section3"))
+                            (is In #2 (sites "Section1"))
+                        )
+                        1
+                        (if (or 
+                                (is In #2 (sites "Section4"))
+                                (is In #2 (sites "Section0"))
+                            )
+                            2
+                            (if (or 
+                                    (is In #2 (sites "Section5"))
+                                    (is In #2 (sites "Section11"))
+                                )
+                                3
+                                (if (or 
+                                        (is In #2 (sites "Section6"))
+                                        (is In #2 (sites "Section10"))
+                                    )
+                                    4
+                                    (if (or 
+                                            (is In #2 (sites "Section7"))
+                                            (is In #2 (sites "Section9"))
+                                        )
+                                        5
+                                        6
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                
+                (if (is In #1 (sites "Section3"))
+                    (if (is In #2 (sites "Section3"))
+                        0
+                        (if (or 
+                                (is In #2 (sites "Section4"))
+                                (is In #2 (sites "Section2"))
+                            )
+                            1
+                            (if (or 
+                                    (is In #2 (sites "Section5"))
+                                    (is In #2 (sites "Section1"))
+                                )
+                                2
+                                (if (or 
+                                        (is In #2 (sites "Section6"))
+                                        (is In #2 (sites "Section0"))
+                                    )
+                                    3
+                                    (if (or 
+                                            (is In #2 (sites "Section7"))
+                                            (is In #2 (sites "Section11"))
+                                        )
+                                        4
+                                        (if (or 
+                                                (is In #2 (sites "Section8"))
+                                                (is In #2 (sites "Section10"))
+                                            )
+                                            5
+                                            6
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    
+                    (if (is In #1 (sites "Section4"))
+                        (if (is In #2 (sites "Section4"))
+                            0
+                            (if (or 
+                                    (is In #2 (sites "Section5"))
+                                    (is In #2 (sites "Section3"))
+                                )
+                                1
+                                (if (or 
+                                        (is In #2 (sites "Section6"))
+                                        (is In #2 (sites "Section2"))
+                                    )
+                                    2
+                                    (if (or 
+                                            (is In #2 (sites "Section7"))
+                                            (is In #2 (sites "Section1"))
+                                        )
+                                        3
+                                        (if (or 
+                                                (is In #2 (sites "Section8"))
+                                                (is In #2 (sites "Section0"))
+                                            )
+                                            4
+                                            (if (or 
+                                                    (is In #2 (sites "Section9"))
+                                                    (is In #2 (sites "Section11"))
+                                                )
+                                                5
+                                                6
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        
+                        (if (is In #1 (sites "Section5"))
+                            (if (is In #2 (sites "Section5"))
+                                0
+                                (if (or 
+                                        (is In #2 (sites "Section6"))
+                                        (is In #2 (sites "Section4"))
+                                    )
+                                    1
+                                    (if (or 
+                                            (is In #2 (sites "Section7"))
+                                            (is In #2 (sites "Section3"))
+                                        )
+                                        2
+                                        (if (or 
+                                                (is In #2 (sites "Section8"))
+                                                (is In #2 (sites "Section2"))
+                                            )
+                                            3
+                                            (if (or 
+                                                    (is In #2 (sites "Section9"))
+                                                    (is In #2 (sites "Section1"))
+                                                )
+                                                4
+                                                (if (or 
+                                                        (is In #2 (sites "Section10"))
+                                                        (is In #2 (sites "Section0"))
+                                                    )
+                                                    5
+                                                    6
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                            
+                            (if (is In #1 (sites "Section6"))
+                                (if (is In #2 (sites "Section6"))
+                                    0
+                                    (if (or 
+                                            (is In #2 (sites "Section7"))
+                                            (is In #2 (sites "Section5"))
+                                        )
+                                        1
+                                        (if (or 
+                                                (is In #2 (sites "Section8"))
+                                                (is In #2 (sites "Section4"))
+                                            )
+                                            2
+                                            (if (or 
+                                                    (is In #2 (sites "Section9"))
+                                                    (is In #2 (sites "Section3"))
+                                                )
+                                                3
+                                                (if (or 
+                                                        (is In #2 (sites "Section10"))
+                                                        (is In #2 (sites "Section2"))
+                                                    )
+                                                    4
+                                                    (if (or 
+                                                            (is In #2 (sites "Section11"))
+                                                            (is In #2 (sites "Section1"))
+                                                        )
+                                                        5
+                                                        6
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                                
+                                (if (is In #1 (sites "Section7"))
+                                    (if (is In #2 (sites "Section7"))
+                                        0
+                                        (if (or 
+                                                (is In #2 (sites "Section8"))
+                                                (is In #2 (sites "Section6"))
+                                            )
+                                            1
+                                            (if (or 
+                                                    (is In #2 (sites "Section9"))
+                                                    (is In #2 (sites "Section5"))
+                                                )
+                                                2
+                                                (if (or 
+                                                        (is In #2 (sites "Section10"))
+                                                        (is In #2 (sites "Section4"))
+                                                    )
+                                                    3
+                                                    (if (or 
+                                                            (is In #2 (sites "Section11"))
+                                                            (is In #2 (sites "Section3"))
+                                                        )
+                                                        4
+                                                        (if (or 
+                                                                (is In #2 (sites "Section0"))
+                                                                (is In #2 (sites "Section2"))
+                                                            )
+                                                            5
+                                                            6
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    
+                                    (if (is In #1 (sites "Section8"))
+                                        (if (is In #2 (sites "Section8"))
+                                            0
+                                            (if (or 
+                                                    (is In #2 (sites "Section9"))
+                                                    (is In #2 (sites "Section7"))
+                                                )
+                                                1
+                                                (if (or 
+                                                        (is In #2 (sites "Section10"))
+                                                        (is In #2 (sites "Section6"))
+                                                    )
+                                                    2
+                                                    (if (or 
+                                                            (is In #2 (sites "Section11"))
+                                                            (is In #2 (sites "Section5"))
+                                                        )
+                                                        3
+                                                        (if (or 
+                                                                (is In #2 (sites "Section0"))
+                                                                (is In #2 (sites "Section4"))
+                                                            )
+                                                            4
+                                                            (if (or 
+                                                                    (is In #2 (sites "Section1"))
+                                                                    (is In #2 (sites "Section3"))
+                                                                )
+                                                                5
+                                                                6
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        
+                                        (if (is In #1 (sites "Section9"))
+                                            (if (is In #2 (sites "Section9"))
+                                                0
+                                                (if (or 
+                                                        (is In #2 (sites "Section10"))
+                                                        (is In #2 (sites "Section8"))
+                                                    )
+                                                    1
+                                                    (if (or 
+                                                            (is In #2 (sites "Section11"))
+                                                            (is In #2 (sites "Section7"))
+                                                        )
+                                                        2
+                                                        (if (or 
+                                                                (is In #2 (sites "Section0"))
+                                                                (is In #2 (sites "Section6"))
+                                                            )
+                                                            3
+                                                            (if (or 
+                                                                    (is In #2 (sites "Section1"))
+                                                                    (is In #2 (sites "Section5"))
+                                                                )
+                                                                4
+                                                                (if (or 
+                                                                        (is In #2 (sites "Section2"))
+                                                                        (is In #2 (sites "Section4"))
+                                                                    )
+                                                                    5
+                                                                    6
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                            
+                                            (if (is In #1 (sites "Section10"))
+                                                (if (is In #2 (sites "Section10"))
+                                                    0
+                                                    (if (or 
+                                                            (is In #2 (sites "Section11"))
+                                                            (is In #2 (sites "Section9"))
+                                                        )
+                                                        1
+                                                        (if (or 
+                                                                (is In #2 (sites "Section0"))
+                                                                (is In #2 (sites "Section8"))
+                                                            )
+                                                            2
+                                                            (if (or 
+                                                                    (is In #2 (sites "Section1"))
+                                                                    (is In #2 (sites "Section7"))
+                                                                )
+                                                                3
+                                                                (if (or 
+                                                                        (is In #2 (sites "Section2"))
+                                                                        (is In #2 (sites "Section6"))
+                                                                    )
+                                                                    4
+                                                                    (if (or 
+                                                                            (is In #2 (sites "Section3"))
+                                                                            (is In #2 (sites "Section5"))
+                                                                        )
+                                                                        5
+                                                                        6
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                                
+                                                (if (is In #2 (sites "Section11"))
+                                                    0
+                                                    (if (or 
+                                                            (is In #2 (sites "Section0"))
+                                                            (is In #2 (sites "Section10"))
+                                                        )
+                                                        1
+                                                        (if (or 
+                                                                (is In #2 (sites "Section1"))
+                                                                (is In #2 (sites "Section9"))
+                                                            )
+                                                            2
+                                                            (if (or 
+                                                                    (is In #2 (sites "Section2"))
+                                                                    (is In #2 (sites "Section8"))
+                                                                )
+                                                                3
+                                                                (if (or 
+                                                                        (is In #2 (sites "Section3"))
+                                                                        (is In #2 (sites "Section7"))
+                                                                    )
+                                                                    4
+                                                                    (if (or 
+                                                                            (is In #2 (sites "Section4"))
+                                                                            (is In #2 (sites "Section6"))
+                                                                        )
+                                                                        5
+                                                                        6
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )	
+    )		
+)
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (count Pips) #1))
+
+(define "MovePiece"
+    (move
+        (from)
+        (to 
+            (if (is In (from) (sites Track "Ring7"))
+                ("SiteToMoveOnTrack" "Ring7")
+                (if (is In (from) (sites Track "Ring6"))
+                    ("SiteToMoveOnTrack" "Ring6")
+                    (if (is In (from) (sites Track "Ring5"))
+                        ("SiteToMoveOnTrack" "Ring5")
+                        (if (is In (from) (sites Track "Ring4"))
+                            ("SiteToMoveOnTrack" "Ring4")
+                            (if (is In (from) (sites Track "Ring3"))
+                                ("SiteToMoveOnTrack" "Ring3")
+                                (if (is In (from) (sites Track "Ring2"))
+                                    ("SiteToMoveOnTrack" "Ring2")
+                                    ("SiteToMoveOnTrack" "Ring1")
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        (then 
+            (if (not ("SameSection" (last From) (last To)))
+                (forEach Site 
+                    (sites Occupied by:Enemy)
+                    (addScore Mover (mapEntry "Score" ("SectionDistance" (last To) (site))))
+                )
+            )
+        )
+    )
+)
+
+(game "Los Escaques"
+    (players 7)
+    (equipment {
+        (board
+            (remove
+                (concentric {0 12 24 36 48 60 72 84})
+                cells:{1}
+            )
+            {
+            (track "Ring7" {11..2 0 1} loop:True)
+            (track "Ring6" {35..14 12 13} loop:True)
+            (track "Ring5" {71..38 36 37} loop:True)
+            (track "Ring4" {119..74 72 73} loop:True)
+            (track "Ring3" {179..122 120 121} loop:True)
+            (track "Ring2" {251..182 180 181} loop:True)
+            (track "Ring1" {335..254 252 253} loop:True)
+            }
+        )
+        (regions "AllSites" (sites Board))
+        (piece "Marker" Each ("MovePiece"))
+        (dice d:7 num:1)
+        (hand Each)
+        (map "FirstSite" {
+            (pair 7 1) (pair 6 13) (pair 5 37) (pair 4 73)
+            (pair 3 121) (pair 2 181) (pair 1 253)
+        })
+        (map "Score" {
+            (pair 0 144) (pair 1 0) (pair 2 24) (pair 3 -36)
+            (pair 4 36) (pair 5 0) (pair 6 -72)
+        })
+        (regions "Section0" (expand origin:1 steps:6 Out))
+        (regions "Section1" (expand origin:0 steps:6 Out))
+        (regions "Section2" (expand origin:2 steps:6 Out))
+        (regions "Section3" (expand origin:3 steps:6 Out))
+        (regions "Section4" (expand origin:4 steps:6 Out))
+        (regions "Section5" (expand origin:5 steps:6 Out))
+        (regions "Section6" (expand origin:6 steps:6 Out))
+        (regions "Section7" (expand origin:7 steps:6 Out))
+        (regions "Section8" (expand origin:8 steps:6 Out))
+        (regions "Section9" (expand origin:9 steps:6 Out))
+        (regions "Section10" (expand origin:10 steps:6 Out))
+        (regions "Section11" (expand origin:11 steps:6 Out))
+    })
+    (rules 
+        (start (place "Marker" "Hand"))
+        phases:{
+        (phase "Opening"
+            (play 
+                ("RollMove"
+                    (if (is Empty (mapEntry "FirstSite" (count Pips)))
+                        (move 
+                            (from (handSite Mover))
+                            (to (mapEntry "FirstSite" (count Pips)))
+                        )
+                        (move Pass (then (moveAgain)))
+                    )
+                )
+            )
+            (nextPhase (and (is Mover P7) (is Next P1)) "Playing")
+        )
+        (phase "Playing" 
+            (play 
+                (if (is Proposed "End")
+                    (or (move Vote "End") (move Vote "No"))
+                    ("RollMove"
+                        (or (forEach Piece) (move Propose "End"))
+                    )
+                )
+            )
+        )
+        }
+        (end 
+            (if 
+                (is Decided "End")
+                (byScore)
+            )
+        )
+    )
+)
+

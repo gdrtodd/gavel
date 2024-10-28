@@ -1,0 +1,43 @@
+(game "Caturvimsatikosthakatmiki Krida"
+    (players 2) 
+    (equipment { 
+        (board (rectangle 3 8))
+        (piece "Marker" Each
+            (or {
+                (move Hop 
+                    Orthogonal
+                    (between 
+                        if:(and 
+                            ("IsEnemyAt" (between)) 
+                            (not (is In (between) (union (sites Bottom) (sites Top))))
+                        )
+                        (apply (remove (between)))
+                    )
+                    (to if:(is Empty (to)))
+                )
+                ("StepOrthogonalToEmpty")
+                (if (= 1 (state at:(from)))
+                    (move 
+                        Slide
+                        Orthogonal
+                        (between
+                            (exact 2)
+                            if:(is Empty (between))
+                        )
+                        (then (set State at:(last To) 0))
+                    )
+                )
+            })			
+        )
+    }) 
+    
+    (rules 
+        (start {
+            (place "Marker1" (sites Bottom) state:1)
+            (place "Marker2" (sites Top) state:1)
+        })
+        (play (forEach Piece))
+        (end ("HavingLessPiecesLoss" Next 3))
+    )
+)
+

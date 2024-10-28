@@ -1,0 +1,64 @@
+(define "PiecesOwnedBy" (count Cell at:(handSite #1)))
+(define "Column" 6)
+
+(game "Um el-Bil" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Column" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom)) 
+        (regions P2 (sites Top)) 
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    
+    (rules 
+        (start (set Count 4 to:(sites Track)))		
+        
+        phases:{
+        (phase "Opening"
+            (play 
+                (move Select 
+                    (from (- ("Column") 1))
+                    (then 
+                        (sow 
+                            if:(= (count at:(to)) 1)
+                            apply:(fromTo 
+                                (from (to)) 
+                                (to (handSite Mover)) 
+                                count:1
+                            )
+                        )
+                    )
+                )		
+            )
+            (nextPhase "Play")
+        )
+        (phase "Play"
+            (play 
+                (move Select 
+                    (from 
+                        (sites Mover) 
+                        if:(< 0 (count at:(from)))
+                    )
+                    (then 
+                        (sow 
+                            if:(= (count at:(to)) 1)
+                            apply:(fromTo 
+                                (from (to)) 
+                                (to (handSite Mover)) 
+                                count:1
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end ("MancalaByScoreWhen" (all Sites (sites Board) if:(is Empty (site)))))
+    )
+)
+

@@ -1,0 +1,190 @@
+(define "Triple" (all DiceEqual))
+(define "Die1" (face 97))
+(define "Die2" (face 98))
+(define "Die3" (face 99))
+(define "HasDouble" 
+    (or {
+        (= ("Die1") ("Die2"))
+        (= ("Die1") ("Die3"))
+        (= ("Die2") ("Die3"))
+    })
+)
+
+(define "DoubleValue"
+    (if (= ("Die1") ("Die2"))
+        ("Die1")
+        (if (= ("Die2") ("Die3"))
+            ("Die2")
+            ("Die3")
+        )
+    )
+)
+
+(define "NotDoubleValue"
+    (if (= ("Die1") ("Die2"))
+        ("Die3")
+        (if (= ("Die2") ("Die3"))
+            ("Die1")
+            ("Die2")
+        )
+    )
+)
+
+(define "AllPiecesOnCentre"
+    (and
+        (= 1 (count Sites in:(sites Occupied by:#1 top:False)))
+        (is In (centrePoint) (sites Occupied by:#1 top:False))
+    )
+)
+
+(define "TrackMove" ("NextSiteOnTrack" #3 #1 #2))
+
+(define "StorePreviousPipsUsed" (set Var "Pips" #1))
+(define "PreviousPipsUsed" (var "Pips"))
+
+(define "StoreMovePair" (set Var "MovePair" #1))
+(define "MovedPair" (= 1 (var "MovePair")))
+
+(define "PieceMove" 
+    (forEach Die
+        if:("DieNotUsed")
+        (move 
+            (from (from) level:(level)
+                if:(!= 0 (what at:(from) level:(level)))
+            )
+            (to 
+                (if (= 0 (state at:(from) level:(level)))
+                    ("TrackMove" from:(from) #1 (pips))
+                    ("TrackMove" from:(from) #2 (pips))
+                )
+                if:(if (= 0 (state at:(from) level:(level))) 
+                    (if (not ("MovedPair")) True (or "Triple" (= (pips) ("NotDoubleValue"))))
+                    (and { 
+                        (not ("MovedPair")) 
+                        ("HasDouble") 
+                        (= (pips) ("DoubleValue")) 
+                        (< (count MovesThisTurn) 2)
+                        (if (= (count MovesThisTurn) 0)
+                            True
+                            (or ("Triple") (!= ("PreviousPipsUsed") ("DoubleValue")))
+                        )
+                    })
+                )
+                (apply 
+                    (and
+                        (if (= 1 (state at:(from)))
+                            (forEach Site (sites Occupied by:Mover top:False)
+                                (forEach Level (site)
+                                    (if (and {
+                                            (= 1 (state at:(site) level:(level)))
+                                            (!= (from) (site))
+                                            (= (mover) (who at:(site) level:(level)))
+                                        })
+                                        (fromTo
+                                            (from (site) level:(level))
+                                            (to 
+                                                ("TrackMove" from:(site) #2 (pips))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        ("StorePreviousPipsUsed" (pips))
+                    )
+                )
+            )
+            (then 
+                (if 
+                    (and 
+                        (not ("MovedPair"))
+                        (if (= 1 (state at:(last To) level:(last LevelTo))) 
+                            (< (count MovesThisTurn) 1)
+                            (< (count MovesThisTurn) 2)
+                        )
+                    )
+                    (and
+                        (moveAgain)
+                        (if (= 1 (state at:(last To) level:(last LevelTo))) 
+                            ("StoreMovePair" 1)
+                        )
+                    )
+                    (and
+                        ("StoreMovePair" 0)
+                        ("StorePreviousPipsUsed" 0)
+                    )
+                )
+            )
+        )
+    )		
+)
+
+(define "Move" 
+    (if ("AllPiecesOnCentre" Mover) 
+        (if (is Mover P1)
+            (forEach Piece ("PieceMove" "TrackNormal3" "TrackPaired3") P3)
+            (if (is Mover P3)
+                (forEach Piece ("PieceMove" "TrackNormal1" "TrackPaired1") P1)
+                (if (is Mover P4)
+                    (forEach Piece ("PieceMove" "TrackNormal2" "TrackPaired2") P2)
+                    (forEach Piece ("PieceMove" "TrackNormal4" "TrackPaired4") P4)
+                )
+            )
+        )
+        (forEach Piece)
+    )		
+)
+
+(game "Chonpa" 
+    (players 4) 
+    (equipment { 
+        ("PachisiBoard" 
+            {
+            (track "TrackNormal1" "64,S,E,N,11,E,N,W,53,N,W,S,42,W,S,E,8,54,E1,N8" P1 directed:True)
+            (track "TrackPaired1" "57,S,E,N,11,E,N,W,53,N,W,S,42,W,S,E,8,54,E1,N8" P1 directed:True)
+            (track "TrackNormal2" "22,W,S,E,8,S,E,N,11,E,N,W,53,N,W,S,42,W,S1,E8" P2 directed:True)
+            (track "TrackPaired2" "36,W,S,E,8,S,E,N,11,E,N,W,53,N,W,S,42,W,S1,E8" P2 directed:True)
+            (track "TrackNormal3" "85,N,W,S,42,W,S,E,8,S,E,N,11,E,N,W,53,N,W1,S8" P3 directed:True)
+            (track "TrackPaired3" "92,N,W,S,42,W,S,E,8,S,E,N,11,E,N,W,53,N,W1,S8" P3 directed:True)
+            (track "TrackNormal4" "31,E,N,W,53,N,W,S,42,W,S,E,8,S,E,N,11,E,N1,W8" P4 directed:True)
+            (track "TrackPaired4" "17,E,N,W,53,N,W,S,42,W,S,E,8,S,E,N,11,E,N1,W8" P4 directed:True)
+            }
+        )
+        (dice d:4 faces:{1 2 5 6} num:3)
+        (piece "Pawn" Each ("PieceMove" "TrackNormal" "TrackPaired"))
+    }) 
+    (rules 
+        (start {
+            (set Team 1 {P1 P3})
+            (set Team 2 {P2 P4})
+            
+            (place Stack "Pawn1" (sites {61 64}))
+            (place Stack "Pawn2" (sites {21 22}))
+            (place Stack "Pawn3" (sites {85 88}))
+            (place Stack "Pawn4" (sites {31 32}))
+            
+            (place Stack "Pawn1" (sites {17 18}) state:1)
+            (place Stack "Pawn2" (sites {54 57}) state:1)
+            (place Stack "Pawn3" (sites {35 36}) state:1)
+            (place Stack "Pawn4" (sites {92 95}) state:1)
+        })
+        
+        (play 
+            ("RollEachNewTurnMove"
+                (if (can Move ("Move"))
+                    ("Move") 
+                    (move Pass 
+                        (then (and
+                                ("StoreMovePair" 0)
+                                ("StorePreviousPipsUsed" 0)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end (if ("AllPiecesOnCentre" TeamMover) (result TeamMover Win)))
+    )
+)
+

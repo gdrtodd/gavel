@@ -1,0 +1,1 @@
+(game "Mu Torere" (players 2) (equipment {(board (concentric {1 8}) use:Vertex) (piece "Marker" Each (move Step (to if:(and (is Empty (to)) (or (not (= (to) (centrePoint))) (is Related Adjacent (from) (sites Occupied by:Next)))))))}) (rules (start {(place "Marker1" {1 2 3 8}) (place "Marker2" {4 5 6 7})}) (play (forEach Piece)) (end (if (no Moves Next) (result Next Loss))))) 

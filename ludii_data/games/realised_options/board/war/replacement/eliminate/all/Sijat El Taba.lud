@@ -1,0 +1,126 @@
+(define "StartSites" 
+    (union
+        (intersection
+            (sites #1)
+            (expand (sites Left) steps:2)
+        )
+        (intersection 
+            (sites #1)
+            (expand (sites Right) steps:2)
+        )
+    )
+)
+
+(define "ThrowValue" (mapEntry (count Pips)))
+
+(define "CaptureEnemyPiece" 
+    (apply 
+        if:("IsEnemyAt" (to)) 
+        (remove (to) (then (addScore Mover 1)))
+    ) 
+)
+
+(define "CapturesAreImpossible" 
+    (and
+        (= (count Sites in:(difference (sites Occupied by:P1) (sites Top))) 0) 
+        (= (count Sites in:(difference (sites Occupied by:P2) (sites Bottom))) 0) 
+    )
+)
+
+(define "TabuleThrowOne" 
+    (if (> (value Player Mover) 0)
+        (set Value Mover (+ 1 (value Player Mover)))
+        (set Value Mover 1)
+    )
+)
+
+(define "ReinitTabule" (set Value Mover 0))
+
+(define "InactivedPiece" (= (state at:(from)) 0))
+
+(define "ActivePiece" (set State at:(last From) 1))
+
+(define "ActiveInactivedPiece"
+    (move Select 
+        (from (sites Occupied by:Mover) if:("InactivedPiece")) 
+        (then (and ("ActivePiece") (moveAgain)))
+    )
+)
+
+(game "Sijat El Taba" 
+    (players 2)
+    (equipment {
+        (board (rectangle 6 10)
+            { 
+            
+            (track "Track1" "0,E,N1,W,N1,E,N1,W,N1,E,N1,W" P1 directed:True)
+            (track "Track2" "59,W,S1,E,S1,W,S1,E,S1,W,S1,E" P2 directed:True)
+            
+            }
+        )
+        (piece "Marker" Each
+            (if (= (state at:(from)) 1) 
+                (or
+                    (if ("IsNotOffBoard" ("NextSiteOnTrack" ("ThrowValue")))
+                        (if (or
+                                (is In ("NextSiteOnTrack" ("ThrowValue")) (sites Empty))
+                                ("IsEnemyAt" ("NextSiteOnTrack" ("ThrowValue")))
+                            )
+                            (move 
+                                (from)
+                                (to 
+                                    ("NextSiteOnTrack" ("ThrowValue")) 
+                                    "CaptureEnemyPiece"
+                                )
+                            )
+                        )
+                    )
+                    (if ("IsNotOffBoard" ("NextSiteOnTrack" (+ (value Player Mover) ("ThrowValue"))))
+                        (if ("IsEnemyAt" ("NextSiteOnTrack" (+ (value Player Mover) ("ThrowValue"))))
+                            (move 
+                                (from)
+                                (to 
+                                    ("NextSiteOnTrack" (+ (value Player Mover) ("ThrowValue"))) 
+                                    "CaptureEnemyPiece"
+                                )
+                                (then ("ReinitTabule"))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        ("StickDice" 3)
+        (map {(pair 1 1) (pair 2 2) (pair 3 4) (pair 0 6)})
+    })
+    (rules
+        (start {
+            (place "Marker1" ("StartSites" Bottom))
+            (place "Marker2" ("StartSites" Top))
+        })
+        (play 
+            ("RollMove" 
+                (if 
+                    (= (mapEntry (count Pips)) 1)
+                    (or
+                        (move Pass 
+                            (then 
+                                (and 
+                                    ("TabuleThrowOne")
+                                    (moveAgain)
+                                )
+                            )
+                        )
+                        ("ActiveInactivedPiece")
+                    )
+                    (if (= (mapEntry (count Pips)) 2)
+                        (forEach Piece)
+                        (forEach Piece (then (moveAgain)))
+                    )
+                )
+            )
+        )
+        (end (if ("CapturesAreImpossible") (byScore)))
+    )
+)
+

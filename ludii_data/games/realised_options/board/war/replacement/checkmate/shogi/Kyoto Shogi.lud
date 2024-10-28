@@ -1,0 +1,189 @@
+(define "CapturePiece"
+    (apply 
+        (if ("IsEnemyAt" (to))
+            (add 
+                (piece (mapEntry "Captured" (what at:(to)))) 
+                (to (mapEntry "Where" (what at:(to))))
+            )
+        )
+    )
+)
+
+(define "NextCannotMove"
+    (not (can Move (do (or
+                    ("PlacePiece" Next) 
+                    (forEach Piece Next) 
+                ) 
+    ifAfterwards:(not ("IsInCheck" "Osho" Next)))))
+)
+
+(define "PlacePiece" 
+    (move 
+        (from (sites Occupied by:#1 container:"Hand")) 
+        (to (sites Empty))
+        (then (moveAgain))
+    )
+)
+
+(define "CapturePiece"
+    (apply 
+        (add 
+            (piece (mapEntry "Captured" (what at:(to)))) 
+            (to (mapEntry "Where" (what at:(to))))
+        )
+    )
+)
+
+(define "PromoteDecision"
+    (move Promote (last To) (piece {(mapEntry "Promoted" (what at:(last To))) (what at:(last To))}))
+)
+
+(define "Promote"
+    (promote (last To) (piece (mapEntry "Promoted" (what at:(last To)))))	
+)
+
+(define "SlideMove"
+    (move Slide
+        #1 
+        (to if:("IsEnemyAt" (to)) "CapturePiece")
+        #2 
+    ) 	
+)
+
+(define "StepMove"
+    (move Step
+        #1
+        (to if:(not ("IsFriendAt" (to))) "CapturePiece") 
+        #2 
+    ) 	
+)
+
+(game "Kyoto Shogi" 
+    ("TwoPlayersNorthSouth") 
+    
+    (equipment { 
+        (board (square 5))
+        
+        (piece "Osho" Each ("StepMove"))
+        
+        (piece "Fuhyo" Each 
+            ("StepMove" 
+                Forward 
+                (then "Promote")
+            )
+        )
+        
+        (piece "Ginsho" Each ("StepMove" (directions {Forward BL BR FL FR}) (then "Promote")))
+        
+        (piece "Hisha" Each ("SlideMove" Orthogonal (then "Promote")))
+        
+        (piece "Kakugyo" Each ("SlideMove" Diagonal (then "Promote")))
+        
+        (piece "Keima" Each 
+            (forEach Direction 
+                Forward 
+                (to 
+                    if:True 
+                    (apply 
+                        (forEach Direction 
+                            (from (to)) 
+                            (directions {FR FL}) 
+                            (if (not ("IsFriendAt" (to))) 
+                                (move 
+                                    (from) 
+                                    (to 
+                                        (apply 
+                                            if:("IsEnemyAt" (to))
+                                            (add 
+                                                (piece (mapEntry "Captured" (what at:(to)))) 
+                                                (to (mapEntry "Where" (what at:(to))))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ) 
+                (then "Promote") 
+            ) 
+        )
+        
+        (piece "Kyosha" Each
+            ("SlideMove" 
+                Forward 
+                (then "Promote")
+            ) 
+        )
+        
+        ("ShogiGold" "Kinsho" "CapturePiece" (then "Promote"))
+        
+        ("ShogiGold" "Tokin" "CapturePiece" (then "Promote"))
+        
+        (map "Where" { 
+            (pair (id "Fuhyo" P1) (handSite P2)) (pair (id "Fuhyo" P2) (handSite P1)) 
+            (pair (id "Ginsho" P1) (handSite P2 1)) (pair (id "Ginsho" P2) (handSite P1 1)) 
+            (pair (id "Kinsho" P1) (handSite P2 2)) (pair (id "Kinsho" P2) (handSite P1 2)) 
+            (pair (id "Tokin" P1) (handSite P2 3)) (pair (id "Tokin" P2) (handSite P1 3)) 
+            (pair (id "Hisha" P1) (handSite P2)) (pair (id "Hisha" P2) (handSite P1)) 
+            (pair (id "Kakugyo" P1) (handSite P2 1)) (pair (id "Kakugyo" P2) (handSite P1 1)) 
+            (pair (id "Keima" P1) (handSite P2 2)) (pair (id "Keima" P2) (handSite P1 2)) 
+            (pair (id "Kyosha" P1) (handSite P2 3)) (pair (id "Kyosha" P2) (handSite P1 3)) 
+        })
+        
+        (map "Captured" { 
+            (pair (id "Fuhyo" P1) (id "Fuhyo" P2)) (pair (id "Fuhyo" P2) (id "Fuhyo" P1)) 
+            (pair (id "Ginsho" P1) (id "Ginsho" P2)) (pair (id "Ginsho" P2) (id "Ginsho" P1))
+            (pair (id "Kinsho" P1) (id "Kinsho" P2)) (pair (id "Kinsho" P2) (id "Kinsho" P1)) 
+            (pair (id "Tokin" P1) (id "Tokin" P2)) (pair (id "Tokin" P2) (id "Tokin" P1)) 
+            (pair (id "Hisha" P1) (id "Fuhyo" P2)) (pair (id "Hisha" P2) (id "Fuhyo" P1)) 
+            (pair (id "Kakugyo" P1) (id "Ginsho" P2)) (pair (id "Kakugyo" P2) (id "Ginsho" P1)) 
+            (pair (id "Keima" P1) (id "Kinsho" P2)) (pair (id "Keima" P2) (id "Kinsho" P1)) 
+            (pair (id "Kyosha" P1) (id "Tokin" P2)) (pair (id "Kyosha" P2) (id "Tokin" P1)) 
+        })
+        
+        (map "Promoted" { 
+            (pair (id "Fuhyo" P1) (id "Hisha" P1)) (pair (id "Fuhyo" P2) (id "Hisha" P2)) 
+            (pair (id "Ginsho" P1) (id "Kakugyo" P1)) (pair (id "Ginsho" P2) (id "Kakugyo" P2)) 
+            (pair (id "Keima" P1) (id "Kinsho" P1)) (pair (id "Keima" P2) (id "Kinsho" P2)) 
+            (pair (id "Kyosha" P1) (id "Tokin" P1)) (pair (id "Kyosha" P2) (id "Tokin" P2)) 
+            (pair (id "Hisha" P1) (id "Fuhyo" P1)) (pair (id "Hisha" P2) (id "Fuhyo" P2)) 
+            (pair (id "Kakugyo" P1) (id "Ginsho" P1)) (pair (id "Kakugyo" P2) (id "Ginsho" P2)) 
+            (pair (id "Kinsho" P1) (id "Keima" P1)) (pair (id "Kinsho" P2) (id "Keima" P2)) 
+            (pair (id "Tokin" P1) (id "Kyosha" P1)) (pair (id "Tokin" P2) (id "Kyosha" P2)) 
+        })
+        
+        (hand Each size:4)
+    })
+    
+    (rules 
+        (start { 
+            (place "Osho1" coord:"C1") (place "Tokin1" coord:"A1") (place "Ginsho1" coord:"B1") (place "Kinsho1" coord:"D1") (place "Fuhyo1" coord:"E1")
+            (place "Osho2" coord:"C5") (place "Tokin2" coord:"E5") (place "Ginsho2" coord:"D5") (place "Kinsho2" coord:"B5") (place "Fuhyo2" coord:"A5")
+        })
+        
+        (play
+            (if ("SameTurn")
+                ("PromoteDecision")
+                (do 
+                    (or
+                        ("PlacePiece" Mover) 
+                        (forEach Piece) 
+                    )
+                    ifAfterwards:(not ("IsInCheck" "Osho" Mover))
+                )
+            )
+        )
+        
+        (end {
+            (if (and 
+                    ("IsInCheck" "Osho" Next)
+                    ("NextCannotMove")
+                ) 
+                (result Mover Win)
+            ) 
+            ("BlockWin")
+        })
+    )
+)
+

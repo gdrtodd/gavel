@@ -1,0 +1,28 @@
+(game "Pentalath" 
+    (players 2) 
+    (equipment { 
+        (board 
+            
+            (intersect { 
+                (hex 7) 
+                (shift -5.20 0 (hex Rectangle 7 14)) 
+            })
+            
+        )
+        (piece "Marker" Each)
+    }) 
+    
+    (rules 
+        (play 
+            (do
+                (move Add 
+                    (to (sites Empty))
+                    (then ("EncloseCapture"))
+                )
+                ifAfterwards:("HasFreedom" Orthogonal)
+            )
+        )
+        (end (if (is Line 5) (result Mover Win)))
+    )
+)
+

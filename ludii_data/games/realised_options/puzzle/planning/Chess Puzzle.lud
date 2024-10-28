@@ -1,0 +1,174 @@
+(define "NextCanNotMove"
+    (not (can Move (do (forEach Piece Next) ifAfterwards:(not ("KingCheck" Next)))))
+)
+
+(define "KingCheck"
+    (is Threatened (id "King" #1) at:(where "King" #1)) 
+)
+
+(define "KingInTheInitialPlace"
+    (= (what at:(mapEntry "King" (mover))) (id "King" Mover))
+)
+
+(define "HasNeverMoved"
+    (= (state at:(mapEntry #1 (mover))) 1) 
+)
+
+(define "ThatPieceNeverMoved"
+    (= (state at:(mapEntry #1 (mover))) 1) 
+)
+
+(define "PieceHasMoved"
+    (set State at:(last To) 0) 
+)
+
+(define "RememberPieceHasMoved"
+    (then 
+        (if 
+            (= (state at:(last To)) 1) 
+            "PieceHasMoved"
+        ) 
+    ) 
+)
+
+(define "KingNotCheckedAndToEmpty"
+    (and 
+        (is Empty (to)) 
+        (not (is Threatened (id "King" Mover) at:(to)))
+    ) 
+)
+
+(define "DoCastle"
+    (move Slide 
+        (from (mapEntry #1 (mover))) 
+        #2 
+        (between 
+            (exact #3) 
+            if:#4
+        ) 
+        #5
+    )
+)
+
+(define "SmallCastling"
+    ("DoCastle" "King" E 2 "KingNotCheckedAndToEmpty" (then (and ("PieceHasMoved") ("DoCastle" "RookRight" W 2 True))))
+)
+
+(define "BigCastling"
+    ("DoCastle" "King" W 2 "KingNotCheckedAndToEmpty" (then (and ("PieceHasMoved") ("DoCastle" "RookLeft" E 3 True))))
+)
+
+(define "Castling"
+    (if (and {
+            "KingInTheInitialPlace" 
+            ("HasNeverMoved" "King")
+            (not ("KingCheck" Mover)) 
+        })
+        (or
+            (if (and 
+                    ("HasNeverMoved" "RookLeft")
+                    (can Move ("DoCastle" "RookLeft" E 3 (is Empty (to))))
+                )
+                "BigCastling"
+            )
+            (if (and 
+                    ("HasNeverMoved" "RookRight")
+                    (can Move ("DoCastle" "RookRight" W 2 (is Empty (to))))
+                )
+                "SmallCastling"
+            )
+        )
+    )		
+)
+
+(define "SetEnPassantLocation"
+    (then 
+        (set Pending (ahead (last To) Backward))
+    )
+)
+
+(define "InLocationEnPassant"
+    (and 
+        (is Pending) 
+        (= (to) (value Pending)) 
+    )
+)
+
+(define "EnPassant"
+    (move Step
+        (directions {FR FL}) 
+        (to if:"InLocationEnPassant") 
+        (then 
+            (remove 
+                (ahead (last To) Backward)
+            )
+        )
+    )
+)
+
+(define "InitialPawnMove"
+    (if (is In (from) (sites Start (piece (what at:(from)))))
+        ("DoubleStepForwardToEmpty" "SetEnPassantLocation")
+    )
+)
+
+(game "Chess Puzzle" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8))
+        
+        ("ChessPawn" "Pawn"
+            (or 
+                "InitialPawnMove"
+                "EnPassant"
+            )
+            (then 
+                (and
+                    ("ReplayInMovingOn" (sites Mover "Promotion"))
+                    (set Counter)
+                )
+            )
+        )
+        ("ChessRook" "Rook" (then (set Counter)) ("RememberPieceHasMoved"))
+        ("ChessKing" "King" (then (set Counter)) ("RememberPieceHasMoved"))
+        ("ChessBishop" "Bishop" (then (set Counter)))
+        ("ChessKnight" "Knight" (then (set Counter)))
+        ("ChessQueen" "Queen" (then (set Counter)))
+        
+        (map "King" {(pair 1 "E1") (pair 2 "E8")})
+        (map "RookLeft" {(pair 1 "A1") (pair 2 "A8")})
+        (map "RookRight" {(pair 1 "H1") (pair 2 "H8")})
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+    }) 
+    (rules 
+        (start { 
+            (place "King1" 42) (place "Rook1" 12) (place "King2" 58)
+        })
+        
+        (play 
+            (if "SameTurn"
+                (move Promote (last To) (piece {"Queen" "Knight" "Bishop" "Rook"}) Mover)
+                (do 
+                    (or 
+                        (forEach Piece)
+                        ("Castling")
+                    )
+                    ifAfterwards:(not ("KingCheck" Mover))
+                )
+            )
+        )
+        
+        (end {
+            (if (and {
+                    ("KingCheck" Next)
+                    "NextCanNotMove"
+                    (<= (count Turns) 1)
+                }) 
+                (result P1 Win)
+            ) 
+            (if (or (no Moves Next) (and (= 1 (count Turns)) (not (is Mover Next)))) (result P1 Loss))
+        }) 
+    )
+)
+

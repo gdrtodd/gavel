@@ -1,0 +1,24 @@
+(game "Sujjua"
+    (players 2)
+    (equipment {
+        ("NineMensMorrisBoard")
+        (piece "Marker" Each ("StepToEmpty" Orthogonal))
+        (hand Each)
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:9))
+        (play
+            (or
+                (if ("HandOccupied" Mover)
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty))
+                    ) 
+                )
+                (forEach Piece)
+            )
+        )
+        (end ("Line3Win" Orthogonal))
+    )
+)
+

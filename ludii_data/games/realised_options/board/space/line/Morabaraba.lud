@@ -1,0 +1,59 @@
+(game "Morabaraba"
+    (players 2)
+    
+    (equipment { 
+        (board
+            (remove
+                (add 
+                    (concentric Square rings:3 joinCorners:True)
+                    vertices:{{0 0}}
+                    edges:{{11 24} {16 24} {7 24} {12 24}}
+                )
+                edges:{{3 6} {8 5} {17 20} {15 18}}
+            )
+            use:Vertex
+        ) 
+        (hand Each)
+        (piece "Marker" Each 
+            (if (> (count Pieces Mover) 3)
+                ("StepToEmpty")
+                (move
+                    (from)
+                    (to (sites Empty)) 
+                )
+                (then ("ReplayIfLine3")) 
+            )
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:12))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3")
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3")) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    ("RemoveAnyEnemyPieceNotInLine3")
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("HavingLessPiecesLoss" Next 2))
+    )
+)
+

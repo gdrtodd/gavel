@@ -1,0 +1,57 @@
+(define "Columns" 4)
+
+(define "PlayFromLastHole" (last To afterConsequence:True))
+
+(define "NextHole" ("NextSiteOnTrack" 1 from:#1 "Track"))
+
+(define "NoCounters" (all Sites (sites #1) if:(= 0 (count at:(site)))))
+
+(game "Boukerourou" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (regions P1 (sites Bottom))     
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start (set Count 6 to:(sites Track)))
+        
+        (play
+            (move Select 
+                (from 
+                    (if ("SameTurn") 
+                        (sites {("NextHole" ("PlayFromLastHole"))})
+                        (sites Mover) 
+                    )
+                    if:(> (count at:(from)) 0)
+                )
+                (then 
+                    (sow 
+                        apply:(if (and
+                                (= 1 (count at:(to)))
+                                (is Occupied ("NextHole" (to)))
+                            )
+                            (moveAgain)
+                            (if (and (is In (to) (sites Next)) (= 6 (count at:(to))))
+                                (remove (to))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end 
+            (forEach Player
+                if:("NoCounters" Player)
+                (result Player Loss)
+            )
+        )
+    )
+)
+

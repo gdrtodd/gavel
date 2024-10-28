@@ -1,0 +1,62 @@
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (pips)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(game "Emperador"
+    (players 2)
+    (equipment {
+        ("TableBoard" "TableTracksOppositeWithHands")
+        (dice d:6 num:3)
+        (hand Each)
+        (regions "StartingQuadrant" P1 (sites {0..5}))
+        (regions "StartingQuadrant" P2 (sites {12..17}))
+        (piece "Disc" Each 
+            (forEach Die 
+                if:("DieNotUsed")
+                (if ("IsOffBoard" "SiteToMoveOnTrack")
+                    "RemoveAPiece"
+                    (if (or {
+                            (is Empty ("SiteToMoveOnTrack"))
+                            (and 
+                                ("IsFriendAt" "SiteToMoveOnTrack")
+                                (if (is In (to) (sites Mover "StartingQuadrant")) (not ("IsSingletonStack" "SiteToMoveOnTrack")) True)
+                            )
+                            (and 
+                                ("IsEnemyAt" "SiteToMoveOnTrack")
+                                ("IsSingletonStack" "SiteToMoveOnTrack")
+                            )
+                        })
+                        (move 
+                            (from) 
+                            (to 
+                                "SiteToMoveOnTrack" 
+                                ("HittingCapture" (handSite (who at:(to))))
+                            )
+                        )
+                    )
+                )	
+            )
+        )
+    })
+    (rules 
+        (start {
+            (place Stack "Disc1" 0 count:15)
+            (place Stack "Disc2" 12 count:15)
+        })
+        (play
+            ("RollEachNewTurnMove"
+                (or 
+                    (forEach Piece top:True) 
+                    (forEach Piece container:(mover) top:True)
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )  
+        (end {
+            ("EscapeWin")
+            (if (and (no Moves P1) (no Moves P2)) (result Mover Draw))
+        })
+    )
+)
+

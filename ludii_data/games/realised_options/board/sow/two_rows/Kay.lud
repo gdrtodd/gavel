@@ -1,0 +1,60 @@
+(define "NextHoleFrom" ("NextSiteOnTrack" #3 from:#1 #2))
+(define "PiecesOwnedBy" (count at:(mapEntry #1)))
+
+(game "Kay" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 6
+            (track "Track" "1,E,N,W" loop:True)
+        )
+        (piece "Seed" Shared)
+        (regions "Home" P1 (sites Bottom)) 
+        (regions "Home" P2 (sites Top)) 
+        (map {(pair P1 FirstSite) (pair P2 LastSite)}) 
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(sites Track)))
+        
+        (play 
+            (move Select
+                (from 
+                    (if ("SameTurn") 
+                        "LastHoleSowed" 
+                        (sites Mover) 
+                    ) 
+                    if:(or 
+                        (< 1 (count at:(from)))
+                        (and 
+                            (= 1 (count at:(from)))
+                            (is Empty ("NextHoleFrom" (from) "Track" 1))
+                        )
+                    )
+                )
+                (then
+                    (sow
+                        if:True
+                        apply:(if (= 4 (count at:(to)))
+                            (fromTo
+                                (from (to))
+                                (to (mapEntry Mover))
+                                count:(count at:(to))
+                            )
+                            (if (< 1 (count at:(to)))
+                                (if (is Occupied ("NextHoleFrom" (to) "Track" 1))
+                                    (moveAgain)
+                                )
+                            )
+                        )
+                        includeSelf:False
+                        backtracking:(= 4 (count at:(to)))
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" (no Moves Next)))
+    )
+)
+

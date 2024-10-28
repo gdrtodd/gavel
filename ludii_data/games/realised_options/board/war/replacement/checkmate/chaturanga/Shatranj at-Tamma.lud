@@ -1,0 +1,66 @@
+(game "Shatranj at-Tamma" 
+    ("TwoPlayersNorthSouth") 
+    (equipment {
+        ("ChessPawn" "Pawn" ~ 
+            (then
+                (if (is In (last To) (sites Mover "Promotion")) 
+                    (if ("IsOffBoard" (where "Queen" Mover))
+                        (promote (last To) (piece "Queen") Mover)
+                        (remove (last To))
+                    )
+                )
+            )
+        )
+        ("ChessKing" "King_noCross")
+        (piece "Queen" Each ("StepToNotFriend" Diagonal))
+        ("ChessKnight" "Knight")
+        ("ChessKing" "Wazir")
+        ("ChessRook" "Rook")
+        (piece "Elephant" Each
+            (move Hop 
+                Diagonal 
+                (between if:True) 
+                (to 
+                    if:(or 
+                        (is Empty (to)) 
+                        (and ("IsEnemyAt" (to)) (not ("IsPieceAt" "Elephant" Next (to))))
+                    ) 
+                    (apply (remove (to))) 
+                )
+            )		
+        )
+        (regions "Promotion" P1 (sites Top))
+        (regions "Promotion" P2 (sites Bottom))
+        (board (square 10))
+    })
+    (rules
+        (start {
+            (place "Pawn1" (sites Row 2))
+            (place "Pawn2" (sites Row 7))
+            (place "Rook1" (sites {"A1" "J1"}))
+            (place "Rook2" (sites {"A10" "J10"}))
+            (place "Knight1" (sites {"B1" "I1"}))
+            (place "Knight2" (sites {"B10" "I10"}))
+            (place "Elephant1" (sites {"C1" "H1"}))
+            (place "Elephant2" (sites {"C10" "H10"}))
+            (place "Wazir1" (sites {"D1" "G1"}))
+            (place "Wazir2" (sites {"D10" "G10"}))
+            (place "Queen1" coord:"E1")
+            (place "Queen2" coord:"F10")
+            (place "King_noCross1" coord:"F1")
+            (place "King_noCross2" coord:"E10")
+        })
+        
+        (play 
+            (do
+                (forEach Piece)
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))
+            )
+        )
+        (end { 
+            ("Checkmate" "King_noCross") 
+            ("BlockWin")
+        })
+    )
+)
+

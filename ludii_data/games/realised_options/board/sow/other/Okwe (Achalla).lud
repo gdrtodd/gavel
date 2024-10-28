@@ -1,0 +1,61 @@
+(define "NextHoleFrom" ("NextSiteOnTrack" 1 from:#1 #2))
+
+(define "PiecesOwnedBy" (count at:(mapEntry #1)))
+
+(game "Okwe (Achalla)"
+    (players 2)
+    (equipment {
+        (board 
+            (add
+                (concentric {10}) 
+                vertices:{{0.45 0.45} {-0.45 -0.45} {0.45 -0.45} {-0.45 0.45}}
+            )
+            (track "Track" {0 2 4 6 8 9 7 5 3 1} loop:True)
+            use:Vertex
+        )
+        
+        (regions P1 (sites {0..4}))  
+        (regions P2 (sites {5..9}))  
+        (map {(pair P1 11) (pair P2 10)}) 
+        (piece "Seed" Shared)
+    })
+    (rules
+        (start (set Count 10 to:(sites Track)))
+        (play 
+            (forEach Site 
+                (forEach (sites Mover) if:(< 1 (count at:(site))))
+                (forEach Value min:2 max:(count at:(site))
+                    (do (set Var (value))
+                        next:(move Select 
+                            (from (site))
+                            (then 
+                                (sow 
+                                    count:(var)
+                                    if:True
+                                    apply:(if (and (<= (count at:(to)) 9) (is Odd (count at:(to))))
+                                        (fromTo 
+                                            (from (to)) 
+                                            (to (mapEntry (mover))) 
+                                            count:(count at:(to))
+                                        )
+                                        (if (and (<= (count at:("NextHoleFrom" (to))) 9) (is Odd (count at:("NextHoleFrom" (to)))))
+                                            (fromTo 
+                                                (from ("NextHoleFrom" (to))) 
+                                                (to (mapEntry (mover))) 
+                                                count:(count at:("NextHoleFrom" (to)))
+                                            )
+                                        )
+                                    )
+                                    origin:True
+                                    backtracking:(and (<= (count at:(to)) 9) (is Odd (count at:(to))))
+                                )
+                            )
+                        )	
+                    )
+                )
+            )
+        )
+        (end ("MancalaByScoreWhen" (and (no Moves P1) (no Moves P2))))
+    )
+)
+

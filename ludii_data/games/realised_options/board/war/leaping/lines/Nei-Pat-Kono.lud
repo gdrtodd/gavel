@@ -1,0 +1,30 @@
+(game "Nei-Pat-Kono"
+    (players 2) 
+    (equipment { 
+        (board (square 4) use:Vertex) 
+        (piece "Marker" Each 
+            (or 
+                ("StepOrthogonalToEmpty")
+                (move Hop
+                    Orthogonal 
+                    (between if:("IsFriendAt" (between)))
+                    (to if:("IsEnemyAt" (to))) 
+                ) 
+            ) 
+        )
+    }) 
+    (rules 
+        (start { (place "Marker1" (expand (sites Bottom) steps:(- (/ (count Rows) 2) 1))) (place "Marker2" (expand (sites Top) steps:(- (/ (count Rows) 2) 1))) })
+        (play (forEach Piece))
+        (end 
+            (if 
+                (or 
+                    (no Moves Next) 
+                    (<= (count Pieces Next) 1)
+                ) 
+                (result Mover Win)
+            )
+        )
+    )
+)
+

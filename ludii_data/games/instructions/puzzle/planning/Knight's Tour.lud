@@ -1,0 +1,2 @@
+Played with one knight on a Chess board. The goal is to move the knight onto every square of the board only once using its typical move as in Chess.
+(game "Knight's Tour" (players 1) (equipment {(board (square 8)) (piece "Knight" P1)}) (rules phases:{(phase "Placement" (play (move Add (to (sites Empty)))) (nextPhase "Movement")) (phase "Movement" (play (move Leap (from (last To)) {{F F R F} {F F L F}} (to if:(is Empty (to))) (then (add (to (last From)))))))} (end {(if (ge (count Moves) (count Sites "Board")) (result P1 Win)) (if (no Moves P1) (result P1 Loss))}))) 

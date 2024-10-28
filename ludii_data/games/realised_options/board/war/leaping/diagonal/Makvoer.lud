@@ -1,0 +1,44 @@
+(game "Makvoer" 
+    (players 2)
+    (equipment { 
+        (board (square 8)) 
+        (piece "Counter" Each 
+            (or {
+                "StepDiagonalToEmpty" 
+                "HopDiagonalCapture"
+                (do
+                    (move Hop 
+                        Orthogonal 
+                        (between 
+                            before:1
+                            after:2
+                            if:("IsEnemyAt" (between))
+                            (apply (remove (between)))
+                        ) 
+                        (to if:(is Empty (to))) 
+                    )
+                    ifAfterwards:(is In (last To) (sites Phase 0))
+                )
+                }
+                (then ("PromoteIfReach" (sites Next) "DoubleCounter"))
+            )
+        )
+        (piece "DoubleCounter" Each
+            (or
+                (move Slide)
+                ("HopCaptureDistance")
+            )
+        )
+        (regions P1 (sites Bottom))
+        (regions P2 (sites Top))
+    }) 
+    
+    (rules 
+        ("BlackCellsSetup" 3)
+        
+        (play (forEach Piece)) 
+        
+        (end ("CaptureAll" Next)) 
+    )
+)
+

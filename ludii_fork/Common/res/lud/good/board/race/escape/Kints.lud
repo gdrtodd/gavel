@@ -1,0 +1,121 @@
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" ("ThrowValue")))
+
+(define "ThrowValue" (mapEntry "Throw" (count Pips)))
+
+(define "CaptureEnemyPiece" ("HittingCapture" (handSite Next)))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "Movement" 
+    (if ("IsEndTrack" ("SiteToMoveOnTrack"))
+        "RemoveAPiece"
+        (if ("IsNotOffBoard" ("SiteToMoveOnTrack")) 	 			
+            (if (not ("IsFriendAt" ("SiteToMoveOnTrack")))
+                (move 
+                    (from)
+                    (to 
+                        ("SiteToMoveOnTrack") 
+                        "CaptureEnemyPiece"
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "PieceAlreadyEntered" (!= (from) (handSite Mover)))
+(define "PieceCanEnterOnlyIfNoPieceOnArc" 
+    (and 
+        (= (from) (handSite Mover)) 
+        (all Sites (sites Occupied by:Mover) if:(not (is In (site) (sites Mover "Arc"))))
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(game "Kints"
+    (players 2)
+    (equipment {
+        ("KintsBoard"
+            {
+            (track "Track1" "46,5,SSE,N,E,S,W,NNW2,End" P1 directed:True)
+            (track "Track2" "47,41,NNW,W,S,E,N,SSE2,End" P2 directed:True)
+            }
+        )
+        (regions "AllSites" (sites Board))
+        (regions "Arc" P1 (sites {1..5}))
+        (regions "Arc" P2 (sites {41..45}))
+        (dice d:2 facesByDie:{{0 4} {0 6} {0 14} {0 15}} num:4)
+        (piece "Marker" Each
+            (if (or ("PieceAlreadyEntered")
+                    ("PieceCanEnterOnlyIfNoPieceOnArc")
+                )
+                ("Movement")
+            )
+        )
+        (hand Each)
+        (map "Throw" {
+            (pair 0 10) (pair 39 5) (pair 24 3) (pair 25 3) (pair 35 3) (pair 33 3)
+            (pair 10 2) (pair 18 2) (pair 19 2) (pair 20 2) (pair 21 2) (pair 29 2)
+        })
+    })
+    (rules 
+        (start (place "Marker" "Hand" count:<Num:piece>))
+        (play ("RollMove" (or (forEach Piece) (forEach Piece container:(mover)))))
+        (end ("EscapeWin"))
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(option "Start Rules" <Num> args:{ <piece> }
+    {
+    (item "1" <1> "Each player has 1 piece.") 
+    (item "2" <2> "Each player has 2 pieces.")** 
+    }
+)
+
+//------------------------------------------------------------------------------
+
+(rulesets { 
+    
+    (ruleset "Ruleset/Kints (Observed)" {
+        "Start Rules/2"
+        }
+        variations:{"Start Rules/1"}
+    )*
+    
+})
+
+//------------------------------------------------------------------------------
+
+(metadata 
+    
+    (info
+        {
+        (description "Kints is a race game played by the Akimel O'odham people of Arizona. It is similar to other games known as Quince, which may be related to Mesoamerican Patolli.")
+        (rules "Played on a board with 36 holes arranged in a square, with a gap in the center of each side. There are two semi circles of five holes on the outside of two opposite corners of the board. The central space of these semicircles is marked. One or two pieces per player. Four stick dice are used, with one marked side. Each die is marked differently for a different value: 4, 6, 14, 15. The throws are as follows: All marked sides up = 5; three marked sides up = 3; two marked sides up = 2, one marked side up = the value of the marked side; zero marked sides up = 10. Players’ pieces enter on the branching arcs. The second piece cannot enter before the first one leaves the arc. Players move in opposite directions around the board. If a player lands on the same spot as the opponent, the opponent’s piece is removed from the board and must re-enter. Player must make an exact throw to get a piece off the board. The player to get both of their pieces around the board, and then to reach the marked space with an exact throw. When a piece is in the hole before the marked space, they may throw anything but 14 or 15 to exit the board. The first player to remove their piece(s) from the board wins.")
+        (source "Culin 1907: 150-152.")
+        (id "705")
+        (version "1.3.10")
+        (classification "board/race/escape")
+        (credit "Eric Piette")
+        }
+    )
+    
+    (graphics {
+        (show Edges Hidden)
+        (show Symbol "disc" "AllSites" Vertex fillColour:(colour Grey) edgeColour:(colour Black) scale:0.5)
+        (show Symbol "stick" Vertex 3 fillColour:(colour White) edgeColour:(colour Black) scale:0.3)
+        (show Symbol "stick" Vertex 43 fillColour:(colour White) edgeColour:(colour Black) scale:0.3)
+        (piece Rename piece:"Die1" "KintsDice1")
+        (piece Rename piece:"Die2" "KintsDice2")
+        (piece Rename piece:"Die3" "KintsDice3")
+        (piece Rename piece:"Die4" "KintsDice4")
+        (piece Style "Die" NativeAmericanDice)
+    })
+    
+    (ai
+        "Kints_ai"
+    )
+)

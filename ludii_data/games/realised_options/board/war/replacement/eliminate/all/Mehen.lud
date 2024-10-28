@@ -1,0 +1,150 @@
+(define "Entry" 87)
+(define "EndInnerTrack" 1)
+(define "BeginOuterTrack" 0)
+
+(define "SiteToMoveOnTrack" ("NextSiteOnTrack" (count Pips) #1))
+(define "SiteToMoveOnTrackForLion" ("NextSiteOnTrack" (* (count Pips) 2) #1))
+(define "EmptyCentralSpaceReached"
+    (and 
+        ("IsEndTrack" ("SiteToMoveOnTrack")) 
+        (is Empty "BeginOuterTrack")
+    )
+)
+(define "EntryReachedFromInside"
+    ("IsEndTrack" ("NextSiteOnTrack" (count Pips) "OppositeTrack"))
+)
+(define "PieceNowMoveToTheEntry"
+    (then
+        (and 
+            (remove (last To)) 
+            (add (piece (id "Marker" Mover)) (to 0))
+        )
+    )
+)
+(define "PromoteToLion"
+    (then 
+        (and 
+            (remove (last To)) 
+            (add (piece (id "Lion" Mover)) (to (handSite Mover 1)))
+        )
+    )
+)
+
+(define "AdvanceOn"
+    (if ("IsNotOffBoard" ("SiteToMoveOnTrack" #1)) 	 			
+        (if (is In ("SiteToMoveOnTrack" #1) (sites Empty))
+            (move (from) (to ("SiteToMoveOnTrack" #1)))
+        )
+    )
+)
+
+(define "LionMoveOn"
+    (if (and 
+            ("IsNotOffBoard" ("SiteToMoveOnTrackForLion" #1)) 
+            ("IsNotEndTrack" ("SiteToMoveOnTrackForLion" #1)) 
+        )			
+        (if (not ("IsFriendAt" (trackSite Move #1 steps:(mul (count Pips) 2))))
+            (move (from) (to (trackSite Move #1 steps:(mul (count Pips) 2))))
+        )
+    )
+)
+
+(define "EntryEmpty"
+    (is Empty "Entry")
+)
+(define "HaveDiscToPlace"
+    (is Occupied (handSite Mover))
+)
+(define "LetInDisc"
+    (move 
+        (from (handSite Mover)) 
+        (to "Entry")
+    )
+)
+(define "EntryEmptyOrOccupiedByEnemy"
+    (not ("IsFriendAt" "Entry"))
+)
+(define "HaveLionToPlace"
+    (is Occupied (handSite Mover 1))
+)
+(define "LetInLion"
+    (move 
+        (from (handSite Mover 1)) 
+        (to "Entry")
+    )
+)
+
+(game "Mehen"
+    (players 2)
+    (equipment { 
+        (board 
+            (spiral turns:5 sites:88) 
+            {
+            (track "NormalTrack" {"Entry".."EndInnerTrack" End} directed:True)
+            (track "OppositeTrack" {"BeginOuterTrack".."Entry" End} directed:True)
+            }
+            use:Vertex
+        ) 
+        ("StickDice" 4)
+        (hand Each size:2)
+        
+        (piece "Disc" Each 
+            (if ("EmptyCentralSpaceReached") 
+                (move Select
+                    (from) 
+                    ("PieceNowMoveToTheEntry") 
+                )
+                ("AdvanceOn" "NormalTrack")
+            )
+        )
+        
+        (piece "Marker" Each 
+            (if ("EntryReachedFromInside")
+                (move Select
+                    (from) 
+                    ("PromoteToLion")
+                ) 
+                ("AdvanceOn" "OppositeTrack")
+            )
+        )
+        
+        (piece "Lion" Each 
+            (or
+                ("LionMoveOn" "OppositeTrack")
+                ("LionMoveOn" "NormalTrack")
+            )
+        )
+    })
+    (rules
+        (start {
+            (place "Disc1" (handSite P1) count:6)
+            (place "Disc2" (handSite P2) count:6)
+        })
+        (play 
+            ("RollMove" 
+                (or {
+                    (if
+                        (and {
+                            (= (count Pips) 1)
+                            ("EntryEmpty")
+                            ("HaveDiscToPlace")
+                        }) 
+                        ("LetInDisc")
+                    )
+                    (if
+                        (and {
+                            (= (count Pips) 1)
+                            ("EntryEmptyOrOccupiedByEnemy")
+                            ("HaveLionToPlace")
+                        })
+                        ("LetInLion")
+                    )
+                    (forEach Piece)
+                })
+            )
+        )
+        
+        (end ("CaptureAll" Next))
+    )
+)
+

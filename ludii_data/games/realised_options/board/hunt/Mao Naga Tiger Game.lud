@@ -1,0 +1,19 @@
+(game "Mao Naga Tiger Game"
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithBottomAndTopTriangles")
+        (piece "Human" P1 "StepToEmpty")
+        (piece "Tiger" P2 (or "StepToEmpty" "HopCapture"))
+    }) 
+    (rules 
+        (start {
+            (place Stack "Human1" (sites {"B4" "B6" "D4" "D6"}) count:5)
+            (place "Tiger2" (sites {"A5" "E5"}))
+        })
+        
+        (play (forEach Piece top:True))
+        
+        (end ("NoMovesP2NoPiecesP1"))
+    )
+)
+

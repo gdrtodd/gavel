@@ -1,0 +1,104 @@
+(define "Move"
+    (move Add 
+        (to 
+            (forEach (sites Empty)
+                if:(>
+                    (count Pieces Mover in:(sites LineOfSight at:(site)))
+                    0
+                )
+            )
+        )
+        #1
+    )
+)
+
+(define "Remove"
+    (forEach Group 
+        (if 
+            (all Sites
+                (sites)
+                if:(=
+                    0
+                    (count Sites 
+                        in:(difference
+                            (intersection
+                                (sites Occupied by:Mover)
+                                (sites Direction
+                                    from:(site)
+                                    stop:(is Occupied (to))
+                                    stopIncluded:True
+                                )
+                            )
+                            (sites)
+                        )
+                    )
+                )
+            )
+            (remove (sites))
+        )
+    ) 
+)
+
+(game "Meridians"
+    (players 2)
+    (equipment {
+        (board (dual (hex Prism 7 6)) use:Vertex)
+        (piece "Disc" Each)
+    })
+    (rules
+        phases:{
+        (phase "Opening"
+            (play
+                (move Add 
+                    (to
+                        (if
+                            (< 0 (count Sites in:(sites Occupied by:Mover)))
+                            (forEach
+                                (sites Empty)
+                                if:(and
+                                    (>
+                                        (count Pieces Mover in:(sites LineOfSight at:(site)))
+                                        0
+                                    )
+                                    (= 
+                                        (count Sites in:(sites Around (site) Own))
+                                        0 
+                                    )
+                                )
+                            )
+                            (sites Empty)
+                        )
+                    )
+                )
+            )
+            (nextPhase (= 4 (count Moves)) "Play")
+        )
+        (phase "Play"
+            (play
+                (if
+                    (can Move ("Move" ~))
+                    ("Move" (then ("Remove")))
+                    (move Pass (then ("Remove")))
+                )
+            )
+        )
+        }
+        (end 
+            (if 
+                (and 
+                    (< 4 (count Moves))
+                    (or
+                        (= 0
+                            (count Sites in:(sites Occupied by:P1))
+                        )
+                        (= 0
+                            (count Sites in:(sites Occupied by:P2))
+                        )
+                    ) 
+                )
+                (result Mover Loss)
+            )
+        )
+    )
+)
+

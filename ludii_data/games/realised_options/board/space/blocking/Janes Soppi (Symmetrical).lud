@@ -1,0 +1,33 @@
+(game "Janes Soppi (Symmetrical)" 
+    (players 2) 
+    (equipment { 
+        (board
+            (remove
+                ("ThreeMensMorrisGraphWithLeftAndRightTriangles")
+                edges:{{6 4} {4 2} {0 4} {4 8}}
+            )
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Hound" P1 "StepToEmpty")
+        (piece "Hare" P2 "StepToEmpty")
+    }) 
+    
+    (rules 
+        (start {
+            (place "Hound1" (handSite P1) count:3)
+            (place "Hare2" (handSite P2) count:3)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play (move (from (handSite Mover)) (to (sites Empty))))
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        (end ("BlockWin"))
+    )
+)
+

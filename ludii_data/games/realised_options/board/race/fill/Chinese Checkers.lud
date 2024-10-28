@@ -1,0 +1,87 @@
+(define "FromIsOnTheRegionToFill" (is In #1 (sites (player (mapEntry (mover))))))
+
+(define "ToIsOnTheRegionToFill" (is In #1 (sites (player (mapEntry (mover))))))
+
+(define "Hop" 
+    (move Hop
+        (from #1)
+        (between if:(is Occupied (between)))
+        (to 
+            if:(and
+                ("IsEmptyAndNotVisited" (to))
+                (or
+                    (not ("FromIsOnTheRegionToFill" #1))
+                    ("ToIsOnTheRegionToFill" (to)) 
+                )
+            )
+        )
+        #2		
+    )
+) 
+
+(define "HopSequence" ("Hop" #1 (then (if (can Move ("Hop" (last To))) (moveAgain)))))
+
+(define "Dim" 4)
+
+(game "Chinese Checkers"
+    (players 6) 
+    (equipment { 
+        (board (hex Star ("Dim")))
+        (piece "Marker" Each) 
+        
+        (regions "Home" P1 (expand origin:(coord row:0 column:("Dim")) steps:(- ("Dim") 1)))
+        (regions "Home" P2 (expand origin:(coord row:("Dim") column:(* ("Dim") 3)) steps:(- ("Dim") 1)))
+        (regions "Home" P3 (expand origin:(coord row:(* ("Dim") 3) column:(* ("Dim") 4)) steps:(- ("Dim") 1)))
+        (regions "Home" P4 (expand origin:(coord row:(* ("Dim") 4) column:(* ("Dim") 3)) steps:(- ("Dim") 1)))
+        (regions "Home" P5 (expand origin:(coord row:(* ("Dim") 3) column:("Dim")) steps:(- ("Dim") 1)))
+        (regions "Home" P6 (expand origin:(coord row:("Dim") column:0) steps:(- ("Dim") 1)))
+        (map {(pair 1 4) (pair 2 5) (pair 3 6) (pair 4 1) (pair 5 2) (pair 6 3)})
+        
+    }) 
+    (rules 
+        
+        (start { 
+            (place "Marker1" (sites P1))
+            (place "Marker2" (sites P2))
+            (place "Marker3" (sites P3))
+            (place "Marker4" (sites P4))
+            (place "Marker5" (sites P5))
+            (place "Marker6" (sites P6))
+        })
+        
+        phases:{
+        (phase "Movement" 
+            (play 
+                (forEach Piece 
+                    (or 
+                        ("HopSequence" (from)) 
+                        (move Step
+                            (to 
+                                if:(and
+                                    (is Empty (to))
+                                    (or
+                                        (not ("FromIsOnTheRegionToFill" (from)))
+                                        ("ToIsOnTheRegionToFill" (to))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ) 
+            (nextPhase (is Mover (next)) "MultiJump")
+        ) 
+        (phase "MultiJump" (play 
+                (or 
+                    ("HopSequence" (last To)) 
+                    (move Pass)
+                )
+            ) 
+            (nextPhase (not (is Mover (next))) "Movement")
+        ) 
+        }
+        
+        (end ("FillWin" (sites (player (mapEntry (mover))))))
+    )
+)
+

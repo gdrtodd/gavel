@@ -1,0 +1,55 @@
+(game "Block" 
+    (players 2) 
+    (equipment { 
+        (boardless Square) 
+        (hand Each size:21)
+        (dominoes)
+    }) 
+    (rules 
+        (start {
+            (deal Dominoes 7) 
+            (set Hidden What (sites Hand P1) to:P2)
+            (set Hidden What (sites Hand P2) to:P1)
+        })
+        (play
+            (priority 
+                {
+                (do (move 
+                        (from 
+                            (forEach 
+                                (sites Hand Mover) 
+                                if:(is Occupied (site))
+                            )
+                        ) 
+                        (to (sites LineOfPlay)) 
+                        (then 
+                            (and
+                                (set Hidden What at:(last To) False to:P1)
+                                (set Hidden What at:(last To) False to:P2)
+                            )
+                        )
+                    ) 
+                    ifAfterwards:(is PipsMatch)
+                )
+                (move Pass 
+                    (then 
+                        (if 
+                            (!= (count Pieces "Bag") 0)
+                            (and {
+                                (take Domino)
+                                (set Hidden What (sites Hand Mover) to:Next)
+                                (moveAgain)
+                            })
+                        )
+                    )
+                )
+                }
+            )
+        )
+        (end {
+            (if ("HandEmpty" Mover) (result Mover Win)) 
+            (if (all Passed) (result Mover Draw)) 
+        }) 
+    )
+)
+

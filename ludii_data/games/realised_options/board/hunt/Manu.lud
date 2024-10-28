@@ -1,0 +1,31 @@
+(game "Manu" 
+    (players 2) 
+    (equipment { 
+        ("CrossBoard" 3 7 use:Vertex diagonals:Alternating)
+        (hand P1)
+        (piece "Stick" P1 (or ("HopCapture") "StepToEmpty"))
+        (piece "Marker" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start { 
+            (place "Marker2" (union (expand (sites Bottom)) (sites Row 2)))
+            (place "Stick1" (handSite P1))
+        })
+        
+        phases:{ 
+        (phase "Placement" P1 
+            (play 
+                (move 
+                    (from (handSite P1)) 
+                    (to (sites Empty))
+                )
+            ) 
+            (nextPhase ("HandEmpty" P1) "Movement")
+        )
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("NoMovesLossAndNoPiecesPlayerLoss" P2))
+    )
+)
+

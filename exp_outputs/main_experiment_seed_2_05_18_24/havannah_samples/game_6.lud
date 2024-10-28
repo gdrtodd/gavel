@@ -1,0 +1,43 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (tri Hexagon 5)
+            use:Vertex)
+            (piece "Marker" Each)
+            (regions P1 {
+                    (sites Side N)
+                    (sites Side S)
+            })
+            (regions P2 {
+                    (sites Side W)
+                    (sites Side E)
+            })
+    })
+
+    (rules 
+        (play 
+            (move Add 
+                (to (sites Empty))
+            )
+        )
+
+        (end 
+            (if (or {
+                        (is Loop)
+                        (is Connected 3 SidesNoCorners)
+                        (is Connected 2 Corners)
+            }) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Havannah
+// Selection metric: 1.00
+// Fitness: 1.00
+// Cell distance: 3.00
+// Edit Distance: 0.20
+// Global Edit Distance: 0.16
+// Lineage length: 1.00
+// Length ratio: 0.68

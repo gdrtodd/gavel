@@ -1,0 +1,2 @@
+Players alternate turns placing one of their pieces on the board. The first person to make a line of four, but without first making a line of three, wins.
+(game "Squava" (players 2) (equipment {(board (square 5)) (piece "Marker" Each)}) (rules (meta (swap)) (play (move Add (to (sites Empty)))) (end {(if (is Line 4) (result Mover Win)) (if (is Line 3) (result Mover Loss))}))) 

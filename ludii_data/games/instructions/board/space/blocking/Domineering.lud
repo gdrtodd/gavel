@@ -1,0 +1,2 @@
+Two players have a collection of dominoes which they place on the grid in turn, covering up squares. One player places tiles vertically, while the other places them horizontally. The first player who cannot move loses. The board has 6 rows. The board has 6 columns. The Last player to play wins.
+(game "Domineering" (players 2) (equipment {(board (rectangle 6 6)) (tile "Horz" P1 {R F} numSides:4) (tile "Vert" P2 {F} numSides:4)}) (rules (play (move Add (piece (mover) state:0) (to (sites Empty)))) (end (if (no Moves Next) (result Next Loss))))) 

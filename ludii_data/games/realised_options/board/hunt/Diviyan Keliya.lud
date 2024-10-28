@@ -1,0 +1,42 @@
+(game "Diviyan Keliya" 
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithFourTriangles") 
+        (hand Each)
+        (piece "Leopard" P1)
+        (piece "Cow" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start { 
+            (place "Leopard1" "Hand1" count:2)
+            (place "Cow2" "Hand2" count:24)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                ) 
+            )
+            {
+            (nextPhase P1 ("HandEmpty" P1) "MovementP1")
+            (nextPhase P2 ("HandEmpty" P2) "MovementP2")
+            }
+        )
+        
+        (phase "MovementP1" P1
+            (play (forEach Piece "Leopard" (or "HopCapture" "StepToEmpty"))) 
+        )
+        
+        (phase "MovementP2" P2
+            (play (forEach Piece))
+        )
+        
+        }
+        
+        (end ("NoMoves" Loss)) 
+    )
+)
+

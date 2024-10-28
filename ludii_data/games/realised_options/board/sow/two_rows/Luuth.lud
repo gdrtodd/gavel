@@ -1,0 +1,100 @@
+(define "Columns" 7)
+(define "NoPieceOnBoard" (= 4 (count Pieces All in:(sites Board))))
+(define "PiecesOwnedBy" (+ (count in:(sites Mover)) (count Cell at:(handSite #1))))
+
+(game "Luuth" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            {
+            (track "TrackCCW" "0,E,N,W" loop:True)
+            (track "TrackCW" "6,W,N,E" loop:True)
+            }
+        )
+        (piece "Seed" Shared)
+        (hand Each)
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(sites Track)))
+        
+        phases:{
+        (phase "Opening"
+            (play 
+                (move 
+                    (from (sites Mover))
+                    (to 
+                        (if (is In (from) (sites Centre))
+                            (difference (sites Board) (from))
+                            (difference (sites Board) (sites {(from) ("OppositePit" (from))}))
+                        )
+                    )
+                    count:(count at:(from))
+                )
+            )
+            (nextPhase Mover "Sowing")
+        )
+        
+        (phase "Sowing"
+            (play
+                (or
+                    (move Select
+                        (from
+                            (sites Mover)
+                            if:(is Occupied (from))
+                        )
+                        (then
+                            (sow
+                                numPerHole:4
+                                "TrackCCW"
+                                apply:(if (and (is In (to) (sites Mover)) (= 4 (count at:(to))))
+                                    (and
+                                        (moveAgain)
+                                        (if (is Occupied ("OppositePit" (to)))
+                                            (fromTo
+                                                (from ("OppositePit" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    (move Select
+                        (from
+                            (sites Mover)
+                            if:(is Occupied (from))
+                        )
+                        (then
+                            (sow
+                                numPerHole:4
+                                "TrackCW"
+                                apply:(if (and (is In (to) (sites Mover)) (= 4 (count at:(to))))
+                                    (and
+                                        (moveAgain)
+                                        (if (is Occupied ("OppositePit" (to)))
+                                            (fromTo
+                                                (from ("OppositePit" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end ("MancalaByScoreWhen" ("NoPieceOnBoard")))
+    )
+)
+

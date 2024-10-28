@@ -1,0 +1,44 @@
+(define "ArmSize" 3)
+(define "NumInitPiece" 6)
+
+(game "Laram Wali"
+    (players 2)
+    (equipment {
+        ("CrossBoard" "ArmSize" (* 3 "ArmSize") use:Cell)
+        (hand Each)
+        (piece "Marker" Each
+            (or
+                ("StepOrthogonalToEmpty") 
+                (move Hop 
+                    Orthogonal
+                    (between 
+                        (range 1 "NumInitPiece")
+                        if:("IsEnemyAt" (between)) 
+                        (apply (remove (between)))
+                    )
+                    (to if:(is Empty (to)))
+                )
+            )
+        )
+    })
+    (rules
+        (start (place "Marker" "Hand" count:"NumInitPiece"))
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (difference (sites Empty) (expand (sites Centre) steps:(- (/ "ArmSize" 2) (if (is Even "ArmSize") 1 0)))))
+                ) 
+            )
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        
+        (end ("CaptureAll" Next))
+    )	
+)
+

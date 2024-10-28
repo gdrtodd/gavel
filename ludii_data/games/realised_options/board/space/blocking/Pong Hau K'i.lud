@@ -1,0 +1,24 @@
+(game "Pong Hau K'i" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (add
+                (remove
+                    ("AlquerqueGraph" 3 3)
+                    vertices:{1 3 5 7}
+                )
+                edges:{{3 0} {0 1} {1 4}}
+            )
+            use:Vertex
+        )
+        (hand Each)
+        (piece "Disc" Each "StepToEmpty")
+    }) 
+    
+    (rules 
+        (start {(place "Disc1" {"A3" "C3"}) (place "Disc2" {"A1" "C1"})})
+        (play (forEach Piece))
+        (end ("NoMoves" Loss)) 
+    )
+)
+

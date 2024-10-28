@@ -1,0 +1,2 @@
+Played on a square grid (8x8 or larger) with two players. Players alternate placing one stone of their colour on the board on any empty point. If a player makes a line of five pieces, either orthogonally or diagonally, they win; but if they make a line of four pieces, they lose. Played on a size 10 board.
+(game "Fivalath" (players 2) (equipment {(board (square 10) use:Vertex) (piece "Ball" Each)}) (rules (play (move Add (to (sites Empty)))) (end {(if (is Line 5 All) (result Mover Win)) (if (is Line 4 All) (result Mover Loss))}))) 

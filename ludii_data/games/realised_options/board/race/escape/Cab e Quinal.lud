@@ -1,0 +1,71 @@
+
+(define "SiteToMoveOnTrackAtOne" ("NextSiteOnTrack" 1))
+(define "SiteToMoveOnTrackAtTwo" ("NextSiteOnTrack" 2))
+(define "SiteToMoveOnTrackAtThree" ("NextSiteOnTrack" 3))
+(define "SiteToMoveOnTrackAtFour" ("NextSiteOnTrack" 4))
+(define "SiteToMoveOnTrackAtFive" ("NextSiteOnTrack" 5))
+(define "SiteToMoveOnTrackAtSix" ("NextSiteOnTrack" 6))
+
+(define "RemoveAPiece" (move Remove (from)))
+
+(define "PieceMove" 
+    (if ("IsOffBoard" #1)
+        "RemoveAPiece"
+        (if ("NoEnemyOrOnlyOne" #1)
+            (move 
+                (from) 
+                (to 
+                    #1 
+                    ("HittingCapture" (handSite (who at:(to)))) 
+                )
+            )
+        )
+    )	
+)
+
+(define "UseDie" 
+    (forEach Die 
+        if:("DieNotUsed")
+        #1
+    )
+)
+
+(game "Cab e Quinal"
+    (players 2)
+    (equipment {
+        ("TableBoard" "TableTracksSameDirectionWithHands")
+        (dice d:6 num:3)
+        (hand Each)
+        (piece "Disc" Each ("UseDie" ("PieceMove" ("NextSiteOnTrack" (pips)))))
+    })
+    (rules 
+        
+        (start {
+            (place Stack "Disc1" 5 count:15)
+            (place Stack "Disc2" 4 count:15)
+        })
+        
+        (play
+            ("RollEachNewTurnMove"
+                (or 
+                    (forEach Piece top:True) 
+                    (forEach Piece container:(mover) top:True)
+                    (then 
+                        (if (or (= (value Player Mover) Undefined) (not (all DiceUsed)))
+                            (moveAgain)
+                            (if (and (all DiceUsed) (= (value Player Mover) 1))
+                                (set Value Mover Undefined)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end {
+            ("EscapeWin")
+            (if (and (no Moves P1) (no Moves P2)) (result Mover Draw))
+        })
+    )
+)
+

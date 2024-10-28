@@ -1,0 +1,61 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (hex 8)
+            )
+            (piece "PIECE_ALPHA" Each)
+    })
+
+    (rules 
+        (play 
+            (or 
+                (move Add 
+                    (to (sites Empty))
+                    (then (set Counter))
+                )
+                (forEach Piece)
+                (then (priority 
+                        (surround 
+                            (from (last To))
+                            Orthogonal 
+                            (between if:
+                                (is Friend (who at:
+                                        (between)
+                                ))
+                            )
+                            (to if:(is Occupied (to)))
+                        )
+                        (surround 
+                            (from (last To))
+                            Orthogonal 
+                            (between if:
+                                (is Enemy (who at:
+                                        (between)
+                                ))
+                            )
+                            (to if:(is Occupied (to)))
+                        )
+                ))
+            )
+        )
+
+        (end 
+            (if (or {
+                        (is Loop)
+                        (is Connected 3 SidesNoCorners)
+                        (is Connected 2 Corners)
+            }) (result Mover Win))
+        )
+    )
+)
+
+// Ancestor: Havannah
+// Selection metric: 0.26
+// Fitness: 1.00
+// Novelty: 0.45
+// Cell distance: 10.00
+// Edit Distance: 0.37
+// Global Edit Distance: 0.26
+// Lineage length: 1.00

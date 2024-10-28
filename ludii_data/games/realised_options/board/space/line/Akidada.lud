@@ -1,0 +1,22 @@
+(game "Akidada"
+    (players 2) 
+    (equipment {
+        (board (square 3) use:Vertex)
+        (hand Each)
+        (piece "Stick" Each (move (from) (to (sites Empty))))
+    }) 
+    (rules 
+        (start (place "Stick" "Hand" count:3))
+        
+        phases:{
+        (phase "Placement"
+            (play (move (from (handSite Mover)) (to (sites Empty))))
+            (nextPhase ("HandEmpty" P2) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement")
+        }
+        (end (if (is Line 3 Orthogonal) (result Mover Win)))
+    )
+)
+

@@ -1,0 +1,79 @@
+(game "GAME_NAME" 
+    (players 2)
+
+    (equipment {
+            (board 
+                (square 11)
+            )
+            (piece "PIECE_ALPHA" Each)
+    })
+
+    (rules 
+        (play 
+            (move Add 
+                (to (sites Empty))
+                (then (and 
+                        (custodial 
+                            (from (last To))
+                            Orthogonal 
+                            (between 
+                                (max 1)
+                                if:
+                                (is Enemy (who at:
+                                        (between)
+                                ))
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                        )
+                        (surround 
+                            (from (last To))
+                            Orthogonal 
+                            (between if:
+                                (and {
+                                        (is Enemy (who at:
+                                                (between)
+                                        ))
+                                        (is In (between) (sites Corners))
+                                        (all Sites (sites Around 
+                                                (between)
+                                                Own) if:(not 
+                                                (is In (to) (sites Around 
+                                                        (between)
+                                                Own))
+                                        ))
+                                })
+                                (apply 
+                                    (remove 
+                                        (between)
+                                    )
+                                )
+                            )
+                            (to if:(is Friend (who at:
+                                        (to)
+                            )))
+                        )
+                ))
+            )
+        )
+
+        (end 
+            (if (is Line 5 All exact:True) (result Mover Win) )
+        )
+    )
+)
+
+// Ancestor: Gomoku
+// Selection metric: 0.33
+// Fitness: 1.00
+// Novelty: 0.41
+// Cell distance: 11.00
+// Edit Distance: 0.55
+// Global Edit Distance: 0.33
+// Lineage length: 4.00

@@ -1,0 +1,291 @@
+(define "NonpriorityMoves" 
+    (or {
+        (if
+            ("SameTurn")
+            (or
+                ("TurnPass")
+                ("PlaceHex")
+            )
+            (or
+                {
+                ("TurnPass")
+                ("PlaceHex")
+                ("PlaceDisc")
+                ("DiscStep")
+                }
+        ))
+        #1
+        #2
+    })
+)
+
+(define "PriorityHopsOnly" 
+    (priority
+        ("NonMoverHops")
+        ("NonpriorityMoves" ~ ~)
+    )
+)
+
+(define "PriorityHops" 
+    (priority
+        ("NonMoverHops")
+        ("NonpriorityMoves" ("MoverHops") ~)
+    )
+) 
+
+(define "MoverHops"
+    ("HopChange" "NoMorph" "MoverSites")
+)
+
+(define "NonMoverHops"
+    ("HopChange" "NoMorph" "NextSites")
+)
+
+(define "HopChange" 
+    (if 
+        ("SameTurn")
+        (if (is Pending)
+            (#1 (from (last To)) #2)
+        )
+        (do (forget Value All) 
+            next:(#1 (from) #2)
+        )
+    )
+)
+
+(define "Previous"
+    (+ 1 (% (+ (- 2 2) (mover)) 2))
+)
+
+(define "NextInTurnSequence"
+    (+ 1 (% (mover) 2))
+)
+
+(define "MoverSites"
+    (sites Occupied by:Mover)
+)
+
+(define "NextSites"
+    (sites Occupied by:(player ("NextInTurnSequence")))
+)
+
+(define "PreviousSites"
+    (sites Occupied by:(player ("Previous")))
+)
+
+(define "NonMoverSites"
+    (difference 
+        (sites Occupied by:All)
+        (sites Occupied by:Mover)
+))
+
+(define "ValueDisc" -10)
+(define "ValueHex" 10)
+
+(define "FinalizeScores"
+    (and
+        (forEach Player 
+            (addScore 
+                (player (player)) 
+                (% 
+                    (+ {2 (var "FirstNoPlace") (- (player)) -1})
+                    2
+                )
+            )
+        )
+        (propose "End")
+    )
+)
+
+(define "TurnPass"
+    (do 
+        (if
+            (= 0 (var "FirstNoPlace"))
+            (set Var "FirstNoPlace" (mover)) 
+            (if
+                (= (next) (var "FirstNoPlace"))
+                ("FinalizeScores")
+            )
+        )
+        next:(move Pass)
+    )
+)
+
+(define "NoMorph" 
+    (or
+        ("GeneralHop" #1 #2 "Hex" "Hex" "ValueHex" "ValueHex")
+        ("GeneralHop" #1 #2 "Disc" "Disc" "ValueDisc" "ValueDisc")
+    )
+)
+
+(define "Morph" 
+    (or
+        ("GeneralHop" #1 #2 "Disc" "Hex" "ValueDisc" "ValueHex")
+        ("GeneralHop" #1 #2 "Hex" "Disc" "ValueHex" "ValueDisc")
+    )
+)
+
+(define "GeneralHop" 
+    (forEach Piece "Disc"
+        (move Hop #1
+            (between 
+                if:(is 
+                    In 
+                    (between)
+                    (difference 
+                        (intersection
+                            #2
+                            (sites Occupied by:All component:#3) 
+                        )
+                        (sites (values Remembered))
+                    )
+                )
+                (apply 
+                    (and 
+                        (addScore (player (who at:(between))) (- #5))
+                        (set Pending (between))
+                    )
+                )
+            )
+            (to if:(is Empty (to)))
+        )
+        (then
+            (and {
+                (remember Value (value Pending))
+                (remove (value Pending))
+                (add (piece (id #4 Mover)) (to (value Pending)))
+                (addScore Mover #6)
+                }
+                (then
+                    (and
+                        (set Pending)
+                        (moveAgain)
+                    )
+                )
+            )
+        )
+    )
+) 
+
+(define "DiscStep"
+    (forEach Piece "Disc"
+        (move 
+            (from (from)) 
+            (to (sites Around (from)) if:(is Empty (to))) 
+            (then (moveAgain))
+        )
+    )
+)
+
+(define "PlaceHex"
+    (move 
+        Add 
+        (piece (id "Hex" Mover))
+        (to (forEach (sites Empty) if:"HexSite")) 
+        (then 
+            (and
+                (addScore Mover "ValueHex")
+                (set Var "FirstNoPlace" 0)
+            )
+        )
+    )
+)
+
+(define "PlaceDisc" 
+    (if
+        ("NewTurn")
+        (move Add 
+            (piece (id "Disc" Mover))
+            (to (forEach "NoSuicide" if:"DiscSite"))
+            (then 
+                (and
+                    (addScore Mover "ValueDisc")
+                    (set Var "FirstNoPlace" 0)
+                )
+            )
+        )
+    )
+)
+
+(define "NoSuicide" 
+    (difference 
+        (sites Empty) 
+        (sites To
+            (forEach 
+                Site 
+                (intersection
+                    "PreviousSites"
+                    (sites Occupied by:All component:"Disc")
+                )
+                (select 
+                    (from 
+                        (sites Distance from:(site) (exact 2))
+                        if:(is Empty (from))
+                    )
+                    (to
+                        (sites Between from:(from) to:(site))
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "HexSite" (= ("NearestPieces" "MoverSites") ("NearestPieces" "NextSites")))
+(define "DiscSite" (!= ("NearestPieces" "MoverSites") ("NearestPieces" "NextSites")))
+
+(define "NearestPieces" 
+    (count 
+        Sites
+        in:(intersection {
+            (#1)
+            (sites Direction from:(site) distance:1)
+            (sites LineOfSight Piece at:(site) Orthogonal) 
+        })
+    )
+)
+
+(define "Dist2NearestLoSEnemy" 
+    (min
+        (results
+            from:(site)
+            to:(forEach 
+                (sites LineOfSight Piece at:(from) Orthogonal) 
+                if:(or (is Mover (who at:(site))) (is In (site) "NextSites"))
+            )
+            (count Steps Orthogonal (from) (to))
+        )
+    )
+)
+
+(define "Dist2NearestLoS"
+    (min
+        (results
+            from:(site)
+            to:(sites LineOfSight Piece at:(from) Orthogonal) 
+            (count Steps Orthogonal (from) (to))
+        )
+    )
+)
+
+(game "Hops-a-Daisy Generalized"
+    (players 2)
+    (equipment {
+        (board (hex {4 6 4 6 4}) use:Cell)
+        (piece "Disc" Each)
+        (piece "Hex" Each)
+    })
+    (rules 
+        (start (set Score Each 0)) 
+        (play
+            ("PriorityHopsOnly")
+        )
+        (end 
+            (if 
+                (is Proposed "End")
+                (byScore)
+            )
+        )
+    )
+)
+

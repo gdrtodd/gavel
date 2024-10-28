@@ -1,0 +1,27 @@
+(game "Coyote" 
+    (players 2) 
+    (equipment { 
+        (board (rectangle 5 5 diagonals:Radiating) use:Vertex)
+        (piece "Sheep" P1 ("StepToEmpty")) 
+        (piece "Coyote" P2 
+            (or ("HopCapture") 
+                (if ("SameTurn") 
+                    (move Pass) 
+                    ("StepToEmpty")
+                ) 
+            ) 
+        )
+    })
+    
+    (rules 
+        (start { 
+            (place "Sheep1" (union (expand (sites Bottom)) (sites {"A3" "E3"})))
+            (place "Coyote2" (centrePoint))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end ("NoMovesLossAndLessNumPiecesPlayerLoss" P1 9))
+    )
+)
+

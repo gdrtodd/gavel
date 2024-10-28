@@ -1,0 +1,108 @@
+(define "Columns" 10)
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1 "Home"))))
+
+(game "Okwe (Nigeria)" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            {
+            (track "Track" "0,E,N,W" loop:True)
+            
+            (track "TrackSpecialHome1" "0,E" loop:True P1)
+            (track "TrackSpecialHome2" "19,W" loop:True P2)
+            
+            }
+        )
+        
+        (regions "OpeningRegion" P1 (sites {14..17}))
+        (regions "OpeningRegion" P2 (sites {2..4}))
+        
+        (piece "Seed" Shared)
+        (hand Each)
+        (map "LeftMost" {(pair P1 0) (pair P2 (- (* ("Columns") 2) 1))})
+        (regions "Home" P1 (sites Bottom))
+        (regions "Home" P2 (sites Top))
+    }) 
+    (rules 
+        
+        (start {
+            (set Count 5 to:((sites {0 1 4 19..18 15})))
+            (set Count 1 to:((sites {2 3 5 17 16 14})))
+        })
+        
+        phases:
+        {
+        (phase "Opening"
+            (play 
+                (move
+                    (from (sites Mover "OpeningRegion") if:(is Occupied (from)))
+                    (to (handSite Mover))
+                    count:(count at:(from))
+                )
+            )
+            (nextPhase (all Sites (union (sites P1 "OpeningRegion") (sites P2 "OpeningRegion")) if:(is Empty (site))) "Sowing")
+        )
+        
+        (phase "Sowing"
+            (play
+                (or
+                    (move Select
+                        (from (sites Mover "Home") if:(is Occupied (from)))
+                        (then
+                            (sow
+                                "Track"
+                                apply:(if (and
+                                        (is In (to) (sites Next "Home"))
+                                        (or {
+                                            (= 1 (count at:("OppositePitTwoRows" (to))))
+                                            (= 3 (count at:("OppositePitTwoRows" (to))))
+                                            (= 5 (count at:("OppositePitTwoRows" (to))))
+                                        })
+                                    )
+                                    (fromTo
+                                        (from ("OppositePitTwoRows" (to)))
+                                        (to (handSite Mover))
+                                        count:(count at:("OppositePitTwoRows" (to)))
+                                    )
+                                )
+                                origin:(< 1 (count at:(from)))
+                            )
+                        )
+                    )
+                    (if (is Occupied Cell (handSite Mover))
+                        (do (set Var "NumToSow" (count Cell at:(handSite Mover)))
+                            next:(move
+                                (from (handSite Mover))
+                                (to (mapEntry "LeftMost" Mover))
+                                count:(count Cell at:(handSite Mover))
+                                (then
+                                    (and 
+                                        (sow
+                                            count:(var "NumToSow")
+                                            "TrackSpecialHome"
+                                            owner:(mover)
+                                            origin:True
+                                        )
+                                        (set Var "NumToSow" 0)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end (if (all Sites (sites Board) if:(= 0 (count at:(site))))
+                {
+                (if (is Empty (handSite P1)) (result P2 Win))
+                (if (is Empty (handSite P2)) (result P1 Win))
+                }
+            )
+        )
+    )
+)
+

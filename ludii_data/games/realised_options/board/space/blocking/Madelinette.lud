@@ -1,0 +1,26 @@
+(game "Madelinette" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (add
+                (remove 
+                    ("AlquerqueGraph" 3 3)
+                    vertices:{7 1} 
+                )
+                edges:{{0 1}}
+            )
+            use:Vertex
+        ) 
+        (piece "Counter" Each ("StepToEmpty"))
+    }) 
+    
+    (rules 
+        (start {
+            (place "Counter1" (sites {"A1" "C2" "A3"}))
+            (place "Counter2" (sites {"C1" "A2" "C3"}))
+        })
+        (play (forEach Piece)) 
+        (end ("NoMoves" Loss)) 
+    )
+)
+

@@ -1,0 +1,26 @@
+(game "Xarajlt"
+    ("TwoPlayersNorthSouth") 
+    
+    (equipment {
+        (board 
+            (rectangle 5 3)
+            use:Vertex
+        )
+        (piece "Marker" Each 
+            (or
+                ("StepToEmpty" (directions {Forward FR FL}))
+                ("HopOrthogonalCapture")
+            )
+        )
+    })
+    
+    (rules
+        (start {
+            (place "Marker1" (expand (sites Bottom)))
+            (place "Marker2" (expand (sites Top)))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

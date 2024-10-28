@@ -1,0 +1,19 @@
+(game "Bis Gutiya" 
+    (players 2)
+    (equipment { 
+        (board (square 5 diagonals:Solid) use:Vertex)
+        (piece "Marker" Each 
+            (or
+                ("StepToEmpty") 
+                ("HopCapture") 
+            )
+        )
+    }) 
+    
+    (rules 
+        ("BeforeAfterCentreSetup" "Marker1" "Marker2")
+        (play (forEach Piece)) 
+        (end ("CaptureAll" Next)) 
+    )
+)
+

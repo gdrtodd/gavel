@@ -1,0 +1,151 @@
+(define "GroupCount"
+    (max 0
+        (max
+            (sizes Group "ScoreConnectionDirection" #1) 
+        )
+    )
+)
+
+(define "GroupScore"
+    (set Var "MoverScore" ("GroupCount" Mover)
+        (then
+            (set Var "NextScore" ("GroupCount" Next)
+                (then
+                    ("CascadeTiebreaker") 
+                )
+            )
+        )
+    )
+)
+
+(define "BonusMover"
+    (set Var "MoverScore"
+        (+ 
+            ("GroupCount" Mover)
+            (count Groups "ScoreConnectionDirection" if:(= (who at:(to)) (mover))) 
+        )
+        (then
+            (set Var "NextScore"
+                (+ 
+                    ("GroupCount" Next)
+                    (count Groups "ScoreConnectionDirection" if:(= (who at:(to)) (next))) 
+                )
+                (then
+                    ("CascadeTiebreaker") 
+                )
+            )
+        )
+    )
+)
+
+(define "BonusOpponent"
+    (set Var "MoverScore"
+        (+ 
+            ("GroupCount" Mover)
+            (count Groups "ScoreConnectionDirection" if:(= (who at:(to)) (next))) 
+        )
+        (then
+            (set Var "NextScore" 
+                (+ 
+                    ("GroupCount" Next)
+                    (count Groups "ScoreConnectionDirection" if:(= (who at:(to)) (mover))) 
+                )
+                (then
+                    ("CascadeTiebreaker") 
+                )
+            )
+        )
+    )
+)
+
+(define "CascadeScore" 
+    (max 0
+        (max
+            (difference
+                (sizes Group "ScoreConnectionDirection" #1)
+                (sizes Group "ScoreConnectionDirection" #2)
+            )
+        )
+    )
+)
+
+(define "NoTiebreaker"
+    (and
+        (set Score Mover (var "MoverScore")) 
+        (set Score Next (var "NextScore")) 
+    )
+)
+
+(define "CascadeTiebreaker"
+    (if 
+        (= (var "MoverScore") (var "NextScore")) 
+        (and
+            (set Score Mover (* -1 ("CascadeScore" Mover Next)))
+            (set Score Next (* -1 ("CascadeScore" Next Mover)))
+        )
+        ("NoTiebreaker")
+    )
+)
+
+(define "AllHave1Connection2Edge"
+    (all Sites
+        #1
+        if:(or
+            (and 
+                (is Empty (site))
+                (is In (site) (sites Outer))
+            )
+            (!= Infinity
+                (count Steps
+                    (step "ConnectionDirection"
+                        (to if:(is Empty (to)))
+                    )
+                    (site)
+                    (difference (sites Outer) (site))
+                )
+            )
+        )
+    )
+)
+
+(game "Brain Coral"
+    (players 2)
+    (equipment {
+        "BoardUsed"
+        (piece "Ball" Each)
+        (piece "Disc" Each)
+    })
+    (rules
+        (start (set Score Each 0))
+        (play
+            (do
+                (move Add (to (sites Empty)))
+                ifAfterwards:("AllHave1Connection2Edge" (sites Around (last To) "ConnectionDirection" includeSelf:True)) 
+                (then "BonusMover") 
+        ))
+        (end 
+            (if (no Moves Next) {
+                (if 
+                    (= (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                (if 
+                    (!= (score Mover) (score Next))
+                    (byScore)
+                )
+            })
+        )
+    )
+)
+
+(define "ScoreConnectionDirection" Orthogonal)
+(define "ConnectionDirection" Orthogonal)
+(define "BoardUsed" "HexLimp")
+
+(define "HexLimp" (board (hex Limping (- 5 1)) use:Cell))
+(define "Hex2Limp" (board (hex (- 5 1) (+ 5 1)) use:Cell))
+(define "HexCell" (board (hex Hexagon 5) use:Cell))
+(define "TriSquare" (board (tiling T33434 (- 5 2)) use:Vertex))
+
+(define "ColourBackground" (colour 126 130 156)) 
+

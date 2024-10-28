@@ -1,0 +1,183 @@
+(define "Columns" 7)
+
+(define "LeftMostCounters"
+    (all Sites (difference (sites Mover "Home") (mapEntry "LeftMost" Mover))
+        if:(> (count at:(mapEntry Mover)) (count at:(site)))
+    )
+)
+
+(define "HoleOnLeft"
+    (if (is Mover P1)
+        (ahead (site) W)
+        (ahead (site) E)
+    )
+)
+
+(define "EqualOrLessThanLeftHole"
+    (all Sites (sites Mover "Home")
+        if:(if (= (site) ("HoleOnLeft"))
+            True
+            (<= (count at:(site)) (count at:("HoleOnLeft")))
+        )
+    )
+)
+
+(define "MaximumOfTwoHolesInInner"
+    (>= 2 
+        (count Sites 
+            in:(forEach (sites Mover "Inner") 
+                if:(= 1 (count at:(site)))
+            )
+        )
+    )
+)
+
+(define "NextHole" ("NextSiteOnTrack" #2 from:#1 "TrackCCW"))
+
+(define "OneCounterInEachHole"
+    (all Sites (sites Mover "Home") if:(> 2 (count at:(site))))
+)
+
+(define "NoPiece" (all Sites (sites Player "Home") if:(= 0 (count at:(site)))))
+
+(game "Quiela" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "TrackCCW1" "0,E,N1,W" loop:True P1)
+            (track "TrackCCW2" "14,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "TrackCCW1")) 
+        (regions "Home" P2 (sites Track "TrackCCW2")) 
+        (regions "Inner" P1 (difference (sites Track "TrackCCW1") (sites Bottom)))  
+        (regions "Inner" P2 (difference (sites Track "TrackCCW2") (sites Top)))   
+        (regions "Outer" P1 (sites Bottom))    
+        (regions "Outer" P2 (sites Top))    
+        (piece "Seed" Shared)
+        (map "LeftMost" {(pair P1 0) (pair P2 27)})
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start 
+            (set Count 3 to:(union (sites P1 "Outer") (sites P2 "Outer")))
+        )
+        
+        phases:{
+        (phase "Rearrangement"
+            (play
+                (or
+                    (move 
+                        (from (sites Mover "Home") if:(is Occupied (from)))
+                        (to (difference (sites Mover) (from)))
+                    )
+                    (if (and {("LeftMostCounters") ("EqualOrLessThanLeftHole") ("MaximumOfTwoHolesInInner") })
+                        (move Pass)
+                    )
+                )
+            )
+            (nextPhase (all Passed) "InitialPhase")
+        )
+        
+        (phase "InitialPhase"
+            (play
+                (move Select
+                    (from 
+                        (if 
+                            ("SameTurn") 
+                            "LastHoleSowed" 
+                            (sites Mover "Home") 
+                        ) 
+                        if:(is Occupied (from))
+                    )
+                    (then
+                        (sow
+                            "TrackCCW"
+                            owner:(mover)
+                            apply:(if (< 1 (count at:(to)))
+                                (moveAgain)
+                                (if (is In (to) (sites Mover "Inner"))
+                                    (if (is Occupied ("OppositePit" (to)))
+                                        (and
+                                            (fromTo
+                                                (from ("OppositePit" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                            (if (is Occupied ("OppositeOuterPit" (to)))
+                                                (fromTo
+                                                    (from ("OppositeOuterPit" (to)))
+                                                    (to (handSite Mover))
+                                                    count:(count at:("OppositeOuterPit" (to)))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            
+            (nextPhase Mover ("OneCounterInEachHole") "MainPhase")
+        )
+        
+        (phase "MainPhase"
+            (play
+                (move Select
+                    (from 
+                        (if 
+                            ("SameTurn") 
+                            "LastHoleSowed" 
+                            (sites Mover "Home") 
+                        ) 
+                        if:(if (< 1 (count at:(from)))
+                            True
+                            (if (= 1 (count at:(from))) (is Empty ("NextHole" (from) 1)))
+                        )
+                    )
+                    (then
+                        (sow
+                            "TrackCCW"
+                            owner:(mover)
+                            apply:(if (< 1 (count at:(to)))
+                                (moveAgain)
+                                (if (is In (to) (sites Mover "Inner"))
+                                    (if (is Occupied ("OppositePit" (to)))
+                                        (and
+                                            (fromTo
+                                                (from ("OppositePit" (to)))
+                                                (to (handSite Mover))
+                                                count:(count at:("OppositePit" (to)))
+                                            )
+                                            (if (is Occupied ("OppositeOuterPit" (to)))
+                                                (fromTo
+                                                    (from ("OppositeOuterPit" (to)))
+                                                    (to (handSite Mover))
+                                                    count:(count at:("OppositeOuterPit" (to)))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        
+        (end
+            (forEach NonMover
+                if:("NoPiece")
+                (result Player Loss)
+            )
+        )
+    )
+)
+

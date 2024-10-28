@@ -1,0 +1,50 @@
+(game "Shi Liu Kan Tsiang Kun" 
+    (players 2) 
+    (equipment { 
+        (board
+            (merge
+                (scale 2 (square 5 diagonals:Alternating))
+                (shift 2 8 (rotate 180 (wedge 3)))
+            )
+            use:Vertex
+        )
+        (piece "General" P1 
+            ("StepToEmpty"
+                ~
+                (then 
+                    ("InterveneCapture")
+                )
+            )
+        )
+        (piece "Marker" P2
+            (move Step 
+                (to if:(and (not (is In (to) (expand (sites Top)))) (is Empty (to))))
+                (then 
+                    ("CustodialCapture")
+                )
+            )
+        ) 
+    }) 
+    (rules 
+        (start { 
+            (place "General1" (ahead (centrePoint) S))
+            (place "Marker2" (difference (sites Outer) (expand (sites Top))))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end {
+            (if (no Pieces P2) (result P1 Win))
+            (if (no Pieces P1) (result P2 Win))
+            (if 
+                (and { 
+                    (is In (where "General" P1) (expand (sites Top))) 
+                    (>= (count Pieces P2) 2)
+                    (= (who at:(coord "D5")) P2)
+                }) 
+                (result P2 Win)
+            )
+        })
+    )
+)
+

@@ -1,0 +1,72 @@
+(define "SiteToMoveOnTrack" (trackSite Move steps:(count Pips)))
+
+(define "EnterToBoard" ("NextSiteOnTrack" (- (count Pips) 1) from:(handSite Mover)))
+
+(define "SacredLine" 10)
+
+(game "Pente Grammai" 
+    (players 2)
+    (equipment {
+        (board 
+            (add
+                (scale 1.5
+                    (merge {
+                        (shift 2 0 (rectangle 2 1))
+                        (shift 1.5 0 (rectangle 2 1))
+                        (shift 1 0 (rectangle 2 1))
+                        (shift 0.5 0 (rectangle 2 1))
+                        (rectangle 2 1)
+                    }) 
+                )
+                vertices:{{1.5 0.75}}
+            )
+            {
+            (track "Track1" "8,6,4,2,0,1,3,5,7,9" loop:True P1)
+            (track "Track2" "1,3,5,7,9,8,6,4,2,0" loop:True P2)
+            }
+            use:Vertex
+        )
+        (piece "Marker" Each 
+            (if (and (!= (from) "SacredLine") (is Empty "SiteToMoveOnTrack"))
+                (move 
+                    (from) 
+                    (to "SiteToMoveOnTrack")
+                )
+            )
+        )
+        (hand Each)
+        (dice d:6 num:1)
+        (map "Goal" {(pair P1 5) (pair P2 4)})
+    })
+    (rules 
+        (start {
+            (place Stack "Marker1" (handSite P1) count:5)
+            (place Stack "Marker2" (handSite P2) count:5)
+        })
+        (play 
+            ("RollMove"
+                (priority {
+                    
+                    (if (and ("HandOccupied" Mover) (is Empty ("EnterToBoard")))
+                        (move (from (handSite Mover)) (to ("EnterToBoard")))
+                    )
+                    
+                    (forEach Piece)
+                    }
+                    (then 
+                        (if (= (mapEntry "Goal" Mover) (last To))
+                            (fromTo (from (last To)) (to "SacredLine"))
+                        )
+                    )
+                )
+            )
+        )
+        (end 
+            (if 
+                (all Sites (sites Occupied by:Mover) if:(= (site) "SacredLine"))
+                (result Mover Win)
+            )
+        )
+    )
+)
+

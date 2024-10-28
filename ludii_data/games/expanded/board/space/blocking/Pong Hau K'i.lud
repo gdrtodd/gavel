@@ -1,0 +1,1 @@
+(game "Pong Hau K'i" (players 2) (equipment {(board (add (remove (rectangle 3 3 diagonals:Alternating) vertices:{1 3 5 7}) edges:{{3 0} {0 1} {1 4}}) use:Vertex) (hand Each) (piece "Disc" Each (move Step (to if:(is Empty (to)))))}) (rules (start {(place "Disc1" {"A3" "C3"}) (place "Disc2" {"A1" "C1"})}) (play (forEach Piece)) (end (if (no Moves Next) (result Next Loss))))) 

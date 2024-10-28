@@ -1,0 +1,56 @@
+(define "Line3SingleDirection" 
+    (if (!= (ahead (last To) #1) (last To)) 
+        (if (= (mover) (who at:(ahead (last To) #1)))
+            (or
+                (if (!= (ahead (last To) steps:2 #1) (last To)) 
+                    (if (= (next) (who at:(ahead (last To) steps:2 #1)))
+                        (if (!= (ahead (last To) steps:3 #1) (last To)) 
+                            (if (is Empty (ahead (last To) steps:3 #1)) 
+                                (remove (ahead (last To) steps:2 #1))
+                            )
+                        )
+                    )
+                )
+                (if (!= (ahead (last To) #2) (last To)) 
+                    (if (= (next) (who at:(ahead (last To) #2)))
+                        (if (!= (ahead (last To) steps:2 #2) (last To)) 
+                            (if (is Empty (ahead (last To) steps:2 #2)) 
+                                (remove (ahead (last To) #2))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )	
+)
+
+(define "Line3WithSingleOpponent" 
+    (if (is Line 2 Orthogonal)
+        (or {
+            ("Line3SingleDirection" N S)
+            ("Line3SingleDirection" S N)
+            ("Line3SingleDirection" E W)
+            ("Line3SingleDirection" W E)
+        })
+    )
+)
+
+(game "Six Insect Game"
+    (players 2)
+    (equipment {
+        (board (square 4))
+        (piece "Marker" Each
+            ("StepToEmpty" Orthogonal (then ("Line3WithSingleOpponent")))
+        )
+    })
+    (rules 
+        (start {
+            (place "Marker1" (union (intersection (union (sites Right) (sites Left)) (sites Row 1)) (sites Bottom)))
+            (place "Marker2" (union (intersection (union (sites Right) (sites Left)) (sites Row 2)) (sites Top)))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

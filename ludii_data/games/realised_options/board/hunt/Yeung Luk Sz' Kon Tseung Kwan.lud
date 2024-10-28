@@ -1,0 +1,36 @@
+(game "Yeung Luk Sz' Kon Tseung Kwan" 
+    (players 2) 
+    (equipment { 
+        (board
+            (merge
+                (rectangle 9 5)
+                (shift 1 8 (scale 0.5 (wedge 3)))
+            )
+            use:Vertex
+        )
+        
+        (piece "Marker" P1 "StepToEmpty")
+        (piece "Marker" P2 
+            (or 
+                ("HopCapture") 
+                ("StepToEmpty")
+            ) 
+        ) 
+        
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (union {(sites Column 1) (difference (sites Column 3) (union (sites Centre) (expand (sites Top)))) (sites Column 5)}))
+            (place "Marker2" (centrePoint))
+        })
+        
+        (play (forEach Piece)) 
+        
+        (end {
+            (if (no Pieces P1) (result P2 Win))
+            (if (no Moves P2) (result P1 Win))
+        })
+        
+    )
+)
+

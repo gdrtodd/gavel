@@ -1,0 +1,32 @@
+(game "Kaooa" 
+    (players 2) 
+    (equipment { 
+        ("StarBoard" 5)
+        (hand Each) 
+        (piece "Marker" P1 (or ("HopSequenceCapture") "StepToEmpty")) 
+        (piece "Marker" P2 "StepToEmpty") 
+    }) 
+    (rules 
+        (start {
+            (place "Marker1" (handSite P1) count:1)
+            (place "Marker2" (handSite P2) count:7)
+        })
+        
+        phases:{
+        (phase "Placement"
+            (play 
+                (move 
+                    (from (handSite Mover)) 
+                    (to (sites Empty))
+                ) 
+            )
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        ("PhaseMovePiece" "Movement"
+            (end ("NoMoves" Loss))
+        )
+        }
+    )
+)
+

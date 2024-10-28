@@ -1,0 +1,51 @@
+(define "Columns" 6)
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1))))
+
+(game "French Wari" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 2 "Columns" store:None
+            (track "Track" "0,E,N,W" loop:True)
+        )
+        (regions P1 (sites Bottom))      
+        (regions P2 (sites Top))      
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start (set Count 4 to:(sites Track)))
+        
+        (play 
+            (move Select 
+                (from 
+                    (if 
+                        ("SameTurn") 
+                        "LastHoleSowed" 
+                        (sites Mover) 
+                    ) 
+                    if:(> (count at:(from)) 0)
+                )
+                (then 
+                    (sow
+                        apply:(if (> (count at:(to)) 1)
+                            (moveAgain)
+                            (if (> (count at:("OppositePitTwoRows" (to))) 0)
+                                (fromTo 
+                                    (from ("OppositePitTwoRows" (to))) 
+                                    (to (handSite Mover)) 
+                                    count:(count at:("OppositePitTwoRows" (to)))
+                                ) 
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" (no Moves Mover)))
+    )
+)
+

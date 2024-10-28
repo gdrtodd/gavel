@@ -1,0 +1,342 @@
+(define "SomeSite"
+    (not
+        (all Sites #1 
+            if:(not #2)
+        )
+    )
+)
+
+(define "WeakPieSetup"
+    (phase "Opening"
+        (play 
+            (move Add 
+                (to 
+                    (sites Empty)
+                    if:(= 0
+                        (count Sites in:(sites Around (to) Own Orthogonal))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "StrongPieSetup"
+    (phase "Opening"
+        (play 
+            (move Select
+                (from
+                    (sites Empty)
+                )
+                (to 
+                    (sites Empty)
+                    if:(not (is In (from) (sites Around (to) includeSelf:True)))
+                )
+                (then 
+                    (and
+                        (add (to (last To)))
+                        (add (to (last From)))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "KomiPieSetup"
+    (phase "KomiPie"
+        (play 
+            (if 
+                (= 0 (count Moves))
+                (move Select
+                    (from (sites Distance from:(centrePoint) (exact 2)))
+                    (then 
+                        (fromTo 
+                            (from (last From))
+                            (to (handSite P2))
+                            count:(size Stack at:(from))
+                            (then
+                                (forEach Site
+                                    (sites Distance from:(centrePoint) (exact 2))
+                                    (remove (site) count:(size Stack at:(site)))
+                                )
+                            )
+                        )
+                    )
+                )
+                (if 
+                    (= 1 (count Moves))
+                    (or
+                        (move Pass)
+                        (move Add (piece 1) (to (sites Empty))
+                            (then (swap Players 1 2))
+                        )
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (= 2 (count Moves))
+            "Opening"
+        )
+    )
+    (phase "Opening"
+        (play 
+            (move Add 
+                (to 
+                    (sites Empty)
+                    if:(= 0
+                        (count Sites in:(sites Around (to) Own Orthogonal))
+                    )
+                )
+            )
+        )
+        (nextPhase 
+            (and
+                (= 2 (count Sites in:(sites Occupied by:P1 component:"Disc")))
+                (= 2 (count Sites in:(sites Occupied by:P2 component:"Disc")))
+            )
+            "Play"
+        )
+    )
+)
+
+(define "Place"
+    (move Add
+        (to
+            (sites Empty)
+            if:(and
+                (not (no Pieces Mover in:(sites Board)))
+                (> 
+                    Infinity
+                    (count Steps Orthogonal
+                        (step //Orthogonal
+                            (to
+                                if:(or 
+                                    (is Empty (to)) 
+                                    (is Mover (who at:(to)))
+                                )
+                            )
+                        )
+                        (to)
+                        (sites Occupied by:Mover)
+                    )
+                )
+            )
+        )
+        #1
+    )
+)
+
+(define "ReachesPlayer"
+    (and
+        (< 0
+            (count Sites 
+                in:(difference
+                    (sites Occupied by:#2 component:"Disc")
+                    #1
+                )
+            )
+        )
+        ("SomeSite"
+            #1
+            (> Infinity
+                (count Steps Orthogonal
+                    (step //Orthogonal
+                        (to
+                            if:(or
+                                (is Empty (to)) 
+                                (is #2 (who at:(to)))
+                            )
+                        )
+                    )
+                    (site)
+                    (difference
+                        (sites Occupied by:#2)
+                        #1
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "Remove"
+    (forEach Group Orthogonal if:(is #1 (who at:(to)))
+        (if
+            (not ("ReachesPlayer" (sites) #1))
+            (remove (sites))
+            (pass)
+        )
+        #2
+    )
+)
+
+(define "SpendKomi"
+    (if
+        (and {
+            (< 0 (size Stack at:(handSite P2)))
+            (= (mover) (id P2))
+            (< 0 (count Pieces Mover in:(sites Board)))
+        })
+        (move Remove (handSite P2))
+    )
+)
+
+(define "KomiSelection"
+    (start {
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 N) count:1)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 NNE) count:2)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 ENE) count:3)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 E) count:4)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 ESE) count:5)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 SSE) count:6)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 S) count:7)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 SSW) count:8)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 WSW) count:9)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 W) count:10)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:1 WNW) count:11)
+        (place Stack "Shi_Western2" (ahead (centrePoint) steps:2 NNW) count:12)
+    })
+)
+
+//------------------------------------------------------------------------------
+
+(game "Lifeline" 
+    (players 2) 
+    (equipment { 
+        (board (dual <Board>)) //(board <Board> use:Vertex)
+        (piece "Disc" Each) 
+        (piece "Shi_Western" P2) //Alternative icons: paper, button-pass
+        (hand P2)
+    })
+    (rules 
+        <Balance:meta>
+        <Balance:start>
+        phases:{
+        <Balance:setup>
+        (phase "Play"
+            (play 
+                (or
+                    ("SpendKomi")
+                    ("Place"
+                        (then 
+                            ("Remove" Enemy 
+                                (then ("Remove" Mover ~))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        }
+        (end 
+            (if
+                (and (no Moves Next) (< 2 (count Moves)))
+                (result Next Loss)
+            )
+        )
+    )
+)
+
+//------------------------------------------------------------------------------
+
+(option "Balance" <Balance> args:{ <meta> <start> <setup> }
+    {
+    (item "Strong pie (standard)" <(meta (swap))> <> <("StrongPieSetup")> "The strong pie rule is currently in force.")*
+    (item "Weak pie" <(meta (swap))> <> <("WeakPieSetup")> "The weak pie rule is currently in force.")
+    (item "Komi pie"<> <("KomiSelection")> <("KomiPieSetup")> "The komi pie rule is currently in force.")
+    }
+)
+
+(option "Board Size" <Board> args:{ <size> }
+    {
+    (item "3" <(tri Hexagon 3)> "A board of size 3 is currently selected.")
+    (item "4" <(tri Hexagon 4)> "A board of size 4 is currently selected.")
+    (item "5" <(tri Hexagon 5)> "A board of size 5 is currently selected.")
+    (item "6" <(tri Hexagon 6)> "A board of size 6 is currently selected.")
+    (item "7" <(tri Hexagon 7)> "A board of size 7 is currently selected.")*
+    (item "8" <(tri Hexagon 8)> "A board of size 8 is currently selected.")
+    (item "9" <(tri Hexagon 9)> "A board of size 9 is currently selected.")
+    (item "10" <(tri Hexagon 10)> "A board of size 10 is currently selected.")
+    (item "11" <(tri Hexagon 11)> "A board of size 11 is currently selected.")
+    (item "12" <(tri Hexagon 12)> "A board of size 12 is currently selected.")
+})
+
+//------------------------------------------------------------------------------
+
+(metadata 
+    
+    (info
+        {
+        (description "Lifeline is a territorial elimination game for two players. It was invented by Michael Amundsen and Luis Bolanos Mures in February 2022, and was inspired by Go and Kanare Kato's Meridians.")
+        (rules "Lifeline is a territorial strategy game for two players (Black and White) that is played on the cells of an initially empty hexhex board. The recommended board sizes are between 3 and 12 cells per side.
+            
+            Definitions:
+            
+            A group is an entire set of connected stones of the same color. A single stone, not connected to others of its color, is also a group.
+            A group is dead if there is no path of connected empty cells between that group and any other of its color.
+            
+            Play:
+            
+            On your turn, perform the following actions in the stated order:
+            
+            1. Place a stone of your color on an empty cell. If it is your first turn of the game, perform this action twice.
+            2. Remove all dead enemy groups.
+            3. Remove all dead friendly groups.
+            
+            The board positions at the start and at the end of your turn must be different.
+            
+            The last player to make a placement wins. Note that, after your first turn, you will always have a placement available unless you have no groups on the board.
+            
+            To make the game fair, White will have the option, on their first turn only, to swap sides with Black instead of making a regular move.
+            
+            Note that, in this implementation, the two stones you place on your first turn are only visible after both cells to place on have been selected.
+            
+            Alternative balancing methods:
+            
+            The balancing method described above is what is called 'strong pie' in the options. 
+            This implementation also offers two other methods, for players who would like to explore alternatives.
+            
+            Weak pie: Just like with strong pie, White will have the option, on their first turn only, to swap sides with Black instead of making a regular move.
+            But instead of placing twice on their first move, players alternate placing one piece each (with no removals) until 4 setup stones are placed.
+            Consequently, White's choice will be made after Black has placed only one stone.
+            
+            Komi pie: The first player chooses a whole number of komi (between 1 and 12) and the second player chooses whether to play as White (pass) or as Black (place a stone).
+            The first 4 stones are placed in the same order as with weak pie (Black, White, Black, White).
+            Throughout the game proper, White will have the option to spend a point of komi instead of making a placement.
+        A point of komi is spent by clicking the shield icon next to White's name.")
+        (id "1936")
+        (version "1.3.10")
+        (classification "board/space/territory")
+        (author "Michael Amundsen and Luis Bolanos Mures")
+        (credit "Michael Amundsen")
+        (date "02-2022")
+        }
+    )
+    
+    (graphics {
+        (player Colour P1 (colour Black))
+        (player Colour P2 (colour White))
+        (board Colour InnerEdges (colour 178 151 100))
+        (board Colour OuterEdges (colour 178 151 100))
+        (board Colour Phase0 (colour 250 210 148))
+        (board Colour Phase1 (colour 250 210 148))
+        (board Style Board)
+        (stackType Count)
+    })
+)

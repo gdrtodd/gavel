@@ -1,0 +1,33 @@
+(game "Co Chan Cho" 
+    (players 2) 
+    (equipment { 
+        (board 
+            (square 2 diagonals:Solid)
+            use:Vertex
+        )
+        (piece "Disc" Each
+            (move Step 
+                (to 
+                    if:(and {
+                        (or {
+                            (and (!= (from) (coord "A1")) (!= (from) (coord "C1")))
+                            (and (= (from) (coord "C1")) (!= (to) (coord "A1")))
+                            (and (= (from) (coord "A1")) (!= (to) (coord "C1")))
+                        }) 
+                        (is Empty (to))
+                    })
+                )
+            )
+        )
+    }) 
+    
+    (rules 
+        (start {
+            (place "Disc1" (sites Top)) 
+            (place "Disc2" (sites Bottom))
+        })
+        (play (forEach Piece))
+        (end ("NoMoves" Loss)) 
+    )
+)
+

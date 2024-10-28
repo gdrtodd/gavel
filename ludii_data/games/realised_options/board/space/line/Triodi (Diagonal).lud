@@ -1,0 +1,42 @@
+(game "Triodi (Diagonal)"
+    (players 2)
+    
+    (equipment { 
+        (board (concentric Square rings:3 joinCorners:True) use:Vertex) 
+        (hand Each)
+        (piece "Marker" Each 
+            ("StepToEmpty" ~ (then ("ReplayIfLine3" Orthogonal exact:True)))
+        ) 
+    }) 
+    (rules 
+        (start (place "Marker" "Hand" count:9))
+        
+        phases:{
+        (phase "Placement"
+            (play
+                (if "SameTurn"
+                    "RemoveAnyEnemyPiece"
+                    (move 
+                        (from (handSite Mover)) 
+                        (to (sites Empty)) 
+                        (then ("ReplayIfLine3" Orthogonal exact:True)) 
+                    ) 
+                )
+            ) 
+            (nextPhase Mover ("HandEmpty" Mover) "Movement")
+        )
+        
+        (phase "Movement" 
+            (play 
+                (if "SameTurn"
+                    "RemoveAnyEnemyPiece"
+                    (forEach Piece)
+                )
+            )
+        )
+        }
+        
+        (end ("HavingLessPiecesLoss" Next 2))
+    )
+)
+

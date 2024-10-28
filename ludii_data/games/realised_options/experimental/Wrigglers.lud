@@ -1,0 +1,97 @@
+
+(define "GridDirection" Orthogonal)
+
+(define "Score4"
+    (do
+        (forEach Site 
+            (sites Occupied by:#1)
+            (if
+                (> 3 (count Pieces #1 in:(sites Around (site) "GridDirection")))
+                (set State at:(site) 0)
+                (set State at:(site) 1)
+            )
+        )
+        next:(do
+            (and {
+                (remember Value 0)
+                (remember Value 0)
+                (forEach Group "GridDirection" 
+                    
+                    (if
+                        (no Pieces in:(intersection (sites) (sites State 1))) 
+                        (remember Value 
+                            (count Sites in:(sites))
+                        )
+                    )
+                )
+            })
+            next:(set Var "TopValue" (max (values Remembered))
+                (then
+                    (forget Value (max (values Remembered)) 
+                        (then
+                            (set Score #1 (* (var "TopValue") (max (values Remembered)))
+                                (then
+                                    (forget Value All)  
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "AddOrPass"
+    (or {
+        (move Add
+            (piece (id "Disc" Mover))
+            (to (sites Empty)
+                if:(> 3 (count Pieces Mover in:(sites Around (to) "GridDirection"))) 
+            ) 
+            (then (set Var "Added" 1))
+        )
+        (move Pass) 
+    })
+)
+
+(game "Wrigglers"
+    (players 2)
+    (equipment {
+        (board (tri Limping 4) use:Vertex)
+        (piece "Disc" Each)
+    })
+    (rules
+        (play
+            (if
+                (= 1 (var "Added"))
+                (or {
+                    "AddOrPass"
+                    (forEach Piece
+                        (if
+                            (< 2 (count Pieces Mover in:(sites Around (from) "GridDirection"))) 
+                            (move Remove (from)
+                                (then (set Var "Added" 0))
+                        ))
+                        Mover
+                    )
+                })
+                "AddOrPass"
+                (then ("Score4" Mover))
+            ) 
+        )
+        (end 
+            (if
+                (all Passed)
+                {
+                (if
+                    (>= (score Mover) (score Next))
+                    (result Mover Win)
+                )
+                }
+                (result Next Win)
+            )
+        )
+    )
+)
+

@@ -1,0 +1,87 @@
+(define "PlaceOutOfSight"
+    (move Add
+        (to (sites Empty) 
+            if:(not (is Within (id "Disc" Mover) in:(sites LineOfSight Piece at:(to))))
+        )
+        (then (addScore Mover 1))
+    )
+)
+
+(define "StepMoves"
+    (or {
+        ("StepIteration" "S1" 1)
+        ("StepIteration" "S2" 2)
+        ("StepIteration" "S3" 3)
+        ("StepIteration" "S4" 4)
+        ("StepIteration" "S5" 5)
+    })
+)
+
+(define "S1" (intersection (sites Empty) (sites Around (from))))
+(define "S2" (intersection (sites Empty) (sites Around ("S1"))))
+(define "S3" (intersection (sites Empty) (sites Around ("S2"))))
+(define "S4" (intersection (sites Empty) (sites Around ("S3"))))
+(define "S5" (intersection (sites Empty) (sites Around ("S4"))))
+
+(define "StepIteration"
+    (if 
+        (<= #2 (count Pieces Next in:(sites Around (from))))
+        (move
+            (from (from))
+            (to (#1))
+        )
+    )
+)
+(define "BoardUsed" (hex Limping 5))
+
+(game "Infuse"
+    (players 2)
+    (equipment {
+        (board "BoardUsed" use:Cell)
+        (piece "Disc" Each)
+    })
+    (rules
+        (start (set Score Each 0))
+        (play
+            (if (was Pass)
+                (or
+                    (move Pass)
+                    (priority 
+                        ("PlaceOutOfSight")
+                        (forEach Piece
+                            (do ("StepMoves") 
+                                ifAfterwards:(can Move 
+                                    (add
+                                        (to (sites Empty) if:(not (is Within (id "Disc" Mover) in:(sites LineOfSight Piece at:(to)))))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+                (or {
+                    ("PlaceOutOfSight")
+                    (forEach Piece ("StepMoves"))
+                    (move Pass)
+                })
+            )
+        )
+        (end {
+            (if 
+                (and
+                    (all Passed)
+                    (> (score Mover) (score Next))
+                )
+                (result Mover Win)
+            )
+            (if 
+                (and
+                    (all Passed)
+                    (<= (score Mover) (score Next))
+                )
+                (result Next Win)
+            )
+        })
+    )
+)  
+

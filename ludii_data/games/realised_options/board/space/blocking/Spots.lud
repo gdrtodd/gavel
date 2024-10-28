@@ -1,0 +1,31 @@
+(define "NoNeighbour"
+    ("NoSites" 
+        (sites Around 
+            (to) 
+            Orthogonal 
+            if:(is In (to) (sites Occupied by:Neutral))
+        )
+    ) 
+)
+
+(game "Spots" 
+    (players 2) 
+    (equipment { 
+        (board (hex 5))
+        (piece "Marker" Neutral) 
+    }) 
+    
+    (rules 
+        (play 
+            (move Add 
+                (piece "Marker0") 
+                (to 
+                    (sites Empty) 
+                    if:"NoNeighbour"
+                )
+            )
+        )
+        (end ("NoMoves" Loss))
+    )
+)
+

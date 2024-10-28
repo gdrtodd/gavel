@@ -1,0 +1,25 @@
+(game "Shatr ikh Padan" 
+    ("TwoPlayersNorthSouth") 
+    (equipment { 
+        (board (square 8)) 
+        ("ChessPawn" "Pawn")
+        ("ChessKing" "King_noCross")
+    }) 
+    (rules 
+        (start { 
+            (place "Pawn1" (sites Row 1))
+            (place "Pawn2" (sites Row 6))
+            (place "King_noCross1" coord:"E1") 
+            (place "King_noCross2" coord:"D8") 
+        })
+        
+        (play 
+            (do (forEach Piece)
+                ifAfterwards:(not ("IsInCheck" "King_noCross" Mover))
+            )
+        )
+        
+        (end ("Checkmate" "King_noCross"))
+    )
+)
+

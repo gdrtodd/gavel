@@ -1,0 +1,61 @@
+(define "NextSiteFrom" ("NextSiteOnTrack" (pips) from:#1))
+
+(define "NextSiteFromDist6" ("NextSiteOnTrack" 6 from:#1))
+
+(define "RemoveAPiece" (move Remove (site)))
+
+(define "Bar" (mapEntry (mover)))
+
+(define "AllPieceEscaped" (no Pieces Mover))
+
+(define "CanEscape" ("IsOffBoard" #1))
+
+(game "Imperial" 
+    (players 2) 
+    (equipment { 
+        ("BackgammonBoard" ("BackgammonTracksWithBar")) 
+        (dice num:3)
+        (map {(pair 1 19) (pair 2 6)}) 
+        (piece "Disc" Each) 
+    })
+    
+    (rules
+        (start { 
+            (place Stack "Disc1" 10 count:5)
+            (place Stack "Disc1" 11 count:5)
+            (place Stack "Disc1" 12 count:5)
+            (place Stack "Disc2" 23 count:5) 
+            (place Stack "Disc2" 24 count:5) 
+            (place Stack "Disc2" 25 count:5) 
+        })
+        
+        (play 
+            ("RollEachNewTurnMove"
+                (forEach Die
+                    if:("DieNotUsed")
+                    (forEach Site
+                        (sites Occupied by:Mover)
+                        (if ("CanEscape" ("NextSiteFrom" (site))) 
+                            ("RemoveAPiece")
+                            (move 
+                                (from (site))
+                                (to ("NextSiteFrom" (site))
+                                    if:("NoEnemyOrOnlyOne" (to))
+                                    ("HittingCapture" ("Bar")) 
+                                )
+                            )
+                        )
+                    )
+                    (then ("ReplayNotAllDiceUsed"))
+                )
+            )
+        )
+        
+        (end 
+            (if ("AllPieceEscaped")
+                (result Mover Win)
+            )
+        )
+    )
+)
+

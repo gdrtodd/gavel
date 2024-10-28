@@ -1,0 +1,326 @@
+
+(define "Score"
+    (if
+        (or 
+            (<
+                (/ 3 2)
+                (count Pieces of:#1
+                    in:(forEach of:(difference (sites {0..3}) (sites {3}))
+                        (sites {(+ (* 3 (/ #2 3)) (site))})
+            )))
+            (and  
+                (= 3
+                    (count Pieces of:#1
+                        in:(forEach of:(difference (sites {0..3}) (sites {3}))
+                            (sites {(+ (* 3 (/ #2 3)) (site))})
+                )))
+                (is Connected 3 
+                    at:(regionSite
+                        (intersection 
+                            (sites Occupied by:(player #1))
+                            (forEach of:(difference (sites {0..3}) (sites {3}))
+                                (sites {(+ (* 3 (/ #2 3)) (site))})
+                        ))
+                        index:0
+                    )
+                    {
+                    (forEach of:(sites {0 1})
+                        (sites {(+ (* 3 (/ #2 3)) (site))})
+                    )
+                    (forEach of:(sites {0 2})
+                        (sites {(+ (* 3 (/ #2 3)) (site))})
+                    )
+                    (forEach of:(sites {1 2})
+                        (sites {(+ (* 3 (/ #2 3)) (site))})
+                    )
+                    }
+        )))
+        (set Var #4 (+ #3 (/ #2 3))
+            (then
+                (if
+                    (!= #1 (who at:(var #4)))
+                    (and
+                        (remove (var #4))
+                        (add (piece #1)
+                            (to (var #4) 
+                                
+                            )
+                            #5
+        )))))
+        (set Var #4 (+ #3 (/ #2 3))
+            (then 
+                (if
+                    (= #1 (who at:(var #4)))
+                    (remove (var #4)
+                        #5 
+))))))
+
+(define "ScoreThePiece"
+    ("Score" #1 (var "L3") "ABoard" "L2" 
+        (then
+            ("Score" #1 (var "L2") "ABoard" "L1" 
+                (then
+                    ("Score" #1 (var "L1") "ABoard" "L0" )
+)))))
+
+(define "LHTwistFrom" 
+    (% 
+        (+
+            {
+            (% (/ #1 "ATri2") "ATri")
+            (* (% #1 "ATri2") "ATri")
+            (* (+ 1 (/ #1 "ATri3")) "ATri3")
+            }
+        )
+        "ABoard"
+))
+
+(define "RHTwistFrom"
+    (%
+        (+
+            { 
+            (% (/ #1 "ATri") "ATri2")
+            (* (% #1 "ATri") "ATri2")
+            (* (+ 2 (/ #1 "ATri3")) "ATri3")
+            }
+        )
+        "ABoard"
+))
+
+(define "ScorePlayers"
+    (and
+        (set Score P1 
+            (+
+                {
+                (count Pieces P1 in:(forEach (sites Board) if:(<= "ABoard" (site))))
+                (* 99 (count Pieces P1 in:(forEach (sites Board) if:(<= (+ "ABoard" (* 3 "ATri2")) (site)))))
+                (* 900 (count Pieces P1 in:(sites {117..119})))
+                }
+        ))
+        (set Score P2 
+            (+
+                {
+                (count Pieces P2 in:(forEach (sites Board) if:(<= "ABoard" (site))))
+                (* 99 (count Pieces P2 in:(forEach (sites Board) if:(<= (+ "ABoard" (* 3 "ATri2")) (site)))))
+                (* 900 (count Pieces P2 in:(sites {117..119})))
+                }
+))))
+
+(define "AddToEmpty" 
+    (move Select
+        (from (forEach (sites Empty) if:(> "ABoard" (site))))
+        (then
+            (and 
+                {
+                (add (piece #1) (to (last To) (apply (set Var "L3" (to)))) (then ("ScoreThePiece" #1)))
+                (add (piece #1) (to ("LHTwistFrom" (last To)) (apply (set Var "L3" (to)))) (then ("ScoreThePiece" #1)))
+                (add (piece #1) (to ("RHTwistFrom" (last To)) (apply (set Var "L3" (to)))) (then ("ScoreThePiece" #1)))
+                }
+                #2
+))))
+
+(define "AlternatingMoves" ("AddToEmpty" (mover) (then "ScorePlayers")))
+
+(define "FriendEnemyMoves" 
+    (if
+        ("SameTurn")
+        ("AddToEmpty" (next) (then "ScorePlayers"))
+        ("AddToEmpty" (mover) (then (moveAgain)))
+))
+
+(define "DoubleMoves" 
+    (if
+        (or "SameTurn" (gt 0 (counter)))
+        ("AddToEmpty" (mover) (then "ScorePlayers"))
+        ("AddToEmpty" (mover) (then (moveAgain)))
+))
+
+(define "SameIslandSites" 
+    (intersection
+        (union 
+            {
+            (sites Distance Adjacent from:(from) (range  1 3)) 
+            (sites Distance Adjacent from:("LHTwistFrom" (from)) (range  1 3))
+            (sites Distance Adjacent from:("RHTwistFrom" (from)) (range  1 3))
+            }
+        )
+        (sites Empty)
+))
+
+(define "FireAndIceMoves" 
+    (if
+        (no Pieces Mover)
+        ("AddToEmpty" (next) (then "ScorePlayers"))
+        (move Select
+            (from (forEach (sites Occupied by:Mover) if:#1))
+            (to 
+                (forEach
+                    of:"SameIslandSites" 
+                    (sites
+                        {
+                        (site)
+                        ("LHTwistFrom" (site))
+                        ("RHTwistFrom" (site))
+                        }
+            )))
+            (then
+                (do
+                    (add (piece (next))
+                        (to (last From) (apply (and (set Var "L3" (to)) (remove (to))))) 
+                        (then (and ("ScoreThePiece" (mover)) ("ScoreThePiece" (next))))
+                    )
+                    next:(do
+                        (add (piece (next))
+                            (to ("LHTwistFrom" (last From)) (apply (and (set Var "L3" (to)) (remove (to))))) 
+                            (then (and ("ScoreThePiece" (mover)) ("ScoreThePiece" (next))))
+                        )
+                        next:(do
+                            (add (piece (next))
+                                (to
+                                    ("RHTwistFrom" (last From)) 
+                                    (apply (and (set Var "L3" (to)) (remove (to))))
+                                ) 
+                                (then (and ("ScoreThePiece" (mover)) ("ScoreThePiece" (next))))
+                            )
+                            
+                            next:(do
+                                (add (piece (mover))
+                                    (to (last To) (apply (set Var "L3" (to)))) 
+                                    (then ("ScoreThePiece" (mover)))
+                                )
+                                next:(do
+                                    (add (piece (mover))
+                                        (to ("LHTwistFrom" (last To)) (apply (set Var "L3" (to)))) 
+                                        (then ("ScoreThePiece" (mover)))
+                                    )
+                                    next:(add (piece (mover))
+                                        (to ("RHTwistFrom" (last To)) (apply (set Var "L3" (to)))) 
+                                        (then ("ScoreThePiece" (mover)))
+        ))))))))
+        #2  
+))
+
+(define "DoubleFireAndIceMoves" 
+    (if
+        (or "SameTurn" (gt 0 (counter)))
+        ("FireAndIceMoves" #1 (then "ScorePlayers"))
+        ("FireAndIceMoves" (> "ABoard" (site)) (then (and "ScorePlayers" (moveAgain))))
+))
+
+(game "Mutant Y^3" 
+    (players 2)
+    (equipment
+        {
+        (board ("FractalBoard" 2) use:Cell)
+        (piece "Ball" Each )
+        }
+    )
+    (rules
+        (play
+            ("AlternatingMoves")
+        )
+        (end 
+            {
+            (if
+                (< 1 (count Pieces P1 in:(sites {117..119})))
+                (byScore misere:False)
+            )
+            (if
+                (< 1 (count Pieces P2 in:(sites {117..119})))
+                (byScore misere:False)
+            )
+            }
+)))
+
+(define "ATri"   3)
+(define "ATri2"  9)
+(define "ATri3"  27)
+(define "ABoard" 81)
+(define "Dx" (* .89 (+ 1 2))) 
+(define "Dy" (* 1.5 (+ 1 2)))    
+(define "S1"  2 )
+(define "S2" (* "S1" "S1"))
+
+(define "FractalBoard" 
+    (merge
+        { 
+        "Y3Board#1" 
+        (shift (* { 2 "S2" "Dx"}) 0 "Y3Board#1" ) 
+        (shift (* "S2" "Dx") (* { 1 "S2" "Dy"}) "Y3Board#1" ) 
+        (shift 0 (* { 4.5 "S1" "Dy"}) ("L2ScoreBoard" #1)) 
+        (shift 0 (* { 3 "S1" "Dy"}) "L1ScoreBoard")
+        (shift 0 (* { 1.5 "S1" "Dy"})"L0ScoreBoard")
+        }
+)) 
+
+(define "Isle" (hex Triangle 2))
+(define "L0ScoreBoard" (hex Triangle 2))
+
+(define "L1ScoreBoard"
+    (merge
+        {
+        "Isle" 
+        (shift (* 2 "Dx") 0 "Isle") 
+        (shift "Dx" "Dy" "Isle")
+        }
+))
+
+(define "L2ScoreBoard" 
+    (merge
+        { 
+        "SubBoard#1"
+        (shift (* { 2 "S1" "Dx"}) 0 "SubBoard#1") 
+        (shift (* "S1" "Dx") (* "S1" "Dy") "SubBoard#1")
+        } 
+))
+
+(define "SubBoard2" "L1ScoreBoard")
+(define "Y3Board2" ("L2ScoreBoard" 2))
+
+(define "SubBoard3"
+    (merge
+        {
+        "Isle" (shift (* 2 "Dx") 0 "Isle") (shift (* 4 "Dx") 0 "Isle")
+        (shift "Dx" "Dy" "Isle") (shift (* 3 "Dx") "Dy" "Isle")
+        (shift (* 2 "Dx") (* 2 "Dy") "Isle")
+        }
+))
+
+(define "Y3Board3" 
+    (merge
+        {
+        "SubBoard3" (shift (* 6 "Dx") 0 "SubBoard3") (shift (* 12 "Dx") 0 "SubBoard3")
+        (shift (* 3 "Dx") (* 3 "Dy") "SubBoard3") (shift (* 9 "Dx") (* 3 "Dy") "SubBoard3")
+        (shift (* 6 "Dx") (* 6 "Dy") "SubBoard3")
+        }
+))
+
+(define "P1Colour" (colour DarkBlue))
+(define "P1Home" (colour DarkBrown))
+(define "P2Colour" (colour White))
+(define "P2Home" (colour Yellow))
+(define "BoardColour" (colour 180 170 145 200))
+
+(define "GraphicsOptions" 
+    (graphics
+        {
+        (player Colour P1 "P1Colour")
+        (player Colour P2 "P2Colour")
+        (board StyleThickness OuterEdges 2.50)
+        (board StyleThickness Symbols .21)
+        (board Style Board)
+        (board Background
+            fillColour:"BoardColour"
+            edgeColour:(colour 120 100 40 90)
+        )
+        (show Symbol text:"                              ( a , b , c )"  8 scale:1.525)  
+        (show Symbol text:"                              ( b , c , a )" 35 scale:1.525)
+        (show Symbol text:"                              ( c , a , b )" 62 scale:1.525)  
+        
+        (board Colour Phase0 "BoardColour")    
+        (board Colour InnerEdges (colour 120 100 40 190) )
+        (board Colour OuterEdges (colour 120 100 40 190) )
+        (piece Scale 1) 
+        }
+))
+

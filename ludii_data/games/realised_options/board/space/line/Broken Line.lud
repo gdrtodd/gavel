@@ -1,0 +1,13 @@
+(game "Broken Line" 
+    (players 2) 
+    (equipment { 
+        (board (hex Diamond 11)) 
+        (piece "Marker" Each)
+    }) 
+    (rules 
+        (meta (swap))
+        (play (move Add (to (sites Empty))))
+        (end (if (is Line 4 Diagonal) (result Mover Win))) 
+    )
+)
+

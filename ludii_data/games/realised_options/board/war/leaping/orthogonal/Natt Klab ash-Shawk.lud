@@ -1,0 +1,21 @@
+(game "Natt Klab ash-Shawk"
+    (players 2)
+    (equipment {
+        (board (square 5)) 
+        (piece "Marker" Each
+            (or
+                ("StepOrthogonalToEmpty")
+                ("HopOrthogonalCapture")
+            )
+        )
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (union {(expand (sites Bottom)) (sites {"D3" "E3"}) }))
+            (place "Marker2" (union {(sites {"A3" "B3"}) (expand (sites Top)) }))
+        })
+        (play (forEach Piece))
+        (end ("CaptureAll" Next))
+    )
+)
+

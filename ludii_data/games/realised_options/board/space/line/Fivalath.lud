@@ -1,0 +1,17 @@
+(game "Fivalath" 
+    (players 2) 
+    (equipment { 
+        (board (square 10) use:Vertex) 
+        (piece "Ball" Each) 
+    }) 
+    (rules 
+        
+        (play (move Add (to (sites Empty))))
+        
+        (end {
+            (if (is Line 5 All) (result Mover Win))
+            (if (is Line 4 All) (result Mover Loss))
+        })
+    )
+)
+

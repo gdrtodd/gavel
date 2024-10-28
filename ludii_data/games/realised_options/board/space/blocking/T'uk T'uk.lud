@@ -1,0 +1,16 @@
+(game "T'uk T'uk"
+    (players 2)
+    (equipment {
+        (board (square 6))
+        (piece "Marker" Each (move Slide Orthogonal))
+    })
+    (rules 
+        (start { 
+            (place "Marker1" (sites Bottom))
+            (place "Marker2" (sites Top))
+        })
+        (play (forEach Piece))
+        (end ("BlockWin"))
+    )
+)
+

@@ -1,0 +1,30 @@
+(game "Dam Hariman"
+    (players 2) 
+    (equipment { 
+        ("AlquerqueBoardWithBottomAndTopTriangles")
+        (piece "Marker" Each 
+            (or 
+                ("HopSequenceCapture")
+                ("StepToEmpty")
+            )
+        )
+    }) 
+    (rules 
+        (start { 
+            (place "Marker1" (union {(sites Row 0) (sites Row 1) (sites Row 2) (sites Row 3)}))
+            (place "Marker2" (union {(sites Row 5) (sites Row 6) (sites Row 7) (sites Row 8)}))
+        })
+        (play 
+            (if "SameTurn"
+                (or
+                    ("HopSequenceCaptureAgain")	
+                    (move Pass)
+                )
+                (forEach Piece)
+            )
+        )
+        
+        (end ("NoMoves" Loss))
+    )	
+)
+

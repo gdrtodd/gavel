@@ -1,0 +1,2 @@
+The goal is to place eight queens on a standard Chess board so that none of them can take another. The puzzle is played on a 8x8 board
+(game "N Queens" (players 1) (equipment {(board (square 8) (values Cell (range 0 1))) (regions {AllDirections})}) (rules (play (satisfy {(is Count (sites Board) of:1 8) (all Different except:0)})) (end (if (is Solved) (result P1 Win))))) 

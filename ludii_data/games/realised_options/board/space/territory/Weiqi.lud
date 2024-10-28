@@ -1,0 +1,30 @@
+(game "Weiqi"
+    (players 2)
+    (equipment {
+        (board (square 19) use:Vertex)
+        (piece "Marker" Each)
+    })
+    (rules 
+        (meta
+            (no Repeat)
+        )
+        (play   
+            (or
+                (move Add
+                    (to (sites Empty))
+                    (then ("EncloseCapture" Orthogonal))
+                )
+                (move Pass)
+            )
+        )
+        (end
+            (if (all Passed)
+                (byScore {
+                    (score P1 (+ (count Pieces P1) (size Territory P1))) 
+                    (score P2 (+ (count Pieces P2) (size Territory P2)))
+                })
+            )
+        )
+    )
+)
+

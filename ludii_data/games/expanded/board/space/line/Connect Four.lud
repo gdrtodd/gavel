@@ -1,0 +1,1 @@
+(game "Connect Four" (players 2) (equipment {(board (rectangle 1 7)) (piece "Disc" Each)}) (rules (play (move Add (to (forEach (sites Board) if:(< (size Stack at:(site)) 6))) stack:True)) (end (if (is Line 4 byLevel:True) (result Mover Win))))) 

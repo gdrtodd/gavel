@@ -1,0 +1,7 @@
+(define "Chinese Checkers_ai"
+    (bestAgent "BRS+")
+    trainedHeuristics:(heuristics {
+        (influence weight:-1.0)
+    })
+    
+)

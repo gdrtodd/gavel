@@ -1,0 +1,140 @@
+(define "Columns" 16)
+
+(define "MoveAgainAfterCapture" (and (is Pending) ("SameTurn")))
+
+(define "StylizedMove" 
+    (if (is Mover P1)
+        (difference 
+            (expand (intersection (sites Row 1) (sites Left)) steps:2 E) 
+            (expand (intersection (sites Row 1) (sites Left)) steps:1 E) 
+        )
+        (difference 
+            (expand (intersection (sites Row 2) (sites Right)) steps:2 W) 
+            (expand (intersection (sites Row 2) (sites Right)) steps:1 W) 
+        )
+    )
+)
+
+(define "Sow" 
+    (then 
+        (sow
+            "Track"
+            owner:(mover)
+            apply:(if (> (count at:(to)) 1)
+                (moveAgain)
+                (if (is In (to) (sites Mover "Inner"))
+                    (and
+                        {
+                        (fromTo 
+                            (from (to)) 
+                            (to (handSite Mover)) 
+                            count:(count at:(to)) 
+                        )
+                        (if (> (count at:("OppositePit" (to))) 0)
+                            (fromTo 
+                                (from ("OppositePit" (to))) 
+                                (to (handSite Mover)) 
+                                count:(count at:("OppositePit" (to)))
+                            ) 
+                        ) 
+                        (if (> (count at:("OppositeOuterPit" (to))) 0)
+                            (fromTo 
+                                (from ("OppositeOuterPit" (to))) 
+                                (to (handSite Mover)) 
+                                count:(count at:("OppositeOuterPit" (to)))
+                            ) 
+                        )
+                        (set Pending) 
+                        (moveAgain)
+                        }
+                    )
+                )
+            )
+        )
+    )
+)
+
+(define "PiecesOwnedBy" (+ (count Cell at:(handSite #1)) (count in:(sites #1 "Home"))))
+
+(game "Mefuvha" 
+    (players 2) 
+    
+    (equipment { 
+        (mancalaBoard 4 "Columns" store:None
+            { 
+            (track "Track1" "0,E,N1,W" loop:True P1)
+            (track "Track2" "32,E,N1,W" loop:True P2)
+            }
+        )
+        (regions "Home" P1 (sites Track "Track1"))        
+        (regions "Home" P2 (sites Track "Track2"))        
+        (regions "Inner" P1 (difference (sites Track "Track1") (sites Bottom))) 
+        (regions "Inner" P2 (difference (sites Track "Track2") (sites Top))) 
+        (piece "Seed" Shared)
+        (hand Each)
+    }) 
+    (rules 
+        
+        (start { 
+            (set Count 2 
+                to:(difference 
+                    (union (sites P1 "Home") (sites P2 "Home")) 
+                    (union
+                        (expand (intersection (sites Row 1) (sites Left)) steps:1 E) 
+                        (expand (intersection (sites Row 2) (sites Right)) steps:1 W) 
+                    )
+                ) 
+            ) 
+            (set Count 1 
+                to:(union
+                    (difference (expand (intersection (sites Row 1) (sites Left)) steps:1 E) (sites Left)) 
+                    (difference (expand (intersection (sites Row 2) (sites Right)) steps:1 W) (sites Right))
+                )
+            )
+        })
+        
+        (play 
+            (if "MoveAgainAfterCapture"
+                (move Select
+                    (from (sites Next "Home") if:(> (count at:(from)) 0))
+                    (then 
+                        (fromTo 
+                            (from (last From)) 
+                            (to (handSite Mover)) 
+                            count:(count at:(last From)) 
+                        )
+                    )
+                )
+                (priority
+                    (move Select 
+                        (from 
+                            (if ("SameTurn") 
+                                "LastHoleSowed" 
+                                (if 
+                                    (< (count Turns) 3) 
+                                    "StylizedMove" 
+                                    (sites Mover "Home") 
+                                ) 
+                            ) 
+                            if:(> (count at:(from)) 1)
+                        )
+                        "Sow"
+                    )
+                    (move Select 
+                        (from 
+                            (if ("SameTurn") 
+                                "LastHoleSowed" 
+                                (sites Mover "Home") 
+                            )
+                            if:(= (count at:(from)) 1)
+                        )
+                        "Sow"
+                    )
+                )
+            )
+        )
+        
+        (end ("MancalaByScoreWhen" (no Moves Mover)))
+    )
+)
+

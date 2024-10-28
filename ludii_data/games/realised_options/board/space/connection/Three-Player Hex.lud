@@ -1,0 +1,19 @@
+(game "Three-Player Hex" 
+    (players 3) 
+    (equipment { 
+        (board (hex 4)) 
+        (piece "Marker" Each)
+        (regions P1 {(sites Side N) (sites Side S) })
+        (regions P2 {(sites Side NW) (sites Side SE) })
+        (regions P3 {(sites Side SW) (sites Side NE) }) 
+    }) 
+    (rules 	
+        
+        (play (move Add (to (sites Empty)))) 
+        (end {
+            (forEach NonMover if:(is Blocked Player) (result Player Loss))
+            (if (is Connected Mover) (result Mover Win))
+        }) 
+    )
+)
+
