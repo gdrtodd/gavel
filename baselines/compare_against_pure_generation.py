@@ -78,7 +78,7 @@ occupied_cells = {
 PURE_GENERATION_FILENAMES = [
     "temp=1dot0_seed=1_{0}_section={1}",
     "temp=1dot0_seed=2_{0}_section={1}",
-    "temp=1dot0_seed=1_{0}_section={1}"
+    "temp=1dot0_seed=3_{0}_section={1}"
 ]
 
 NUM_SECTIONS = 5
